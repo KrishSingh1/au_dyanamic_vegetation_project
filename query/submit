@@ -29,7 +29,7 @@ MEMORY="2GB"
 QUEUE=normal
 PROJECT=pt17
 EMAIL_OPT=abe
-EMAIL=d.holzworth@westernsydney.edu.au
+EMAIL=me@example.com
 JOB_NAME=job
 
 ################################################################################
