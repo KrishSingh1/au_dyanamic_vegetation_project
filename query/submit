@@ -116,4 +116,4 @@ mpirun -np "${NPROCESS}" python3 "${PYTHON_SCRIPT}" "${RUNS_DIR}" "${RUN_OUT_DIR
 EOF
 chmod ug+x "${RUN_SCRIPT}"
 
-# qsub "${RUN_SCRIPT}"
+qsub "${RUN_SCRIPT}"
