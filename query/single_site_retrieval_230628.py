@@ -1,38 +1,50 @@
+# Required arguments:
+# 0. Input directory name.
+# 1. Output directory name.
 
 ####### IMPORT PACKAGES ####### 
 
 # Inbuilt tools 
 import numpy as np
 import pandas as pd
-import os 
+import os, sys
+
+# MPI
+from mpi4py import MPI
 
 # DEA Tools 
 import datacube
+# sys.path.insert(1, '/home/590/ks0104/dea-notebooks/Tools')
+from dea_tools.datahandling import wofs_fuser
 from datacube.utils import masking
 
-import sys 
-sys.path.insert(1, '/home/590/ks0104/dea-notebooks/Tools')
-from dea_tools.datahandling import wofs_fuser
+
+comm = MPI.COMM_WORLD
+
+input_path = sys.argv[1]
+output_path = sys.argv[2]
+
+# Run directories are numbered 1..N but rank is 0..N-1
+rank = comm.Get_rank() + 1
 
 ###### Specify debug mode #######
 debug = True
-print(f'Debug mode: {debug}')
 
+def write_to_log(msg):
+   if debug:
+      print(f"[node {rank}] {msg}")
 
-###### Create a directory for dataset ######
-## Apply debug mode (1/2)
+write_to_log(f'Debug mode: {debug}')
+write_to_log(f"MPI rank={rank}")
 
-dir_name = 'fc_preprocessed'
-if debug:
-  dir_name = 'fc_preprocessed_one_small'
-##
+write_to_log(f"input_path='{input_path}'")
+write_to_log(f"output_path={output_path}")
 
+# change current directory to the query folder to access query files
+os.chdir(os.path.join(input_path, f"run{rank}"))
 
-os.chdir(os.path.join(os.getcwd(), 'query')) # change current directory to the query folder to access query files
-path = os.path.join(os.getcwd(), dir_name) # Results directory path 
-if not os.path.isdir(path): # create directory if doesn't exist
-    os.mkdir(dir_name)
-
+if not os.path.isdir(output_path): # create directory if doesn't exist
+    os.makedirs(output_path)
 
 ###### Create Query #######
 ## Load in query file (sites coords of interest)
@@ -66,7 +78,7 @@ query = {
     'crs': output_crs
 }
 
-print(f"Query ({site_info['site_location_name'][RI]}, Index = {RI})\n{query}, Extent = {extent}") # Print query
+write_to_log(f"Query ({site_info['site_location_name'][RI]}, Index = {RI})\n{query}, Extent = {extent}") # write_to_log query
 
 ###### Retrieve Data and preprocess ######
 ### Load DEA Fractional Cover data from the datacube
@@ -89,6 +101,6 @@ fc_masked = fc.where(wo_mask) # turn wet pixels into NAN
 
 ###### Export processed as a csv file #######
 file_name = f"{site_info['site_location_name'][RI]}.csv" # Simply location_name.csv
-file_path = os.path.join(path,file_name)
+file_path = os.path.join(output_path,file_name)
 region = fc_masked.to_dataframe()
 df = region.to_csv(file_path)
