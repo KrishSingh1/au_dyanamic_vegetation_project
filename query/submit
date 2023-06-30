@@ -104,7 +104,7 @@ cat <<EOF > "${RUN_SCRIPT}"
 #PBS -l wd
 #PBS -W umask=0022
 #PBS -S /bin/bash
-#PBS -l storage=gdata/${PROJECT}+scratch/${PROJECT}+scratch/hw83
+#PBS -l storage=gdata/${PROJECT}+scratch/${PROJECT}+scratch/hw83+gdata/v10
 #PBS -l jobfs=40GB
 #PBS -o ${OUT_DIR}/${JOB_NAME}.log
 #PBS -N ${JOB_NAME}
