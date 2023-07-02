@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# If environment variable DEBUG is set to 1, run in debug mode.
+if [ "${DEBUG:-}" = 1 ]
+then
+  echo "Running in debug mode. Set DEBUG to 0 to disable."
+  set -x
+fi
+
+# Get directory containing this script.
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd -P)"
+
+################################################################################
+# User Inputs
+################################################################################
+
+# Note: ${DIR} is the directory containing this script.
+
+OUT_DIR=/scratch/pt17/ks0104/test
+IN_FILE="${DIR}/sites_info_query.csv"
+PYTHON_SCRIPT="${DIR}/single_site_retrieval_230628.py"
+
+NPROCESS=4
+WALLTIME="02:00:00"
+MEMORY="2GB"
+QUEUE=normal
+PROJECT=pt17
+EMAIL_OPT=abe
+EMAIL=20162506@student.westernsydney.edu.au
+JOB_NAME=job
+
+################################################################################
+# End of User Inputs
+################################################################################
+
+OUT_FILE_NAME="$(basename "${IN_FILE}")"
+RUNS_DIR="${OUT_DIR}/runs"
+
+# Name of the directory which each python invocation will write to (relative to
+# that run directory). This doesn't really matter in the long run.
+RUN_OUT_DIR=out
+
+# This function creates the gridlist files for each run by splitting
+# the original gridlist file into approximately equal parts.
+function split_gridlist {
+    # Create empty gridlists first to make sure each run gets one.
+    for ((a=1; a <= NPROCESS ; a++))
+    do
+        mkdir -p "${RUNS_DIR}/run${a}"
+        echo > "${RUNS_DIR}/run${a}/${OUT_FILE_NAME}"
+    done
+
+    # Use the split command to split the files into temporary files
+    # Splitting using r/N mode for round-robin distribution.
+    local tmp_prefix=tmpSPLITSITES_
+
+    # By default, split will use a suffix of 2 digits. This will
+    # obviously be insufficient if we have >99 CPUs. We could just use
+    # an excessively large suffix (ie 30 - we're never going to have
+    # 10^30 CPUs), but I think we can be a bit more elegant than that.
+    # Here we compute the number of digits required for the suffix as
+    # log10(NCPU) + 1. The only complication is that there is no builtin
+    # log10 function in bash, so I've implemented a simple integer log
+    # function here.
+    log(){ local x=$1 n=2 l=-1;if [ "$2" != "" ];then n=$x;x=$2;fi;while((x));do let l+=1 x/=n;done;echo $l; }
+    local num_digits_required=$(echo "`log 10 ${NPROCESS}` + 1" | bc)
+
+	TMP_IN="${IN_FILE}_tmp"
+	tail -n +2 "${IN_FILE}" >"${TMP_IN}"
+    split -a${num_digits_required} -dn r/${NPROCESS} "${TMP_IN}" "${tmp_prefix}"
+
+    # Move the temporary files into the runX-directories.
+    local files="${tmp_prefix}*"
+    local i=1
+    for file in ${files}
+    do
+	  OUT="${RUNS_DIR}/run${i}/${OUT_FILE_NAME}"
+	  head -n1 "${IN_FILE}" >"${OUT}"
+      cat "${file}" >>"${OUT}"
+	  rm "${file}"
+      i=$((i+1))
+    done
+	rm "${TMP_IN}"
+}
+
+mkdir -p "${OUT_DIR}"
+split_gridlist
+
+RUN_SCRIPT="${OUT_DIR}/run"
+
+cat <<EOF > "${RUN_SCRIPT}"
+#!/usr/bin/env bash
+#PBS -l ncpus=${NPROCESS}
+#PBS -l walltime=${WALLTIME}
+#PBS -l mem=${MEMORY}
+#PBS -q ${QUEUE}
+#PBS -P ${PROJECT}
+#PBS -m ${EMAIL_OPT}
+#PBS -M ${EMAIL}
+#PBS -j oe
+#PBS -l wd
+#PBS -W umask=0022
+#PBS -S /bin/bash
+#PBS -l storage=gdata/${PROJECT}+scratch/${PROJECT}+scratch/hw83+gdata/v10+gdata/jw04
+#PBS -l jobfs=40GB
+#PBS -o ${OUT_DIR}/${JOB_NAME}.log
+#PBS -N ${JOB_NAME}
+#PBS -p 512
+set -euo pipefail
+#module load dea openmpi
+python3 --version
+export PYTHONPATH="\${PYTHONPATH:-}:${HOME}/.local/lib/python3.6/site-packages"
+export PATH="${PATH}:/home/590/ks0104/dea-notebooks/Tools"
+echo PYTHONPATH=\$PYTHONPATH
+echo PATH=\$PATH
+echo mpirun=`which mpirun`
+module load dea openmpi
+
+#export PATH="${PATH}:/home/590/ks0104/dea-notebooks/Tools"
+#export PYTHONPATH=/home/590/ks0104/.local/lib/python3.10/site-packages
+mpirun -np "${NPROCESS}" python3 "${PYTHON_SCRIPT}" "${RUNS_DIR}" "${RUN_OUT_DIR}"
+EOF
+chmod ug+x "${RUN_SCRIPT}"
+
+qsub "${RUN_SCRIPT}"
