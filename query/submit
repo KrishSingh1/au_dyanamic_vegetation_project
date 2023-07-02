@@ -18,8 +18,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd -P)"
 
 # Note: ${DIR} is the directory containing this script.
 
-OUT_DIR=/scratch/hw83/dh7190/test
-OUT_DIR="${DIR}/out"
+OUT_DIR=/scratch/pt17/ks0104/test
 IN_FILE="${DIR}/sites_info_query.csv"
 PYTHON_SCRIPT="${DIR}/single_site_retrieval_230628.py"
 
@@ -29,7 +28,7 @@ MEMORY="2GB"
 QUEUE=normal
 PROJECT=pt17
 EMAIL_OPT=abe
-EMAIL=me@example.com
+EMAIL=20162506@student.westernsydney.edu.au
 JOB_NAME=job
 
 ################################################################################
@@ -104,14 +103,23 @@ cat <<EOF > "${RUN_SCRIPT}"
 #PBS -l wd
 #PBS -W umask=0022
 #PBS -S /bin/bash
-#PBS -l storage=gdata/${PROJECT}+scratch/${PROJECT}+scratch/hw83+gdata/v10
+#PBS -l storage=gdata/${PROJECT}+scratch/${PROJECT}+scratch/hw83+gdata/v10+gdata/jw04
 #PBS -l jobfs=40GB
 #PBS -o ${OUT_DIR}/${JOB_NAME}.log
 #PBS -N ${JOB_NAME}
-
+#PBS -p 512
 set -euo pipefail
-module load dea python3
+#module load dea openmpi
+python3 --version
+export PYTHONPATH="\${PYTHONPATH:-}:${HOME}/.local/lib/python3.6/site-packages"
+export PATH="${PATH}:/home/590/ks0104/dea-notebooks/Tools"
+echo PYTHONPATH=\$PYTHONPATH
+echo PATH=\$PATH
+echo mpirun=`which mpirun`
+module load dea openmpi
 
+#export PATH="${PATH}:/home/590/ks0104/dea-notebooks/Tools"
+#export PYTHONPATH=/home/590/ks0104/.local/lib/python3.10/site-packages
 mpirun -np "${NPROCESS}" python3 "${PYTHON_SCRIPT}" "${RUNS_DIR}" "${RUN_OUT_DIR}"
 EOF
 chmod ug+x "${RUN_SCRIPT}"

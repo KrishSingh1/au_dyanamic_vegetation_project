@@ -14,7 +14,7 @@ from mpi4py import MPI
 
 # DEA Tools 
 import datacube
-# sys.path.insert(1, '/home/590/ks0104/dea-notebooks/Tools')
+sys.path.insert(1, '/home/590/ks0104/dea-notebooks/Tools')
 from dea_tools.datahandling import wofs_fuser
 from datacube.utils import masking
 
