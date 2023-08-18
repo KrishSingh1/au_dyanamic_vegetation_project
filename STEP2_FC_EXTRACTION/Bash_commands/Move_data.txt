@@ -1,0 +1,8 @@
+$sourcePath = 'C:\Users\krish\Desktop\DYNAMIC MODEL VEGETATION PROJECT\DataExtraction\BACKUP_DATA\test - subqueryb&c'
+$destinationPath = 'C:\Users\krish\Desktop\DYNAMIC MODEL VEGETATION PROJECT\DataExtraction\BACKUP_DATA\csv_files'
+
+$filesToMove = Get-ChildItem -Path $sourcePath -Recurse -File -Filter "*.csv" | Where-Object { $_.Name -ne 'sites_info_subquery_b.csv' } | Where-Object { $_.Name -ne 'sites_info_subquery_c.csv' }
+
+foreach ($file in $filesToMove) {
+    Move-Item -Path $file.FullName -Destination $destinationPath
+}

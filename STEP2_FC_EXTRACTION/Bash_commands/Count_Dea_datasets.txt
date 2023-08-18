@@ -1,0 +1,2 @@
+
+(Get-ChildItem -Path 'C:\Users\krish\Desktop\test' -Recurse -File -Filter "*.csv" | Where-Object { $_.Name -ne 'sites_info_subquery_c.csv' } | Where-Object { $_.Name -ne 'sites_info_subquery_b.csv' }).Count
