@@ -40,3 +40,33 @@ if (write & con) {
 
 
 ###### END ######
+
+## There appears to be a discrepency with the number of sites in the original query and 
+##  a newer one -> merge the newer lat/lon to the original query
+## The extra site is NTAPCK0003
+
+
+original <- read.csv('sites_info_query.csv')
+original <- original[,-1]
+original.latlong <- merge(original, site.info.coorded.essen)
+
+# t <- table(c(original$site_location_name, site.info.coorded.essen$site_location_name))
+# site.extra <- t[t == 1]
+#any(is.element(original$site_location_name, 'NTAPCK0003')) # 0
+#any(is.element(site.info.coorded.essen$site_location_name, 'NTAPCK0003')) # 1
+##
+
+
+if (write & con) {
+  write.csv(original.latlong, "sites_info_query_latlon.csv")
+  print('File Written')
+} else if (!con) {
+  print('Error writing file')
+} else {
+  print('File not written')
+}
+
+#################
+
+
+
