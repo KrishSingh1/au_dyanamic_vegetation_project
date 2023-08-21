@@ -11,13 +11,13 @@ veg.info <- readRDS("../STEP2_VEG_EXTRACTION/site_veg.rds")
 
 
 ## Get overall visuals built in 
-map_ausplots(veg.info)
-ausplots_visual(veg.info,max.plots=length(unique(veg.info$veg.PI$site_location_name)))
+#map_ausplots(veg.info)
+#ausplots_visual(veg.info,max.plots=length(unique(veg.info$veg.PI$site_location_name)))
 ## 
 
 
 ## Inspect growth form table
-growth.form <- as.data.frame(growth_form_table(veg.info$veg.PI, m_kind = "percent_cover", cumulative = F))
+#growth.form <- as.data.frame(growth_form_table(veg.info$veg.PI, m_kind = "percent_cover", cumulative = F))
 # cumulative - F means absolute cover i.e. percent of points covered by the species
 
 # saveRDS(growth.form, file = "growth_form_matrix.rds")
@@ -32,19 +32,9 @@ growth.form <- readRDS("growth_form_matrix.rds")
 insitu.fractional.cover <- readRDS("AusPlots_fractional_cover.rds")
 
 
-
-fc.vio <- as.list(insitu.fractional.cover)
-
-fractional_type <- c()
-fractional_percent <- c()
-
-for(n in names(fc.vio[-1])){
-  names(fc.vio[[n]]) <- rep(n, length(fc.vio[[n]]))
-  fractional_type <- c(fractional_type, names(fc.vio[[n]]))
-  fractional_percent <- c(fractional_percent, fc.vio[[n]])
-}
-
-fc.vio.df <- data.frame(fractional_type,fractional_percent)
+fc.vio.df <- melt(insitu.fractional.cover, variable.name = "fractional_type",
+                                value.name = "fractional_percent", 
+                                measure.vars = c("bare","brown","green","NA."))
 
 
 library(ggplot2)
@@ -73,53 +63,95 @@ brplt
 
 
 ### 
-my.fractional <- merge(insitu.fractional.cover, veg.info$site.info, by="site_unique")[,c("site_unique", "bare", "brown", "green", "NA.", "longitude", "latitude")]
-
+my.fractional <- merge(insitu.fractional.cover,
+                       veg.info$site.info, by="site_unique")[,c("site_unique",
+                                                                "bare", "brown", "green",
+                                                                "NA.", "longitude", "latitude",
+                                                                "visit_end_date")]
+my.fractional$visit_end_date <- as.Date(my.fractional$visit_end_date)
 
 library(dplyr)
+library(reshape2)
+
+
 
 hs <- ggplot(my.fractional, aes(x=latitude)) +
   geom_histogram(binwidth = 4)
 hs
 
 
-my.fractional.interv <- my.fractional %>% mutate(lat.bin = cut(latitude, breaks=9))
+my.fractional.interv <- my.fractional%>% mutate(lat.bin = cut(latitude, breaks=9))
+
+table(my.fractional.interv$lat.bin)
 
 
 
-fractional_type.interv <- rep(x = c("bare", "brown", "green", "NA."),
-                              each = nrow(my.fractional.interv))
-
-fractional_percent.interv <- c(my.fractional.interv$bare,
-                               my.fractional.interv$brown,
-                               my.fractional.interv$green,
-                               my.fractional.interv$NA.)
-
-
-latitudinal_bin <- rep(my.fractional.interv$lat.bin, 
-                       times = 4 )
-
-
-my.fractional.interv.df <- data.frame(fractional_type.interv,
-                                      fractional_percent.interv,
-                                      latitudinal_bin)
+my.fractional.interv.df <- melt(my.fractional.interv, variable.name = "fractional_type",
+                                value.name = "fractional_percent", 
+                                measure.vars = c("bare","brown","green","NA."))
 
 
 
-brplt <- ggplot(my.fractional.interv.df, aes(y = fractional_percent.interv, x = fractional_type.interv)) + 
-  geom_bar(width = 0.3, stat = "identity") + coord_flip() + theme_minimal() +
-  facet_wrap(latitudinal_bin)
+scplt <- ggplot(my.fractional.interv.df, aes(x = latitude, y = fractional_percent)) +
+  geom_point() + facet_wrap(.~fractional_type,ncol = 2) + stat_smooth()
+scplt
+
+
+
+brplt <- ggplot(my.fractional.interv.df, aes(y = fractional_percent, x = fractional_type)) + 
+  geom_bar(width = 0.3, stat = "identity") + coord_flip() + facet_wrap(~lat.bin)
 brplt
 
 # No Scale
 bxplt <- ggplot(my.fractional.interv.df, aes(x=fractional_type, y=fractional_percent)) + 
-  geom_boxplot() + facet_wrap(latitudinal_bin)
+  geom_boxplot() + facet_wrap(~lat.bin)
 bxplt
 
 
 
+timeseries <- ggplot(my.fractional.interv.df, aes(x = visit_end_date, y = fractional_percent)) +
+  geom_point() + facet_wrap(.~fractional_type,ncol = 2) + geom_line() + stat_smooth()
+timeseries
+
+timeseries <- ggplot(my.fractional.interv.df, aes(x = visit_end_date, y = fractional_percent,
+                                                  colour = fractional_type)) +
+  geom_point() + facet_wrap(.~lat.bin,ncol = 3)  + geom_line() + stat_smooth() + ylim(0,100)
+timeseries
+
+
+## Visualise spatial variance of growth forms 
+
+growth.form$site_unique <- rownames(growth.form)
+growth.form.df <- melt(growth.form, id = "site_unique", 
+                       variable.name = "growth.form", value.name = "occurance")
+
+
+my.fractional.interv.grwth <- merge(my.fractional.interv,
+                                    growth.form.df, 
+                                    by = "site_unique")
 
 
 
+scplt <- ggplot(my.fractional.interv.grwth, aes(x = latitude, y = occurance)) +
+  geom_point() + facet_wrap(~growth.form) + stat_smooth()
+scplt
 
+
+brplt <- ggplot(my.fractional.interv.grwth, aes(y = occurance, x = growth.form)) + 
+  geom_bar(width = 0.3, stat = "identity") + coord_flip() + facet_wrap(~lat.bin)
+brplt
+
+bxplt <- ggplot(my.fractional.interv.grwth, aes(x = growth.form, y=occurance, fill = growth.form)) + 
+  geom_boxplot() + facet_wrap(~lat.bin)
+bxplt
+
+
+timeseries <- ggplot(my.fractional.interv.grwth, aes(x = visit_end_date, y = occurance)) +
+  geom_point() + facet_wrap(~growth.form,ncol = 4) + geom_line() + stat_smooth()
+timeseries
+
+
+timeseries <- ggplot(my.fractional.interv.grwth, aes(x = visit_end_date, y = occurance, colour = growth.form)) +
+  geom_point() + facet_wrap(~lat.bin,ncol = 3) + geom_line() + stat_smooth() + ylim(0,100)
+timeseries
 
