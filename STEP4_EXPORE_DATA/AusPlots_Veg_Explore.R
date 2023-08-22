@@ -11,7 +11,7 @@ veg.info <- readRDS("../STEP2_VEG_EXTRACTION/site_veg.rds")
 
 
 ## Get overall visuals built in 
-#map_ausplots(veg.info)
+map_ausplots(veg.info)
 #ausplots_visual(veg.info,max.plots=length(unique(veg.info$veg.PI$site_location_name)))
 ## 
 
@@ -24,6 +24,7 @@ veg.info <- readRDS("../STEP2_VEG_EXTRACTION/site_veg.rds")
 growth.form <- readRDS("growth_form_matrix.rds")
 
 
+library(reshape2)
 
 
 ## Inspect fractional cover ## 
