@@ -3,9 +3,12 @@
 ## Date: 230808
 ## Purpose: To explore the data in AusPlots, particularly in the vegetation information
 
-
-
 library(ausplotsR)
+library(reshape2)
+library(ggplot2)
+library(dplyr)
+
+
 
 veg.info <- readRDS("../STEP2_VEG_EXTRACTION/site_veg.rds")
 
@@ -17,14 +20,12 @@ map_ausplots(veg.info)
 
 
 ## Inspect growth form table
-#growth.form <- as.data.frame(growth_form_table(veg.info$veg.PI, m_kind = "percent_cover", cumulative = F))
+# growth.form <- as.data.frame(growth_form_table(veg.info$veg.PI, m_kind = "percent_cover", cumulative = F))
 # cumulative - F means absolute cover i.e. percent of points covered by the species
 
 # saveRDS(growth.form, file = "growth_form_matrix.rds")
 growth.form <- readRDS("growth_form_matrix.rds")
 
-
-library(reshape2)
 
 
 ## Inspect fractional cover ## 
@@ -38,7 +39,7 @@ fc.vio.df <- melt(insitu.fractional.cover, variable.name = "fractional_type",
                                 measure.vars = c("bare","brown","green","NA."))
 
 
-library(ggplot2)
+
 
 # IN LOG10
 violin <- ggplot(fc.vio.df, aes(x=fractional_type, y=fractional_percent)) + 
@@ -70,9 +71,6 @@ my.fractional <- merge(insitu.fractional.cover,
                                                                 "NA.", "longitude", "latitude",
                                                                 "visit_end_date")]
 my.fractional$visit_end_date <- as.Date(my.fractional$visit_end_date)
-
-library(dplyr)
-library(reshape2)
 
 
 
