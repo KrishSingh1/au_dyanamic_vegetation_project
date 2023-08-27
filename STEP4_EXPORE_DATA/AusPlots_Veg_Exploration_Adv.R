@@ -40,7 +40,6 @@ info <- as.data.frame(veg.info$site.info)[,c("site_location_name", "visit_start_
 info.revisit.2 <- subset(info, subset = (site_location_name %in% sites.revisit.2.df$site.names))
 info.revisit.2$visit_start_date <- as.Date(info.revisit.2$visit_start_date)
 
-
 info.revisit.2.sorted <- info.revisit.2 %>% arrange(+visit_start_date)
 
 indexes <- c()
@@ -64,13 +63,18 @@ growth.form.df.t2 <- merge(growth.form.df, info.revisit.2.t2, by = 'site_unique'
 length(unique(growth.form.df.t1$site_location_name))
 length(unique(growth.form.df.t2$site_location_name))
 
-missing_location.t1 <- setdiff(unique(growth.form.df.t1$site_location_name), unique(growth.form.df.t2$site_location_name))
-missing_location.t2 <- setdiff(unique(growth.form.df.t2$site_location_name), unique(growth.form.df.t1$site_location_name))
+missing_location.t1 <- setdiff(unique(growth.form.df.t1$site_location_name),
+                               unique(growth.form.df.t2$site_location_name))
+missing_location.t2 <- setdiff(unique(growth.form.df.t2$site_location_name),
+                               unique(growth.form.df.t1$site_location_name))
 
 
-growth.form.df.t1.filtered <-subset(growth.form.df.t1, subset = !(site_location_name %in% missing_location.t1)) %>% 
+growth.form.df.t1.filtered <-subset(growth.form.df.t1, 
+                                    subset = !(site_location_name %in% missing_location.t1)) %>% 
   arrange(site_location_name, growth.form)
-growth.form.df.t2.filtered <-subset(growth.form.df.t2, subset = !(site_location_name %in% missing_location.t2)) %>% 
+
+growth.form.df.t2.filtered <-subset(growth.form.df.t2,
+                                    subset = !(site_location_name %in% missing_location.t2)) %>% 
   arrange(site_location_name, growth.form) 
 
 # Check if the column values for growth form and site_location_name are identitcal
@@ -81,7 +85,6 @@ all(growth.form.df.t1.filtered$growth.form == growth.form.df.t2.filtered$growth.
 growth.form.change.df <- merge(growth.form.df.t1.filtered, growth.form.df.t2.filtered, by = c("site_location_name", "growth.form"))
 
 
-
 change.p <- ggplot(growth.form.change.df ,map = aes(x = occurance.x, y = occurance.y,
            colour =  growth.form)) + geom_point() + geom_abline() 
 ggplotly(change.p, tooltip = c("occurance.x", "occurance.y", 
@@ -89,16 +92,15 @@ ggplotly(change.p, tooltip = c("occurance.x", "occurance.y",
                                "visit_start_date.y"))  
 
 
-
 ### Now looking at strata 
 
 growth.form.strata$site_unique <- rownames(growth.form.strata)
 growth.form.starta.df <- melt(growth.form.strata, id = "site_unique", 
                               variable.name = "strata", value.name = "percentage_cover")
-
-
-growth.form.strata.t1 <- merge(growth.form.starta.df, info.revisit.2.t1, by = 'site_unique')
-growth.form.strata.t2 <- merge(growth.form.starta.df, info.revisit.2.t2, by = 'site_unique')
+growth.form.strata.t1 <- merge(growth.form.starta.df, 
+                               info.revisit.2.t1, by = 'site_unique')
+growth.form.strata.t2 <- merge(growth.form.starta.df,
+                               info.revisit.2.t2, by = 'site_unique')
 
 missing_location.t1 <- setdiff(unique(growth.form.strata.t1$site_location_name), unique(growth.form.strata.t2$site_location_name))
 missing_location.t2 <- setdiff(unique(growth.form.strata.t2$site_location_name), unique(growth.form.strata.t1$site_location_name))
@@ -113,7 +115,8 @@ growth.form.strata.change <- merge(growth.form.strata.t1, growth.form.strata.t2,
 
 
 
-change.p <- ggplot(growth.form.strata.change ,map = aes(x = percentage_cover.x, y = percentage_cover.y,
+change.p <- ggplot(growth.form.strata.change, 
+                   map = aes(x = percentage_cover.x, y = percentage_cover.y,
                                                     colour =  strata)) + geom_point() + geom_abline() 
 ggplotly(change.p) 
 

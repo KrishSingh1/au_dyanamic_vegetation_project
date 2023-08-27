@@ -54,12 +54,14 @@ new.method.diff <- subset(new_method, subset = (time %in% diff.timeslices))
 
 
 check.na <- function(df){
+  
   all.na <- T
   len <- nrow(df)
   
   if(len > 0){
     
     for(col in c('bs','pv','npv','ue')){
+      
       na.count <- sum(is.na(df[[col]]))
       if(na.count != len){
         all.na <- F
