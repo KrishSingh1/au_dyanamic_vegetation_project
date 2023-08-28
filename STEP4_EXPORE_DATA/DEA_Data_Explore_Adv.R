@@ -3,10 +3,12 @@
 # Date: 230827
 # Purpose: To visually explore the alignment of AusPlots and DEA data. 
 
-debug <- T
+debug <- F
 
 debug_msg <- function(msg) {
-  print(msg)
+  if (debug) {
+    print(msg)
+  }
 }
 
 
@@ -32,11 +34,18 @@ insitu.fractional.cover <- readRDS("AusPlots_fractional_cover.rds")
 
 get_1_directional_nearest_timestep <- function(time.seq, dea.fc.input, aus.date.input) {
   
+  na <- T
+  
   for (d in time.seq) {
     subsetter <- subset(dea.fc.input, subset = (time == d))
-    if(nrow(subsetter) > 0 & !all(is.na(subsetter$pv)) ) {
+    if(nrow(subsetter) > 0 & mean(is.na(subsetter$pv)) < 0.3 ) {
+      na <- F
       break
     }
+  }
+  
+  if(na) {
+    return(c(NA, NA))
   }
   
   time.stamp <- paste(subsetter$time[1])
@@ -52,7 +61,7 @@ get_nearest_timestep <- function(fowards.nearest, backwards.nearest) {
   is.bac.na <- is.na(backwards.nearest[2])
   
   if(is.for.na & is.bac.na){
-    return(NA)
+    timestamp.nearest <- c(NA,NA)
   } else if (is.for.na) {
     timestamp.nearest <- backwards.nearest
   } else if (is.bac.na) {
@@ -66,7 +75,58 @@ get_nearest_timestep <- function(fowards.nearest, backwards.nearest) {
   return(timestamp.nearest)
 }
 
-########################
+
+trim_to_nearest_coord <- function(ausplots.info.i.index, veg.info, dea.fc.i ) {
+  
+  # Site End Points:   
+  W.site <- veg.info$site.info$pit_marker_easting[ausplots.info.i.index]
+  S.site <- veg.info$site.info$pit_marker_northing[ausplots.info.i.index]
+  N.site <- S.site + 100
+  E.site <- W.site + 100
+  
+  #print(W.site)
+  
+  # Remote End Points: 
+  E.remote.incre <- unique(dea.fc.i$x)
+  N.remote.incre <- unique(dea.fc.i$y)
+  
+  # Find Closest Points:
+  W.closest <- E.remote.incre[which.min(abs(E.remote.incre - W.site))]
+  E.closest <- E.remote.incre[which.min(abs(E.remote.incre - E.site))]
+  N.closest <- N.remote.incre[which.min(abs(N.remote.incre - N.site))]
+  S.closest <- N.remote.incre[which.min(abs(N.remote.incre - S.site))]
+  
+  #print(W.closest)
+  #print(E.closest)
+  #print(N.closest)
+  #print(S.closest)
+  
+  # Trim dataset:
+  trimmed <- subset(dea.fc.i, subset = (x >= W.closest & x <= E.closest &
+                                          y >= S.closest & y <= N.closest))
+  
+  #print(unique(trimmed$x))
+  #print(unique(trimmed$y))
+  
+  return(trimmed)
+}
+
+
+plot_site_markings <- function(easting.site, northing.site, dea.fc.i) {
+  
+  MASS::eqscplot(dea.fc.i$x, dea.fc.i$y,tol = .5, xlab = "easting", ylab = "northing")
+  
+  points(x = easting.site,y = northing.site, pch = 2, col = 'red')
+  points(x = easting.site+100,y = northing.site, pch = 2, col= 'red')
+  points(x = easting.site,y = northing.site+100, pch = 2, col= 'red')
+  points(x = easting.site+100,y = northing.site+100, pch = 2, col= 'red')
+  
+}
+
+
+
+
+######### Obtain Dataset for Exploration ###########
 
 dea.fc.sites.nearest <- data.frame("site_unique" = NA,
                      "time" = NA,
@@ -74,7 +134,11 @@ dea.fc.sites.nearest <- data.frame("site_unique" = NA,
                      "bs" = NA,
                      "pv" = NA,
                      "npv" = NA,
-                     "ue" = NA)
+                     "ue" = NA,
+                     "npixels" = NA)
+
+no.files <- length(fileNames)
+no.files.processed <- 0
 
 for (file.i in fileNames) {
   
@@ -108,28 +172,57 @@ for (file.i in fileNames) {
     timestamp.nearest <- get_nearest_timestep(forward.nearest, backwards.nearest)
     debug_msg(timestamp.nearest)
     
-    dea.fc.nearest <- subset(dea.fc.i, subset = (time == timestamp.nearest))
+    dea.fc.nearest <- subset(dea.fc.i, subset = (time == timestamp.nearest[1]))
     debug_msg(dea.fc.nearest)
     
-    ## To do: Cut the dataset further to reduce excess data
+    #dea.fc.nearest.test <- dea.fc.nearest
     
-    dea.fc.agg.nearest <- data.frame("site_unique" = veg.info$site.info$site_unique[ausplots.info.i.index], 
-                                     "time" = dea.fc.nearest$time[1], "diff" = abs(as.numeric(timestamp.nearest[2])),
-               lapply(dea.fc.nearest[,c("bs","pv","npv","ue")],mean, na.rm = T))
+    dea.fc.nearest <- trim_to_nearest_coord(ausplots.info.i.index, veg.info, dea.fc.nearest)
+    
+    dea.fc.agg.nearest <- data.frame("site_unique" = i, "time" = timestamp.nearest[1],
+                                     "diff" = as.numeric(timestamp.nearest[2]),
+               lapply(dea.fc.nearest[,c("bs","pv","npv","ue")], mean, na.rm = T), 
+               nrow(dea.fc.nearest))
     
     dea.fc.sites.nearest <- rbind(dea.fc.sites.nearest, dea.fc.agg.nearest)
     debug_msg(dea.fc.sites.nearest)
-    
   }
+  
+  if(debug) {
+    break
+  }
+  no.files.processed <- no.files.processed + 1
+  print(paste(no.files - no.files.processed, "left"))
 }
 
 
-# write.csv(dea.fc.sites.nearest, "dea_fc_sites_nearest.csv")
+#write.csv(dea.fc.sites.nearest, "dea_fc_sites_nearest.csv")
+write.csv(dea.fc.sites.nearest, "dea_fc_sites_nearest_2.csv")
+
+
+if(debug) {
+  
+  test.trim <- trim_to_nearest_coord(ausplots.info.i.index, veg.info, dea.fc.i)
+  
+  plot_site_markings(veg.info$site.info$pit_marker_easting[ausplots.info.i.index],
+                     veg.info$site.info$pit_marker_northing[ausplots.info.i.index],
+                     dea.fc.nearest.test)
+  
+  plot_site_markings(veg.info$site.info$pit_marker_easting[ausplots.info.i.index],
+                     veg.info$site.info$pit_marker_northing[ausplots.info.i.index],
+                     dea.fc.nearest)
+  
+}
+
+
+
+
 
 ####### Generating plots ########
 
 library(ggplot2)
 
+Original <- read.csv(file = "dea_fc_sites_nearest.csv")
 
 #opaque.fc <- fractional_cover(veg.PI = veg.info$veg.PI, in_canopy_sky = "TRUE") 
 #dea.fc.sites.plotting <- merge(dea.fc.sites.nearest, opaque.fc, by = 'site_unique')
@@ -149,4 +242,10 @@ ggplot(dea.fc.sites.plotting, aes(y = npv, x = brown)) + geom_point() + geom_abl
   xlim(0,100) + ylim(0,100)
 
 
+dea.fc.sites.nearest.1 <- read.csv(file = "dea_fc_sites_nearest.csv")
+dea.fc.sites.plotting.1 <- merge(dea.fc.sites.nearest.1, insitu.fractional.cover, by = 'site_unique')
+
+# Greenness 
+ggplot(dea.fc.sites.plotting.1, aes(y = pv, x = green)) + geom_point() + geom_abline() + 
+  xlim(0,100) + ylim(0,100)
 
