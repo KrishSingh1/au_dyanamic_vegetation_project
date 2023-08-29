@@ -85,8 +85,12 @@ all(growth.form.df.t1.filtered$growth.form == growth.form.df.t2.filtered$growth.
 growth.form.change.df <- merge(growth.form.df.t1.filtered, growth.form.df.t2.filtered, by = c("site_location_name", "growth.form"))
 
 
+
+### Plot 1: Individual growth forms 
+
+
 change.p <- ggplot(growth.form.change.df ,map = aes(x = occurance.x, y = occurance.y,
-           colour =  growth.form)) + geom_point() + geom_abline() 
+           colour =  growth.form)) + geom_point() + geom_abline() + geom_smooth()
 ggplotly(change.p, tooltip = c("occurance.x", "occurance.y", 
                                "growth.form", "visit_start_date.x",
                                "visit_start_date.y"))  
@@ -115,6 +119,8 @@ growth.form.strata.change <- merge(growth.form.strata.t1, growth.form.strata.t2,
 
 
 
+### Plot 2 - Strata together 
+
 change.p <- ggplot(growth.form.strata.change, 
                    map = aes(x = percentage_cover.x, y = percentage_cover.y,
                                                     colour =  strata)) + geom_point() + geom_abline() 
@@ -123,6 +129,9 @@ ggplotly(change.p)
 change.p <- ggplot(growth.form.strata.change ,map = aes(x = percentage_cover.x, y = percentage_cover.y,
                                                         colour =  strata)) + geom_point() + geom_abline() +
   facet_grid(~strata)
+
+
+### Plot 3 - Strata seperated 
 
 ggplotly(change.p) 
 

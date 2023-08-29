@@ -182,7 +182,7 @@ for (file.i in fileNames) {
     dea.fc.agg.nearest <- data.frame("site_unique" = i, "time" = timestamp.nearest[1],
                                      "diff" = as.numeric(timestamp.nearest[2]),
                lapply(dea.fc.nearest[,c("bs","pv","npv","ue")], mean, na.rm = T), 
-               nrow(dea.fc.nearest))
+               "npixels" = nrow(dea.fc.nearest))
     
     dea.fc.sites.nearest <- rbind(dea.fc.sites.nearest, dea.fc.agg.nearest)
     debug_msg(dea.fc.sites.nearest)
@@ -197,7 +197,7 @@ for (file.i in fileNames) {
 
 
 #write.csv(dea.fc.sites.nearest, "dea_fc_sites_nearest.csv")
-write.csv(dea.fc.sites.nearest, "dea_fc_sites_nearest_2.csv")
+#write.csv(dea.fc.sites.nearest, "dea_fc_sites_nearest_pixel_inc.csv")
 
 
 if(debug) {
@@ -227,25 +227,60 @@ Original <- read.csv(file = "dea_fc_sites_nearest.csv")
 #opaque.fc <- fractional_cover(veg.PI = veg.info$veg.PI, in_canopy_sky = "TRUE") 
 #dea.fc.sites.plotting <- merge(dea.fc.sites.nearest, opaque.fc, by = 'site_unique')
 
+dea.fc.sites.nearest <- read.csv("dea_fc_sites_nearest_pixel_inc.csv")
+
 dea.fc.sites.plotting <- merge(dea.fc.sites.nearest, insitu.fractional.cover, by = 'site_unique')
+dea.fc.sites.plotting <- subset(dea.fc.sites.plotting, subset = (npixels > 100 & npixels <= 121))
+
+
 
 # Greenness 
 ggplot(dea.fc.sites.plotting, aes(y = pv, x = green)) + geom_point() + geom_abline() + 
-  xlim(0,100) + ylim(0,100)
+  xlim(0,100) + ylim(0,100) 
+
+Metrics::rmse(actual = dea.fc.sites.plotting$green, 
+              predicted = dea.fc.sites.plotting$pv)
 
 # Bare
 ggplot(dea.fc.sites.plotting, aes(y = bs, x = bare)) + geom_point() + geom_abline() +
-  xlim(0,100) + ylim(0,100)
+  xlim(0,100) + ylim(0,100) + geom_smooth()
+
+Metrics::rmse(actual = dea.fc.sites.plotting$bare, 
+              predicted = dea.fc.sites.plotting$bs)
 
 # Brown
 ggplot(dea.fc.sites.plotting, aes(y = npv, x = brown)) + geom_point() + geom_abline() +
-  xlim(0,100) + ylim(0,100)
+  xlim(0,100) + ylim(0,100) + geom_smooth()
 
-
-dea.fc.sites.nearest.1 <- read.csv(file = "dea_fc_sites_nearest.csv")
-dea.fc.sites.plotting.1 <- merge(dea.fc.sites.nearest.1, insitu.fractional.cover, by = 'site_unique')
+Metrics::rmse(actual = dea.fc.sites.plotting$brown, 
+              predicted = dea.fc.sites.plotting$npv)
 
 # Greenness 
-ggplot(dea.fc.sites.plotting.1, aes(y = pv, x = green)) + geom_point() + geom_abline() + 
-  xlim(0,100) + ylim(0,100)
+ggplot(dea.fc.sites.plotting, aes(y = (pv+npv), x = (green+brown))) + geom_point() + geom_abline() + 
+  xlim(0,100) + ylim(0,100) + geom_smooth()
+
+
+### Try with ausplots' other fc calcs. ###
+
+fc <- fractional_cover(veg.PI = veg.info$veg.PI, in_canopy_sky = "TRUE") 
+dea.fc.sites.plotting <- merge(dea.fc.sites.nearest, fc, by = 'site_unique')
+dea.fc.sites.plotting <- subset(dea.fc.sites.plotting, subset = (npixels > 100 & npixels <= 121))
+
+# Greenness 
+ggplot(dea.fc.sites.plotting, aes(y = pv, x = green)) + geom_point() + geom_abline() + 
+  xlim(0,100) + ylim(0,100) + geom_smooth()
+
+ggplot(dea.fc.sites.plotting, aes(y = bs, x = bare)) + geom_point() + geom_abline() +
+  xlim(0,100) + ylim(0,100) + geom_smooth()
+
+# Brown
+ggplot(dea.fc.sites.plotting, aes(y = npv, x = brown)) + geom_point() + geom_abline() +
+  xlim(0,100) + ylim(0,100) + geom_smooth()
+
+
+####
+# z score for each timestamp in DEA; 
+# create an interval where the surveyors visited 
+# Create an Australian map where the z score for green/brown values lie (when they were visited)
+
 
