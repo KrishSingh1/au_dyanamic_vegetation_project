@@ -20,6 +20,44 @@ fileNames <- tools::file_path_sans_ext(files)
 veg.info <- readRDS("../STEP2_VEG_EXTRACTION/site_veg.rds")
 insitu.fractional.cover <- readRDS("AusPlots_fractional_cover.rds")
 
+
+ausplots.fc.i.index <- grep("NSABBS0003", insitu.fractional.cover$site_unique)
+ausplots.fc.i <- insitu.fractional.cover[ausplots.fc.i.index,]
+
+dea.file.path <- file.path(directory, paste0("NSABBS0003", ".csv"))
+dea.fc.i <- read.csv(dea.file.path)
+dea.fc.i$time <- as.Date(dea.fc.i$time)
+
+
+ausplots.info.i.index <- grep("NSABBS0003-58581", veg.info$site.info$site_unique)
+
+ausplots.date.i <- as.Date(veg.info$site.info$visit_start_date[ausplots.info.i.index])
+
+
+times.forwards <- seq(ausplots.date.i, by='1 days', length = 31)
+times.backwards <- seq(ausplots.date.i, by='-1 days', length = 31)
+
+forward.nearest <- get_1_directional_nearest_timestep(times.forwards, 
+                                                      dea.fc.i, ausplots.date.i)
+
+backwards.nearest <- get_1_directional_nearest_timestep(times.backwards,
+                                                        dea.fc.i, ausplots.date.i)
+
+timestamp.nearest <- get_nearest_timestep(forward.nearest, backwards.nearest)
+
+dea.fc.nearest <- trim_to_nearest_coord(ausplots.info.i.index, veg.info, dea.fc.i)
+
+agg.time.series <- aggregate(dea.fc.nearest[,c("time", "bs", "pv", "npv", "ue")], 
+                             by = list(dea.fc.nearest$time), FUN = mean, na.rm = T)
+
+sds <- mapply(agg.time.series[,c("bs", "pv", "npv", "ue")], FUN = sd, na.rm = T)
+means <- mapply(agg.time.series[,c("bs", "pv", "npv", "ue")], FUN = mean, na.rm = T)
+
+zscores <- (agg.time.series[,c("bs", "pv", "npv", "ue")] - means)/sds
+zscore.timestamp <- zscores[which(agg.time.series$time == timestamp.nearest),]
+
+
+
 ##### Algorithm #####
 # 1.  Obtain the insitu fractional cover 
 # 2.  In a site, obtain corresponding fractional cover 
@@ -56,7 +94,7 @@ get_1_directional_nearest_timestep <- function(time.seq, dea.fc.input, aus.date.
 
 
 get_nearest_timestep <- function(fowards.nearest, backwards.nearest) {
-
+  
   is.for.na <- is.na(fowards.nearest[2])
   is.bac.na <- is.na(backwards.nearest[2])
   
@@ -129,13 +167,13 @@ plot_site_markings <- function(easting.site, northing.site, dea.fc.i) {
 ######### Obtain Dataset for Exploration ###########
 
 dea.fc.sites.nearest <- data.frame("site_unique" = NA,
-                     "time" = NA,
-                     "diff" = NA,
-                     "bs" = NA,
-                     "pv" = NA,
-                     "npv" = NA,
-                     "ue" = NA,
-                     "npixels" = NA)
+                                   "time" = NA,
+                                   "diff" = NA,
+                                   "bs" = NA,
+                                   "pv" = NA,
+                                   "npv" = NA,
+                                   "ue" = NA,
+                                   "npixels" = NA)
 
 no.files <- length(fileNames)
 no.files.processed <- 0
@@ -181,8 +219,8 @@ for (file.i in fileNames) {
     
     dea.fc.agg.nearest <- data.frame("site_unique" = i, "time" = timestamp.nearest[1],
                                      "diff" = as.numeric(timestamp.nearest[2]),
-               lapply(dea.fc.nearest[,c("bs","pv","npv","ue")], mean, na.rm = T), 
-               "npixels" = nrow(dea.fc.nearest))
+                                     lapply(dea.fc.nearest[,c("bs","pv","npv","ue")], mean, na.rm = T), 
+                                     "npixels" = nrow(dea.fc.nearest))
     
     dea.fc.sites.nearest <- rbind(dea.fc.sites.nearest, dea.fc.agg.nearest)
     debug_msg(dea.fc.sites.nearest)
@@ -221,70 +259,3 @@ if(debug) {
 ####### Generating plots ########
 
 library(ggplot2)
-
-Original <- read.csv(file = "dea_fc_sites_nearest.csv")
-
-#opaque.fc <- fractional_cover(veg.PI = veg.info$veg.PI, in_canopy_sky = "TRUE") 
-#dea.fc.sites.plotting <- merge(dea.fc.sites.nearest, opaque.fc, by = 'site_unique')
-
-dea.fc.sites.nearest <- read.csv("dea_fc_sites_nearest_pixel_inc.csv")
-
-dea.fc.sites.plotting <- merge(dea.fc.sites.nearest, insitu.fractional.cover, by = 'site_unique')
-dea.fc.sites.plotting <- subset(dea.fc.sites.plotting, subset = (npixels > 100 & npixels <= 121))
-
-
-
-# Greenness 
-ggplot(dea.fc.sites.plotting, aes(y = pv, x = green)) + geom_point() + geom_abline() + 
-  xlim(0,100) + ylim(0,100) 
-
-Metrics::rmse(actual = dea.fc.sites.plotting$green, 
-              predicted = dea.fc.sites.plotting$pv)
-
-# Bare
-ggplot(dea.fc.sites.plotting, aes(y = bs, x = bare)) + geom_point() + geom_abline() +
-  xlim(0,100) + ylim(0,100) 
-
-Metrics::rmse(actual = dea.fc.sites.plotting$bare, 
-              predicted = dea.fc.sites.plotting$bs)
-
-# Brown
-ggplot(dea.fc.sites.plotting, aes(y = npv, x = brown)) + geom_point() + geom_abline() +
-  xlim(0,100) + ylim(0,100) 
-
-Metrics::rmse(actual = dea.fc.sites.plotting$brown, 
-              predicted = dea.fc.sites.plotting$npv)
-
-# Greenness 
-ggplot(dea.fc.sites.plotting, aes(y = (pv+npv), x = (green+brown))) + geom_point() + geom_abline() + 
-  xlim(0,100) + ylim(0,100) 
-
-
-Metrics::rmse(actual = dea.fc.sites.plotting$brown + dea.fc.sites.plotting$green, 
-              predicted = dea.fc.sites.plotting$npv + dea.fc.sites.plotting$pv)
-
-
-### Try with ausplots' other fc calcs. ###
-
-fc <- fractional_cover(veg.PI = veg.info$veg.PI, in_canopy_sky = "TRUE") 
-dea.fc.sites.plotting <- merge(dea.fc.sites.nearest, fc, by = 'site_unique')
-dea.fc.sites.plotting <- subset(dea.fc.sites.plotting, subset = (npixels > 100 & npixels <= 121))
-
-# Greenness 
-ggplot(dea.fc.sites.plotting, aes(y = pv, x = green)) + geom_point() + geom_abline() + 
-  xlim(0,100) + ylim(0,100) + geom_smooth()
-
-ggplot(dea.fc.sites.plotting, aes(y = bs, x = bare)) + geom_point() + geom_abline() +
-  xlim(0,100) + ylim(0,100) + geom_smooth()
-
-# Brown
-ggplot(dea.fc.sites.plotting, aes(y = npv, x = brown)) + geom_point() + geom_abline() +
-  xlim(0,100) + ylim(0,100) + geom_smooth()
-
-
-####
-# z score for each timestamp in DEA; 
-# create an interval where the surveyors visited 
-# Create an Australian map where the z score for green/brown values lie (when they were visited)
-
-
