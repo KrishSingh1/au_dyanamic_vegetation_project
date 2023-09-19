@@ -266,7 +266,7 @@ plot_aus_map <- function(df, variable){
 
 dea.fc.sites.nearest <- na.omit(dea.fc.sites.nearest)
 plot_aus_map(dea.fc.sites.nearest, "bs")
-plot_aus_map(dea.fc.sites.nearest,  "pv")
+plot_aus_map(dea.fc.sites.nearest, "pv")
 plot_aus_map(dea.fc.sites.nearest, "npv")
 
 
