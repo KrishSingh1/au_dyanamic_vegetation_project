@@ -238,22 +238,13 @@ for (file.i in fileNames) {
 
 library(leaflet)
 library(dplyr)
+dea.fc.sites.nearest <- read.csv("dea_fc_sites_nearest_zscores.csv")
 
-
-cen.lat <- -25.2744  
-cen.lng <- 133.7751  
-
-
-aus.map <- leaflet() %>%
-  setView(lng = cen.lng, lat = cen.lat, zoom = 5) %>%
-  addTiles() 
-
-
-plot_aus_map <- function(df, aus.map, variable){
+plot_aus_map <- function(df, variable){
   
   df["var"] <- df[variable]
-  col.var <- colorNumeric(palette = c("red", "green"), domain = df["var"])
-  aus.map.var <- aus.map %>% 
+  col.var <- colorNumeric(palette = c("green", "red"), domain = df$var)
+  aus.map.var <- leaflet(df) %>% addTiles %>%
     addCircleMarkers(data = df,
                      lat = ~latitude,
                      lng = ~longitude,
@@ -264,30 +255,22 @@ plot_aus_map <- function(df, aus.map, variable){
                                     "time: ", time, "<br>",
                                     "diff: ", diff,"<br>",
                                     "site_unique", site_unique)
-                     ) %>% addLegend(colors = col.var, values = var)
+                     )  %>%
+    addLegend("bottomright", pal = col.var, values = ~var,
+              title = variable, opacity = 1)
   
   
   return(aus.map.var)
 }
 
 
-plot_aus_map(dea.fc.sites.nearest, aus.map, "bs")
-
-plot_aus_map(dea.fc.sites.nearest, aus.map, "pv")
-
-plot_aus_map(dea.fc.sites.nearest, aus.map, "npv")
-
-
-TIME <- read.csv("/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtraction/BACKUP_DATA/csv_files/QDACYP0018.csv")
+dea.fc.sites.nearest <- na.omit(dea.fc.sites.nearest)
+plot_aus_map(dea.fc.sites.nearest, "bs")
+plot_aus_map(dea.fc.sites.nearest,  "pv")
+plot_aus_map(dea.fc.sites.nearest, "npv")
 
 
-df <- aggregate(TIME["bs"],by = list(TIME$time), FUN = mean, na.rm = T)
 
-plot(x = as.Date(df$Group.1), y = df$bs, pch = 1, type = "l" )
-abline(v = as.Date("2018-07-21"), col = "red")
-
-
-mean()
 
 
 
