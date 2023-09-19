@@ -12,11 +12,14 @@ library(plotly)
 
 
 veg.info <- readRDS("../STEP2_VEG_EXTRACTION/site_veg.rds")
+
+
+#veg.info$site.info$site_unique[which(veg.info$site.info$plot_is_aligned_to_grid & veg.info$site.info$plot_is_permanently_marked)]
+
 growth.form <- readRDS("growth_form_matrix.rds")
 growth.form.strata <- growth_form_table(veg.info$veg.PI, m_kind = "percent_cover", 
                                         cumulative = FALSE, by_strata = TRUE)
 insitu.fractional.cover <- readRDS("AusPlots_fractional_cover.rds")
-
 
 site.names <- unique(veg.info$site.info$site_location_name)
 site.observations <- unique(veg.info$site.info$site_unique)

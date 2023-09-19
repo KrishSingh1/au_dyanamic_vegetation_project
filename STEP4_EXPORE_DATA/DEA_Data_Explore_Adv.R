@@ -18,6 +18,8 @@ directory <- "/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtracti
 files <- list.files(directory, pattern = "\\.csv$", full.names = FALSE)
 fileNames <- tools::file_path_sans_ext(files)
 veg.info <- readRDS("../STEP2_VEG_EXTRACTION/site_veg.rds")
+
+
 insitu.fractional.cover <- readRDS("AusPlots_fractional_cover.rds")
 
 ##### Algorithm #####
@@ -198,6 +200,7 @@ for (file.i in fileNames) {
 
 #write.csv(dea.fc.sites.nearest, "dea_fc_sites_nearest.csv")
 #write.csv(dea.fc.sites.nearest, "dea_fc_sites_nearest_pixel_inc.csv")
+#write.csv(dea.fc.sites.nearest, "dea_fc_sites_nearest_median.csv")
 
 
 if(debug) {
@@ -227,7 +230,13 @@ Original <- read.csv(file = "dea_fc_sites_nearest.csv")
 #opaque.fc <- fractional_cover(veg.PI = veg.info$veg.PI, in_canopy_sky = "TRUE") 
 #dea.fc.sites.plotting <- merge(dea.fc.sites.nearest, opaque.fc, by = 'site_unique')
 
-dea.fc.sites.nearest <- read.csv("dea_fc_sites_nearest_pixel_inc.csv")
+#dea.fc.sites.nearest <- read.csv("dea_fc_sites_nearest_pixel_inc.csv")
+dea.fc.sites.nearest <- read.csv("dea_fc_sites_nearest_median.csv")
+
+# Test subsetting for sites not in proper oriention or marked 
+valid_observations <- veg.info$site.info$site_unique[which(veg.info$site.info$plot_is_aligned_to_grid & veg.info$site.info$plot_is_permanently_marked)]
+dea.fc.sites.nearest <- subset(dea.fc.sites.nearest, subset = (site_unique %in% valid_observations))
+
 
 dea.fc.sites.plotting <- merge(dea.fc.sites.nearest, insitu.fractional.cover, by = 'site_unique')
 dea.fc.sites.plotting <- subset(dea.fc.sites.plotting, subset = (npixels > 100 & npixels <= 121))
@@ -281,10 +290,5 @@ ggplot(dea.fc.sites.plotting, aes(y = bs, x = bare)) + geom_point() + geom_ablin
 ggplot(dea.fc.sites.plotting, aes(y = npv, x = brown)) + geom_point() + geom_abline() +
   xlim(0,100) + ylim(0,100) + geom_smooth()
 
-
-####
-# z score for each timestamp in DEA; 
-# create an interval where the surveyors visited 
-# Create an Australian map where the z score for green/brown values lie (when they were visited)
 
 

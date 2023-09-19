@@ -129,36 +129,6 @@ plot_site_markings <- function(easting.site, northing.site, dea.fc.i) {
 
 
 
-# 
-# 
-# ausplots.fc.i.index <- grep("NSABBS0003", insitu.fractional.cover$site_unique)
-# ausplots.fc.i <- insitu.fractional.cover[ausplots.fc.i.index,]
-# 
-# dea.file.path <- file.path(directory, paste0("NSABBS0003", ".csv"))
-# dea.fc.i <- read.csv(dea.file.path)
-# dea.fc.i$time <- as.Date(dea.fc.i$time)
-# 
-# 
-# ausplots.info.i.index <- grep("NSABBS0003-58581", veg.info$site.info$site_unique)
-# 
-# ausplots.date.i <- as.Date(veg.info$site.info$visit_start_date[ausplots.info.i.index])
-# 
-# 
-# times.forwards <- seq(ausplots.date.i, by='1 days', length = 31)
-# times.backwards <- seq(ausplots.date.i, by='-1 days', length = 31)
-# 
-# forward.nearest <- get_1_directional_nearest_timestep(times.forwards, 
-#                                                       dea.fc.i, ausplots.date.i)
-# backwards.nearest <- get_1_directional_nearest_timestep(times.backwards,
-#                                                         dea.fc.i, ausplots.date.i)
-# timestamp.nearest <- get_nearest_timestep(forward.nearest, backwards.nearest)
-# dea.fc.nearest <- trim_to_nearest_coord(ausplots.info.i.index, veg.info, dea.fc.i)
-# agg.time.series <- aggregate(dea.fc.nearest[,c("time", "bs", "pv", "npv", "ue")], 
-#                              by = list(dea.fc.nearest$time), FUN = mean, na.rm = T)
-# zscores <- sapply(agg.time.series[,c("bs", "pv", "npv", "ue")], FUN = scale)
-# zscores.nearest <- zscores[which(agg.time.series$time == timestamp.nearest),]
-
-
 ######### Obtain Dataset for Exploration ###########
 
 dea.fc.sites.nearest <- data.frame("site_unique" = NA,
@@ -292,12 +262,14 @@ plot_aus_map <- function(df, aus.map, variable){
                      fillOpacity = 1, 
                      popup= ~paste0(variable, " :", var, "<br>", 
                                     "time: ", time, "<br>",
-                                    "diff: ", diff)
-                     )
+                                    "diff: ", diff,"<br>",
+                                    "site_unique", site_unique)
+                     ) %>% addLegend(colors = col.var, values = var)
   
   
   return(aus.map.var)
 }
+
 
 plot_aus_map(dea.fc.sites.nearest, aus.map, "bs")
 
@@ -306,11 +278,16 @@ plot_aus_map(dea.fc.sites.nearest, aus.map, "pv")
 plot_aus_map(dea.fc.sites.nearest, aus.map, "npv")
 
 
+TIME <- read.csv("/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtraction/BACKUP_DATA/csv_files/QDACYP0018.csv")
 
 
+df <- aggregate(TIME["bs"],by = list(TIME$time), FUN = mean, na.rm = T)
+
+plot(x = as.Date(df$Group.1), y = df$bs, pch = 1, type = "l" )
+abline(v = as.Date("2018-07-21"), col = "red")
 
 
-
+mean()
 
 
 
