@@ -55,7 +55,8 @@ trim_to_nearest_coord <- function(ausplots.info.i.index, veg.info, dea.fc.i ) {
 ###### Load Dataset ######
 
 # "NSTSYB0002" is 81
-RI = 56 # record index
+# 'NTABRT0001' is  94
+RI = 94 # record index
 files <- list.files(directory, pattern = "\\.csv$", full.names = FALSE)
 file.names <- tools::file_path_sans_ext(files)
 site.path <- paste(directory,files[RI],sep = "")
