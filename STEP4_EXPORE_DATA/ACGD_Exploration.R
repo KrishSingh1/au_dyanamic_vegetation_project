@@ -4,6 +4,8 @@ library(timetk)
 library(dplyr)
 library(ggplot2)
 library(lubridate)
+library(imputeTS)
+
 
 
 directory <- "/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtraction/BACKUP_DATA/ausplots_agcd/"
@@ -16,10 +18,12 @@ vapourpres_h15 <- file.path(directory, "vapourpres_h15")
 
 files <- list.files(precip, pattern = "\\.nc$", full.names = FALSE) # same for each directory
 fileNames <- tools::file_path_sans_ext(files)
+DI = 81 # directory index 
+
 
 ### 
 
-timeseries_plot <- function(index, files, variable, directory){
+get_climate_tibble <- function(index, files, variable, directory, window){
   
   data.directory <- file.path(directory, variable)
   nc.path <- file.path(data.directory, files[index])
@@ -35,93 +39,79 @@ timeseries_plot <- function(index, files, variable, directory){
   
   dates <- as.Date(time.var, origin = "1850-01-01")
   
-  monthly.var <- rollapply(zoo(var,dates), width = 1, FUN = sum, by = "months", fill = NA)
-  print(monthly.var)
+  daily.var <- zoo::zoo(var,dates)
+  window.sum <- zoo::rollsum(daily.var,k = window)
   
-  data.df <- data.frame(time = dates,variable = monthly.var) %>% as_tibble()
+  data.df <- merge(daily.var, window.sum) %>% as.data.frame()
+  colnames(data.df)[which(colnames(data.df) == "daily.var")] <- variable
+  data.df$time <- as.Date(rownames(data.df))
   
-  return(
-  data.df %>% plot_time_series_regression(
-    .date_var     = time,
-    .formula      = variable ~ as.numeric(time) + month(time, label = TRUE),
-    .show_summary = T)
-  )
+  data.df$window.sum <- na_interpolation(data.df$window.sum)
+  colnames(data.df)[which(colnames(data.df) == "window.sum")] <- paste0("window.sum", ".", window)
+  
+  return(as_tibble(data.df))
 }
 
-timeseries_plot(3, files, "precip", directory)
 
 
+## Precipitation 
 
-RI <- 3
-nc.data.site <- fileNames[RI]
+precip.tibble <- get_climate_tibble(DI, files, "precip", directory, 16)
 
+precip.tibble %>% plot_time_series_regression(
+    .date_var     = time,
+    .formula      = precip ~ as.numeric(time) + month(time, label = TRUE),
+    .show_summary = T)
 
-### Precipitation 
-
-nc.precip.path <- file.path(precip, files[RI])
-
-nc <- nc_open(nc.precip.path)
-print(nc)
-
-attributes(nc$var)
-precip.var <- ncvar_get(nc, "precip")
-time.var <- ncvar_get(nc, "time")
-
-ncatt_get(nc, "time", "units")
-
-start.date <- as.Date('1986-12-31')
-end.date <- as.Date('2022-12-30')
-dates <- seq(from = start.date, by='1 days', to = end.date)
-length(dates)
-as.Date(time.var, origin = "1850-01-01")
-range(as.Date(time.var, origin = "1850-01-01"))
-
-
-precip.df <- data.frame(time = dates, precip = precip.var) %>% as_tibble()
-precip.df %>% plot_time_series(time, precip)
-
-precip.df %>% plot_time_series_boxplot(time, precip, .period = "1 year")
-
-summary(precip.var)
-var(precip.var)
-
-precip.df %>% plot_time_series_regression(
+precip.tibble <- get_climate_tibble(DI, files, "precip", directory, 16)
+precip.tibble %>% plot_time_series_regression(
   .date_var     = time,
-  .formula      = precip ~ as.numeric(time) + month(time, label = TRUE),
-  .show_summary = T
-)
-
-### min
-
-timeseries_plot(3, files, "tmax", directory)
-
-timeseries_plot(3, files, "tmin", directory)
+  .formula      = window.sum.16 ~ as.numeric(time) + month(time, label = TRUE),
+  .show_summary = T)
 
 
-timeseries_plot(3, files, "vapourpres_h09", directory)
-timeseries_plot(3, files, "vapourpres_h15", directory)
+write.csv(precip.tibble, paste0("Precip_",fileNames[DI], ".csv"))
 
 
 
-RI <- 3
-nc.data.site <- fileNames[RI]
+## Tmax
+
+tmax.tibble <- get_climate_tibble(DI, files, "tmax", directory, 16)
+tmax.tibble %>% plot_time_series_regression(
+  .date_var     = time,
+  .formula      = tmax ~ as.numeric(time) + month(time, label = TRUE),
+  .show_summary = T)
 
 
-### Precipitation 
+## Tmin
 
-nc.precip.path <- file.path(vapourpres_h15, files[RI])
-
-nc <- nc_open(nc.precip.path)
-print(nc)
-
-attributes(nc$var)
-precip.var <- ncvar_get(nc, "vapourpres")
-time.var <- ncvar_get(nc, "time")
-
-ncatt_get(nc, "time", "units")
+tmin.tibble <- get_climate_tibble(DI, files, "tmin", directory)
+tmin.tibble %>% plot_time_series_regression(
+  .date_var     = time,
+  .formula      = weekly.sum ~ as.numeric(time) + month(time, label = TRUE),
+  .show_summary = T)
 
 
-library(zoo)
+## vapourpres_09
+
+vapourpres_h09.tibble <- get_climate_tibble(DI, files, "vapourpres_h09", directory)
+vapourpres_h09.tibble %>% plot_time_series_regression(
+  .date_var     = time,
+  .formula      = weekly.sum ~ as.numeric(time) + month(time, label = TRUE),
+  .show_summary = T)
+
+
+## Vapourpres_15
+
+vapourpres_h15.tibble <- get_climate_tibble(DI, files, "vapourpres_h15", directory)
+vapourpres_h15.tibble %>% plot_time_series_regression(
+  .date_var     = time,
+  .formula      = weekly.sum ~ as.numeric(time) + month(time, label = TRUE),
+  .show_summary = T)
+
+
+
+
 
 
 

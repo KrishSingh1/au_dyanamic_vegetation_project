@@ -11,6 +11,7 @@ library(xts)
 library(forecast)
 library(seasonal)
 library(dplyr)
+library(caret)
 
 
 directory <- "/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtraction/BACKUP_DATA/csv_files/"
@@ -19,8 +20,8 @@ directory <- "/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtracti
 trim_to_nearest_coord <- function(ausplots.info.i.index, veg.info, dea.fc.i ) {
   
   # Site End Points:   
-  W.site <- veg.info$site.info$pit_marker_easting[ausplots.info.i.index]
-  S.site <- veg.info$site.info$pit_marker_northing[ausplots.info.i.index]
+  W.site <- veg.info$site.info$pit_marker_easting[ausplots.info.i.index][1]
+  S.site <- veg.info$site.info$pit_marker_northing[ausplots.info.i.index][1]
   N.site <- S.site + 100
   E.site <- W.site + 100
   
@@ -56,7 +57,7 @@ trim_to_nearest_coord <- function(ausplots.info.i.index, veg.info, dea.fc.i ) {
 
 # "NSTSYB0002" is 81
 # 'NTABRT0001' is  94
-RI = 94 # record index
+RI = 81 # record index
 files <- list.files(directory, pattern = "\\.csv$", full.names = FALSE)
 file.names <- tools::file_path_sans_ext(files)
 site.path <- paste(directory,files[RI],sep = "")
@@ -129,7 +130,7 @@ pl <- ggplot(dea.data.agg.essen, aes(x = Group.1)) +
                "pv.obs" = "darkgreen")) +
   theme_minimal() +
   scale_x_date(date_breaks = "2 months", date_labels = "%Y %b",
-               date_minor_breaks = "1 month") +
+               date_minor_breaks = "2 month") +
   theme(axis.text.x=element_text(angle=60, hjust = 1)) +
   geom_hline(yintercept = 0)
 
@@ -137,6 +138,59 @@ pl <- ggplot(dea.data.agg.essen, aes(x = Group.1)) +
 p <- ggplotly(pl) %>% 
   rangeslider()
 p
+
+
+## Adding precipitation data 
+
+precip.NSTSYB002 <- read.csv('Precip_NSTSYB0002_1987_2022.csv')
+precip.NSTSYB002$time <- as.Date(precip.NSTSYB002$time)
+colnames(precip.NSTSYB002)[which(colnames(precip.NSTSYB002) == 'time')] <- 'Group.1'
+save.colnames <- colnames(precip.NSTSYB002)
+precip.NSTSYB002$time <- as.Date(precip.NSTSYB002$Group.1)
+
+temp <- predict(preProcess(as.data.frame(precip.NSTSYB002$window.sum.16), method = 'range'), 
+        as.data.frame(precip.NSTSYB002$window.sum.16)) * 100
+precip.NSTSYB002$window.sum.16 <- temp$`precip.NSTSYB002$window.sum.16` 
+
+
+dea.data.agg.essen.precip <- merge(dea.data.agg.essen, precip.NSTSYB002, by = 'Group.1')
+
+
+
+## Using ggplotly
+pl <- ggplot(dea.data.agg.essen.precip, aes(x = Group.1)) +
+  geom_line(mapping = aes(y = precip, colour = "precip")) +
+  geom_line(mapping = aes(y = window.sum.16, colour = "precip.sum")) +
+  geom_line(mapping = aes(y = bs, colour = "bs")) +
+  geom_line(mapping = aes(y = npv, colour = "npv")) +
+  geom_line(mapping = aes(y = pv, colour = "pv")) +
+  geom_line(mapping = aes(y = ue, colour = "ue")) +
+  xlab("Time") +
+  ylab("Colour Intensity") +
+  labs(title = file.names[RI]) +
+  geom_point(data = site.info.data.essen,
+             mapping = aes(x = Group.1, y = bs, colour = "bs.obs")) +
+  geom_point(data = site.info.data.essen,
+             mapping = aes(x = Group.1, y = npv, colour = "npv.obs")) +
+  geom_point(data = site.info.data.essen,
+             mapping = aes(x = Group.1, y = pv, colour = "pv.obs")) +
+  scale_color_manual(
+    name = "Colour Bands", 
+    values = c("bs" = "red", "npv" = "blue", "pv" = "green", "ue" = "yellow",
+               "bs.obs" = "darkred", "npv.obs" = "darkblue", 
+               "pv.obs" = "darkgreen", "precip" = "lightblue", 
+               "precip.sum" = "cyan")) +
+  theme_minimal() +
+  scale_x_date(date_breaks = "2 months", date_labels = "%Y %b",
+               date_minor_breaks = "2 month") +
+  theme(axis.text.x=element_text(angle=60, hjust = 1)) +
+  geom_hline(yintercept = 0)
+
+
+p <- ggplotly(pl) %>% 
+  rangeslider()
+p
+
 
 
 
