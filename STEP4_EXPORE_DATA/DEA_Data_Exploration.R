@@ -152,6 +152,9 @@ temp <- predict(preProcess(as.data.frame(precip.NSTSYB002$window.sum.16), method
         as.data.frame(precip.NSTSYB002$window.sum.16)) * 100
 precip.NSTSYB002$window.sum.16 <- temp$`precip.NSTSYB002$window.sum.16` 
 
+temp <- predict(preProcess(as.data.frame(precip.NSTSYB002$precip), method = 'range'), 
+                as.data.frame(precip.NSTSYB002$precip)) * 100
+precip.NSTSYB002$precip <- temp$`precip.NSTSYB002$precip` 
 
 dea.data.agg.essen.precip <- merge(dea.data.agg.essen, precip.NSTSYB002, by = 'Group.1')
 
@@ -166,7 +169,7 @@ pl <- ggplot(dea.data.agg.essen.precip, aes(x = Group.1)) +
   geom_line(mapping = aes(y = pv, colour = "pv")) +
   geom_line(mapping = aes(y = ue, colour = "ue")) +
   xlab("Time") +
-  ylab("Colour Intensity") +
+  ylab("Intensity") +
   labs(title = file.names[RI]) +
   geom_point(data = site.info.data.essen,
              mapping = aes(x = Group.1, y = bs, colour = "bs.obs")) +
@@ -175,16 +178,19 @@ pl <- ggplot(dea.data.agg.essen.precip, aes(x = Group.1)) +
   geom_point(data = site.info.data.essen,
              mapping = aes(x = Group.1, y = pv, colour = "pv.obs")) +
   scale_color_manual(
-    name = "Colour Bands", 
+    name = "Timeseries", 
     values = c("bs" = "red", "npv" = "blue", "pv" = "green", "ue" = "yellow",
                "bs.obs" = "darkred", "npv.obs" = "darkblue", 
                "pv.obs" = "darkgreen", "precip" = "lightblue", 
                "precip.sum" = "cyan")) +
-  theme_minimal() +
+  scale_y_continuous(sec.axis = dup_axis(name = "Precipitation (mm)")) +
+  theme_minimal() + 
   scale_x_date(date_breaks = "2 months", date_labels = "%Y %b",
                date_minor_breaks = "2 month") +
   theme(axis.text.x=element_text(angle=60, hjust = 1)) +
   geom_hline(yintercept = 0)
+
+pl
 
 
 p <- ggplotly(pl) %>% 
