@@ -18,6 +18,7 @@ directory <- "/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtracti
 files <- list.files(directory, pattern = "\\.csv$", full.names = FALSE)
 fileNames <- tools::file_path_sans_ext(files)
 veg.info <- readRDS("../STEP2_VEG_EXTRACTION/site_veg.rds")
+sites.query <- read.csv("/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/query/sites_info_query.csv")
 
 
 insitu.fractional.cover <- readRDS("AusPlots_fractional_cover.rds")
@@ -78,11 +79,17 @@ get_nearest_timestep <- function(fowards.nearest, backwards.nearest) {
 }
 
 
-trim_to_nearest_coord <- function(ausplots.info.i.index, veg.info, dea.fc.i ) {
+trim_to_nearest_coord <- function(ausplots.info.i.index, veg.info, dea.fc.i, reference.query ) {
+  
+  reference.query.index <- which(reference.query$site_location_name == veg.info$site.info$site_location_name[ausplots.info.i.index][1])
+  print(reference.query.index)
   
   # Site End Points:   
-  W.site <- veg.info$site.info$pit_marker_easting[ausplots.info.i.index]
-  S.site <- veg.info$site.info$pit_marker_northing[ausplots.info.i.index]
+  #W.site <- veg.info$site.info$pit_marker_easting[ausplots.info.i.index][2]
+  #S.site <- veg.info$site.info$pit_marker_northing[ausplots.info.i.index][2]
+  W.site <- reference.query$pit_marker_easting[reference.query.index]
+  S.site <- reference.query$pit_marker_northing[reference.query.index]
+  
   N.site <- S.site + 100
   E.site <- W.site + 100
   
@@ -112,6 +119,7 @@ trim_to_nearest_coord <- function(ausplots.info.i.index, veg.info, dea.fc.i ) {
   
   return(trimmed)
 }
+
 
 
 plot_site_markings <- function(easting.site, northing.site, dea.fc.i) {
@@ -151,6 +159,9 @@ for (file.i in fileNames) {
   dea.fc.i <- read.csv(dea.file.path)
   dea.fc.i$time <- as.Date(dea.fc.i$time)
   
+  site.info.index <- which(veg.info$site.info$site_location_name == file.i)
+  dea.fc.i <- trim_to_nearest_coord(site.info.index, veg.info, dea.fc.i, sites.query)
+  
   for (i in ausplots.fc.i$site_unique) {
     
     ausplots.info.i.index <- grep(i, veg.info$site.info$site_unique)
@@ -179,7 +190,8 @@ for (file.i in fileNames) {
     
     #dea.fc.nearest.test <- dea.fc.nearest
     
-    dea.fc.nearest <- trim_to_nearest_coord(ausplots.info.i.index, veg.info, dea.fc.nearest)
+    ## Note I disabled spatial trimming for now 
+ 
     
     dea.fc.agg.nearest <- data.frame("site_unique" = i, "time" = timestamp.nearest[1],
                                      "diff" = as.numeric(timestamp.nearest[2]),
@@ -201,7 +213,8 @@ for (file.i in fileNames) {
 #write.csv(dea.fc.sites.nearest, "dea_fc_sites_nearest.csv")
 #write.csv(dea.fc.sites.nearest, "dea_fc_sites_nearest_pixel_inc.csv")
 #write.csv(dea.fc.sites.nearest, "dea_fc_sites_nearest_median.csv")
-
+#write.csv(dea.fc.sites.nearest, "dea_fc_sites_nearest_no_spatial.csv")
+write.csv(dea.fc.sites.nearest, "dea_fc_sites_nearest_adjusted_spatial.csv")
 
 if(debug) {
   
@@ -219,7 +232,7 @@ if(debug) {
 
 
 
-
+dea.fc.sites.nearest
 
 ####### Generating plots ########
 
@@ -231,7 +244,7 @@ Original <- read.csv(file = "dea_fc_sites_nearest.csv")
 #dea.fc.sites.plotting <- merge(dea.fc.sites.nearest, opaque.fc, by = 'site_unique')
 
 #dea.fc.sites.nearest <- read.csv("dea_fc_sites_nearest_pixel_inc.csv")
-dea.fc.sites.nearest <- read.csv("dea_fc_sites_nearest_median.csv")
+dea.fc.sites.nearest <- read.csv("dea_fc_sites_nearest_adjusted_spatial.csv")
 
 # Test subsetting for sites not in proper oriention or marked 
 valid_observations <- veg.info$site.info$site_unique[which(veg.info$site.info$plot_is_aligned_to_grid & veg.info$site.info$plot_is_permanently_marked)]
@@ -271,6 +284,8 @@ ggplot(dea.fc.sites.plotting, aes(y = (pv+npv), x = (green+brown))) + geom_point
 
 Metrics::rmse(actual = dea.fc.sites.plotting$brown + dea.fc.sites.plotting$green, 
               predicted = dea.fc.sites.plotting$npv + dea.fc.sites.plotting$pv)
+
+
 
 
 ### Try with ausplots' other fc calcs. ###

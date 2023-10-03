@@ -103,9 +103,9 @@ dea.data.agg.essen <- dea.data.agg[,c("Group.1","bs","npv","pv", "ue")]
 
 time.sequence <- data.frame(Group.1 =  seq(from = min(dea.data.agg.essen$Group.1), to = max(dea.data.agg.essen$Group.1), by='8 days'))
 
-merged.data <- dea.data.agg.essen %>% full_join(time.sequence)
-merged.data$Group.1 <- as.Date(merged.data$Group.1)
-merged.data <- merged.data %>% arrange(Group.1)
+#merged.data <- dea.data.agg.essen %>% full_join(time.sequence)
+#merged.data$Group.1 <- as.Date(merged.data$Group.1)
+#merged.data <- merged.data %>% arrange(Group.1)
 
 
 ## Using ggplotly
@@ -138,6 +138,8 @@ pl <- ggplot(dea.data.agg.essen, aes(x = Group.1)) +
 p <- ggplotly(pl) %>% 
   rangeslider()
 p
+
+
 
 
 ## Adding precipitation data 
