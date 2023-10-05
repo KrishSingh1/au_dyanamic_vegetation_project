@@ -13,6 +13,12 @@ library(dplyr)
 veg.info <- readRDS("../STEP2_VEG_EXTRACTION/site_veg.rds")
 
 
+# data <- sample(veg.info$site.info$site_location_name, size = 12)
+# veg.info.df <- as.data.frame(veg.info$site.info)
+# subset(veg.info.df, subset = (site_location_name %in% data))
+# veg.subset <- subset(veg.info.df, subset = (site_location_name %in% data))
+# sites.subset <- write.csv(veg.subset, "sites_subset.csv")
+
 ## Get overall visuals built in 
 map_ausplots(veg.info)
 #ausplots_visual(veg.info,max.plots=length(unique(veg.info$veg.PI$site_location_name)))
@@ -37,6 +43,7 @@ insitu.fractional.cover <- readRDS("AusPlots_fractional_cover.rds")
 fc.vio.df <- melt(insitu.fractional.cover, variable.name = "fractional_type",
                                 value.name = "fractional_percent", 
                                 measure.vars = c("bare","brown","green","NA."))
+
 
 
 
