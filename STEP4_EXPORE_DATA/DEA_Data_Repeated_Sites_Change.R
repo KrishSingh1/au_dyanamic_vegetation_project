@@ -12,6 +12,7 @@ library(dplyr)
 library(caret)
 library(cowplot)
 library(data.table)
+library(tune)
 
 
 
@@ -72,7 +73,7 @@ site.names <- unique(veg.info$site.info$site_location_name)
 
 # Count the number of observations of each site
 counts.df <- as.data.frame(table(veg.info$site.info$site_location_name))
-sites.revisit.2.df <- subset(counts.df, Freq == 2) # For sites that were only visited twice 
+sites.revisit.2.df <- subset(counts.df, Freq >= 2) # For sites that were visited two or more 
 
 # Merge sites with counts == 2 with current veg information
 site.info.df <- as.data.frame(veg.info$site.info)
@@ -80,7 +81,7 @@ site.info.df <- merge(site.info.df, insitu.fractional.cover, by = "site_unique")
 
 # Remeasure Counts 
 counts.df <- as.data.frame(table(site.info.df$site_location_name))
-sites.revisit.2.df <- subset(counts.df, Freq == 2) # For sites that were only visited twice 
+sites.revisit.2.df <- subset(counts.df, Freq >= 2) # For sites that were visited two or more
 
 # Subset based on counts 
 site.info.df.revisit <- subset(site.info.df, subset = site_location_name %in% sites.revisit.2.df$Var1)
@@ -112,14 +113,45 @@ for (name in site.location.names) {
   visit.data <- subset(site.info.df.revisit, subset = (site_location_name == name))
   visit.data <- visit.data[order(visit.data$visit_start_date, decreasing =  T),]
   
-  #print(visit.data[, c("visit_start_date","green", "brown", "bare")])
-  change <- visit.data[1, c("green", "brown", "bare")] - visit.data[2, c("green", "brown", "bare")]
-  #print(change)
+  samples <- nrow(visit.data)
   
-  change$visit_start_date_a <- visit.data$visit_start_date[2]
-  change$visit_start_date_b <- visit.data$visit_start_date[1]
-  change$site_location_name <- name
+  change <- data.frame(site_location_name = NA,
+                       visit_start_date_a = as.Date(NA),
+                       visit_start_date_b = as.Date(NA),
+                       green = as.numeric(NA),
+                       brown = as.numeric(NA),
+                       bare = as.numeric(NA))
   
+  for(i in 1:(samples - 1)) {
+    b <- visit.data[i, c("green", "brown", "bare")]
+    a <- visit.data[i+1, c("green", "brown", "bare")]
+    print(visit.data[i:(i+1), c("site_location_name", "green", "brown", "bare", "visit_start_date")])
+    change.i <- b - a
+    change.i$visit_start_date_a <- visit.data$visit_start_date[i+1]
+    change.i$visit_start_date_b <- visit.data$visit_start_date[i]
+    change.i$site_location_name <- name
+    print(change.i)
+    #print(change.i)
+    change <- rbind(change, change.i)
+  }  
+  
+  if(samples > 2) {
+    print("From beginning to end")
+    b <- visit.data[1, c("green", "brown", "bare")]
+    a <- visit.data[samples, c("green", "brown", "bare")]
+    print(visit.data[1:samples, c("site_location_name", "green", "brown", "bare", "visit_start_date")])
+    change.i <- b - a
+    change.i$visit_start_date_a <- visit.data$visit_start_date[samples]
+    change.i$visit_start_date_b <- visit.data$visit_start_date[1]
+    change.i$site_location_name <- name
+    print(change.i)
+    #print(change.i)
+    change <- rbind(change, change.i)
+    
+  }
+  
+  
+  change <- change[-1,]
   #print(change)
   site.fc.change.df <- rbind(site.fc.change.df, change)
 }
@@ -140,62 +172,67 @@ plot_grid(bare.pl, green.pl, brown.pl)
 # 4. (IN DEA FC) take the average of data points defined in 3.
 # 5. Export that data
 
-dea.fc.means.df <- data.frame(site_location_name = NA,
-                              time = as.Date(NA),
-                              pv = as.numeric(NA),
-                              npv = as.numeric(NA),
-                              bs = as.numeric(NA),
-                              spatial_ref = NA)
-
-missing.data <- c()
-
-for (RI in 1:nrow(site.fc.change.df)) {
-
-  site.location <- site.fc.change.df$site_location_name[RI]
-  print(site.location)
-  site.path <- file.path(directory,paste0(site.location,".csv"))
-
-  ausplots.info.i.index <- which(veg.info$site.info$site_location_name == site.location)
-  dea.data <- read.csv(site.path)
-  dea.data <- trim_to_nearest_coord(ausplots.info.i.index, veg.info, dea.data, sites.query)
+use.saved.data <- T
+if(!use.saved.data) {
+  dea.fc.means.df <- data.frame(site_location_name = NA,
+                                time = as.Date(NA),
+                                pv = as.numeric(NA),
+                                npv = as.numeric(NA),
+                                bs = as.numeric(NA),
+                                spatial_ref = NA)
   
-  if(nrow(dea.data) > 0){
-    dea.data.agg <- aggregate(dea.data, by = list(dea.data$time),
-                              FUN = mean, na.rm = T)
-    dea.data.agg$Group.1 <- as.Date(dea.data.agg$Group.1)
-    dea.data.agg <- dea.data.agg[,c("Group.1", "pv", "npv", "bs", "spatial_ref")]
+  missing.data <- c()
+  
+  site.fc.change.df.names <- unique(site.fc.change.df$site_location_name)
+  for (site.location in site.fc.change.df.names) {
     
-    visit.times <- subset(site.info.df.revisit,
-                          subset = (site_location_name == site.location))
+    print(site.location)
+    site.path <- file.path(directory,paste0(site.location,".csv"))
+  
+    ausplots.info.i.index <- which(veg.info$site.info$site_location_name == site.location)
+    dea.data <- read.csv(site.path)
+    dea.data <- trim_to_nearest_coord(ausplots.info.i.index, veg.info, dea.data, sites.query)
     
-    means <- data.frame(Group.1 = as.Date(NA), bs = NA, npv = NA, pv = NA, spatial_ref = NA)
-    
-    for(i in 1:nrow(visit.times)){ 
-      date <- visit.times$visit_start_date[i]
-      #print(date)
-      times.forwards <- seq(date, by='1 days', length = 31)
-      times.backwards <- seq(date, by='-1 days', length = 31)
-      closest.times <- rbind(dea.data.agg[dea.data.agg$Group.1 %in%times.forwards,],
-                             dea.data.agg[dea.data.agg$Group.1 %in%times.backwards,])
-      #print(closest.times)
-      means <- rbind(means,data.frame(Group.1 = date, lapply(closest.times[,c("bs","npv","pv", "spatial_ref")],
-                                                             FUN = mean, na.rm = T)))
+    if(nrow(dea.data) > 0){
+      dea.data.agg <- aggregate(dea.data, by = list(dea.data$time),
+                                FUN = mean, na.rm = T)
+      dea.data.agg$Group.1 <- as.Date(dea.data.agg$Group.1)
+      dea.data.agg <- dea.data.agg[,c("Group.1", "pv", "npv", "bs", "spatial_ref")]
+      
+      visit.times <- subset(site.info.df.revisit,
+                            subset = (site_location_name == site.location))
+      
+      means <- data.frame(Group.1 = as.Date(NA), bs = NA, npv = NA, pv = NA, spatial_ref = NA)
+      
+      for(i in 1:nrow(visit.times)){ 
+        date <- visit.times$visit_start_date[i]
+        #print(date)
+        times.forwards <- seq(date, by='1 days', length = 31)
+        times.backwards <- seq(date, by='-1 days', length = 31)
+        closest.times <- rbind(dea.data.agg[dea.data.agg$Group.1 %in%times.forwards,],
+                               dea.data.agg[dea.data.agg$Group.1 %in%times.backwards,])
+        #print(closest.times)
+        means <- rbind(means,data.frame(Group.1 = date, lapply(closest.times[,c("bs","npv","pv", "spatial_ref")],
+                                                               FUN = mean, na.rm = T)))
+        #print(means)
+      }
       #print(means)
+      means <- means[-1,]
+      means$site_location_name <- rep(site.location, nrow(means))
+      #print(means)
+      colnames(means)[which(colnames(means) == "Group.1")] = "time"
+      
+      #print(means)
+      dea.fc.means.df <- rbind(dea.fc.means.df, means)
+    } else{
+      missing.data <- c(missing.data, site.location)
     }
-    #print(means)
-    means <- means[-1,]
-    means$site_location_name <- rep(site.location, nrow(means))
-    #print(means)
-    colnames(means)[which(colnames(means) == "Group.1")] = "time"
-    
-    #print(means)
-    dea.fc.means.df <- rbind(dea.fc.means.df, means)
-  } else{
-    missing.data <- c(missing.data, site.location)
-  }
-} 
-dea.fc.means.df <- dea.fc.means.df[-1,]
-
+  } 
+  dea.fc.means.df <- dea.fc.means.df[-1,] 
+  #save(dea.fc.means.df, file =  "dea.fc.means.df_23108.RData") 
+} else {
+  load('dea.fc.means.df_23108.RData')
+}
 
 
 # Now get the change in fc
@@ -210,18 +247,47 @@ dea.fc.change.df <- data.frame(site_location_name = NA,
 
 for (name in site.location.names) {
   
+  
   visit.data <- subset(dea.fc.means.df, subset = (site_location_name == name))
-  print(visit.data)
   visit.data <- visit.data[order(visit.data$time, decreasing =  T),]
   
-  #print(visit.data[, c("visit_start_date","green", "brown", "bare")])
-  change <- visit.data[1, c("pv", "npv", "bs")] - visit.data[2, c("pv", "npv", "bs")]
-  #print(change)
+  change <- data.frame(site_location_name = NA,
+                       visit_start_date_a = as.Date(NA),
+                       visit_start_date_b = as.Date(NA),
+                       pv = as.numeric(NA),
+                       npv = as.numeric(NA),
+                       bs = as.numeric(NA))
+  samples <- nrow(visit.data)
   
-  change$visit_start_date_a <- visit.data$time[2]
-  change$visit_start_date_b <- visit.data$time[1]
-  change$site_location_name <- name
+  for(i in 1:(samples - 1)) {
+    b <- visit.data[i, c("pv", "npv", "bs")]
+    a <- visit.data[i+1, c("pv", "npv", "bs")]
+    print(visit.data[i:(i+1), c("site_location_name", "pv", "npv", "bs", "time")])
+    change.i <- b - a
+    change.i$visit_start_date_a <- visit.data$time[i+1]
+    change.i$visit_start_date_b <- visit.data$time[i]
+    change.i$site_location_name <- name
+    print(change.i)
+    #print(change.i)
+    change <- rbind(change, change.i)
+  }
   
+  if(samples > 2) {
+    print("From beginning to end")
+    b <- visit.data[1, c("pv", "npv", "bs")]
+    a <- visit.data[samples, c("pv", "npv", "bs")]
+    print(visit.data[1:samples, c("site_location_name", "pv", "npv", "bs", "time")])
+    change.i <- b - a
+    change.i$visit_start_date_a <- visit.data$time[samples]
+    change.i$visit_start_date_b <- visit.data$time[1]
+    change.i$site_location_name <- name
+    print(change.i)
+    #print(change.i)
+    change <- rbind(change, change.i)
+    
+  }
+  
+  change <- change[-1,]
   #print(change)
   dea.fc.change.df <- rbind(dea.fc.change.df, change)
 }
@@ -232,12 +298,12 @@ both.changs.df <- merge(dea.fc.change.df,site.fc.change.df, by = c("site_locatio
                                                  "visit_start_date_b"))
 
 bs.bare.pl <- ggplot(data = both.changs.df, aes(x = bare, y = bs)) + labs(x = "\u0394 bare cover (in-situ)", y = "\u0394 bare cover (remote)") +
-  geom_point() + geom_abline(slope = 1, intercept = 0)
+  geom_point() + geom_abline(slope = 1, intercept = 0) + coord_obs_pred()
 
 pv.green.pl <- ggplot(data = both.changs.df, aes(x = green, y = pv)) + labs(x = "\u0394 green cover (in-situ)", y = "\u0394 green cover (remote)") + 
-  geom_point() + geom_abline(slope = 1, intercept = 0)
+  geom_point() + geom_abline(slope = 1, intercept = 0) + coord_obs_pred()
 npv.brown.pl <- ggplot(data = both.changs.df, aes(x = brown, y = npv)) + geom_point() + labs(x = "\u0394 brown cover (in-situ)", y = "\u0394 brown cover (remote)") + 
-  geom_abline(slope = 1, intercept = 0)
+  geom_abline(slope = 1, intercept = 0) + coord_obs_pred()
 
 
 dea.fc.change.df.long <- reshape2::melt(dea.fc.change.df, id.vars = c('site_location_name', 'visit_start_date_a', 'visit_start_date_b'), value.name ="remote.cover")
@@ -253,10 +319,18 @@ both.changes.df.long <- merge(dea.fc.change.df.long, site.fc.change.df.long, by 
 
 
 all.pl <- ggplot(data = both.changes.df.long, aes(x = insitu.cover, y = remote.cover, colour = variable)) + labs(x = "\u0394 cover (in-situ)", y = "\u0394 cover (remote)") + 
-  geom_point() + geom_abline(slope = 1, intercept = 0)
+  geom_point() + geom_abline(slope = 1, intercept = 0) + coord_obs_pred()
 
 
 plot_grid(bs.bare.pl,npv.brown.pl,pv.green.pl, all.pl) 
+
+ggplot(data = both.changes.df.long, aes(x = insitu.cover, y = remote.cover)) + labs(x = "\u0394 cover (in-situ)", y = "\u0394 cover (remote)") + 
+  geom_point() + geom_abline(slope = 1, intercept = 0) + coord_obs_pred() + facet_wrap(~variable)
+
+
+
+
+
 
 
 
