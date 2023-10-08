@@ -10,13 +10,15 @@ library(forecast)
 library(seasonal)
 library(dplyr)
 library(caret)
+library(cowplot)
+library(data.table)
 
 
 
 trim_to_nearest_coord <- function(ausplots.info.i.index, veg.info, dea.fc.i, reference.query ) {
   
   reference.query.index <- which(reference.query$site_location_name == veg.info$site.info$site_location_name[ausplots.info.i.index][1])
-  print(reference.query.index)
+  #print(reference.query.index)
   
   # Site End Points:   
   #W.site <- veg.info$site.info$pit_marker_easting[ausplots.info.i.index][2]
@@ -56,30 +58,35 @@ trim_to_nearest_coord <- function(ausplots.info.i.index, veg.info, dea.fc.i, ref
 
 
 
+# Get Needed datasets
 directory <- "/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtraction/BACKUP_DATA/csv_files"
 files <- list.files(directory, pattern = "\\.csv$", full.names = FALSE)
 fileNames <- tools::file_path_sans_ext(files)
 veg.info <- readRDS("../STEP2_VEG_EXTRACTION/site_veg.rds")
-
 insitu.fractional.cover <- readRDS("AusPlots_fractional_cover.rds")
-
-site.names <- unique(veg.info$site.info$site_location_name)
 sites.query <- read.csv("/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/query/sites_info_query.csv")
 
-# Count the number of observations of each site
 
+# Get Site names
+site.names <- unique(veg.info$site.info$site_location_name)
+
+# Count the number of observations of each site
 counts.df <- as.data.frame(table(veg.info$site.info$site_location_name))
 sites.revisit.2.df <- subset(counts.df, Freq == 2) # For sites that were only visited twice 
 
+# Merge sites with counts == 2 with current veg information
 site.info.df <- as.data.frame(veg.info$site.info)
 site.info.df <- merge(site.info.df, insitu.fractional.cover, by = "site_unique")
 
+# Remeasure Counts 
 counts.df <- as.data.frame(table(site.info.df$site_location_name))
 sites.revisit.2.df <- subset(counts.df, Freq == 2) # For sites that were only visited twice 
 
+# Subset based on counts 
 site.info.df.revisit <- subset(site.info.df, subset = site_location_name %in% sites.revisit.2.df$Var1)
 site.info.df.revisit$visit_start_date <- as.Date(site.info.df.revisit$visit_start_date)
 
+# Subset based on the avaliable dea information
 site.info.df.revisit <- subset(site.info.df.revisit, subset = site_location_name %in% fileNames)
 
 table(site.info.df.revisit$site_location_name)
@@ -89,6 +96,8 @@ ggplot(data = site.info.df.revisit, aes(x = visit_start_date, y = green)) +
   geom_point() + facet_grid(~state)
 ## A lot of the repeated measures were in south australia 
 
+
+## Now to get the change in FC in-situ
 site.location.names <- unique(site.info.df.revisit$site_location_name)
 
 site.fc.change.df <- data.frame(site_location_name = NA,
@@ -116,12 +125,20 @@ for (name in site.location.names) {
 }
 site.fc.change.df <- site.fc.change.df[-1,]
 
+bare.pl <- ggplot(data = site.fc.change.df, mapping = aes(x = bare)) + geom_histogram()
+green.pl <- ggplot(data = site.fc.change.df, mapping = aes(x = green)) + geom_histogram()
+brown.pl <- ggplot(data = site.fc.change.df, mapping = aes(x = brown)) + geom_histogram()
 
+plot_grid(bare.pl, green.pl, brown.pl)
+
+
+## Now get dea revisit measurements 
 # Algorithm:
 # 1. Get the datasets: queryfile, Dea.fc files, ausplots fc
 # 2. Check which of the sites have repeated visits (2 visits for now)
 # 3. (In DEA FC) get data-points that are month before and after from the site visits (from Ausplots FC)
-# 4. (IN DEA FC) take the average of each site visit
+# 4. (IN DEA FC) take the average of data points defined in 3.
+# 5. Export that data
 
 dea.fc.means.df <- data.frame(site_location_name = NA,
                               time = as.Date(NA),
@@ -131,15 +148,16 @@ dea.fc.means.df <- data.frame(site_location_name = NA,
                               spatial_ref = NA)
 
 missing.data <- c()
-browser()
-for (RI in 1:nrow(site.info.df.revisit)) {
 
-  
+for (RI in 1:nrow(site.fc.change.df)) {
+
   site.location <- site.fc.change.df$site_location_name[RI]
   print(site.location)
   site.path <- file.path(directory,paste0(site.location,".csv"))
-  
+
+  ausplots.info.i.index <- which(veg.info$site.info$site_location_name == site.location)
   dea.data <- read.csv(site.path)
+  dea.data <- trim_to_nearest_coord(ausplots.info.i.index, veg.info, dea.data, sites.query)
   
   if(nrow(dea.data) > 0){
     dea.data.agg <- aggregate(dea.data, by = list(dea.data$time),
@@ -150,123 +168,96 @@ for (RI in 1:nrow(site.info.df.revisit)) {
     visit.times <- subset(site.info.df.revisit,
                           subset = (site_location_name == site.location))
     
-    means <- data.frame(Group.1 = as.Date(NA), bs = NA, npv = NA, pv = NA, ue = NA)
+    means <- data.frame(Group.1 = as.Date(NA), bs = NA, npv = NA, pv = NA, spatial_ref = NA)
     
     for(i in 1:nrow(visit.times)){ 
       date <- visit.times$visit_start_date[i]
-      print(date)
+      #print(date)
       times.forwards <- seq(date, by='1 days', length = 31)
       times.backwards <- seq(date, by='-1 days', length = 31)
       closest.times <- rbind(dea.data.agg[dea.data.agg$Group.1 %in%times.forwards,],
                              dea.data.agg[dea.data.agg$Group.1 %in%times.backwards,])
-      print(closest.times)
-      means <- rbind(means,data.frame(Group.1 = date, lapply(closest.times[,c("bs","npv","pv")],
+      #print(closest.times)
+      means <- rbind(means,data.frame(Group.1 = date, lapply(closest.times[,c("bs","npv","pv", "spatial_ref")],
                                                              FUN = mean, na.rm = T)))
-      print(means)
+      #print(means)
     }
-    print(means)
+    #print(means)
     means <- means[-1,]
     means$site_location_name <- rep(site.location, nrow(means))
-    print(means)
-    colnames(means)[which(colnames(means)) == "Group.1"] = "time"
-    print(means)
-    #dea.fc.means.df <- rbind(dea.fc.means.df, means)
+    #print(means)
+    colnames(means)[which(colnames(means) == "Group.1")] = "time"
+    
+    #print(means)
+    dea.fc.means.df <- rbind(dea.fc.means.df, means)
   } else{
-    missing.data <- missing.data(site.location)
+    missing.data <- c(missing.data, site.location)
   }
 } 
-
-
-RI = which(sites.revisit.df$site.names == 'NTAFIN0001') # A good triple one
-
-which(fileNames == 'NTAFIN0001')
-
-site.location <- sites.revisit.df$site.names[RI]
-site.path <- paste(directory,paste0(site.location,".csv"), sep = "/")
-
-dea.data <- read.csv(site.path)
-veg.info <- readRDS("../STEP2_VEG_EXTRACTION/site_veg.rds")
-
-site.info.data <- veg.info$site.info
-site.info.index <- which(site.info.data$site_location_name == site.location)
-site.info.data <- site.info.data[site.info.index,]
-
-insitu.fractional.cover <- readRDS("AusPlots_fractional_cover.rds")
-
-
-ausplots.fc <- insitu.fractional.cover[grep(site.location, insitu.fractional.cover$site_unique),]
-site.info.data <- merge(ausplots.fc, site.info.data, by = 'site_unique')
+dea.fc.means.df <- dea.fc.means.df[-1,]
 
 
 
-# Visual validation
-# plot_site_markings <- function(easting.site, northing.site, dea.fc.i) {
-#   
-#   MASS::eqscplot(dea.fc.i$x, dea.fc.i$y,tol = .5, xlab = "easting", ylab = "northing")
-#   
-#   points(x = easting.site,y = northing.site, pch = 2, col = 'red')
-#   points(x = easting.site+100,y = northing.site, pch = 2, col= 'red')
-#   points(x = easting.site,y = northing.site+100, pch = 2, col= 'red')
-#   points(x = easting.site+100,y = northing.site+100, pch = 2, col= 'red')
-#   
-# }
-# 
-# plot_site_markings(veg.info$site.info$pit_marker_easting[site.info.index][2],
-#                    veg.info$site.info$pit_marker_northing[site.info.index][2],
-#                    dea.data)
-# 
-# dea.data <- trim_to_nearest_coord(site.info.index, veg.info, dea.data, sites.query)
-# 
-# plot_site_markings(veg.info$site.info$pit_marker_easting[site.info.index][2],
-#                    veg.info$site.info$pit_marker_northing[site.info.index][2],
-#                    dea.data)
+# Now get the change in fc
 
-###### Visualise The Data ######
+site.location.names <- unique(dea.fc.means.df$site_location_name)
+dea.fc.change.df <- data.frame(site_location_name = NA,
+                                visit_start_date_a = as.Date(NA),
+                                visit_start_date_b = as.Date(NA),
+                                pv = as.numeric(NA),
+                                npv = as.numeric(NA),
+                                bs = as.numeric(NA))
 
-
-dea.data.agg <- aggregate(dea.data, by = list(dea.data$time),
-                          FUN = mean, na.rm = T)
-
-posit.date <- as.POSIXlt(dea.data.agg$Group.1) # for use for a later section: smoothing time series 
-dea.data.agg$Group.1 <- as.Date(dea.data.agg$Group.1)
-
-## Get essential data from Ausplots 
-site.info.data.essen <- site.info.data[,c("visit_start_date", "bare",
-                                          "brown", "green" )]
-
-site.info.data.essen$visit_start_date <- as.Date(site.info.data.essen$visit_start_date)
-
-
-colnames(site.info.data.essen) <- colnames(
-  dea.data.agg[,c("Group.1","bs","npv","pv")]
-)
-
-site.info.data.essen$Group.1 <- as.Date(site.info.data.essen$Group.1)
-dea.data.agg.essen <- dea.data.agg[,c("Group.1","bs","npv","pv", "ue")]
-
-
-means <- data.frame(Group.1 = as.Date(NA), bs = NA, npv = NA, pv = NA, ue = NA)
-for(i in 1:length(site.info.data.essen$Group.1)){ 
-  date <- site.info.data.essen$Group.1[i]
-  times.forwards <- seq(date, by='1 days', length = 31)
-  times.backwards <- seq(date, by='-1 days', length = 31)
-  closest.times <- rbind(dea.data.agg.essen[dea.data.agg.essen$Group.1 %in%times.forwards,],
-                         dea.data.agg.essen[dea.data.agg.essen$Group.1 %in%times.backwards,])
-  means <- rbind(means,data.frame(Group.1 = date, lapply(closest.times[,c("bs","npv","pv","ue")], FUN = mean, na.rm = T)))
-}
-means <- means[-1,]
-
-#time.sequence <- data.frame(Group.1 =  seq(from = min(dea.data.agg.essen$Group.1), to = max(dea.data.agg.essen$Group.1), by='8 days'))
-#merged.data <- dea.data.agg.essen %>% full_join(time.sequence)
-#merged.data$Group.1 <- as.Date(merged.data$Group.1)
-#merged.data <- merged.data %>% arrange(Group.1)
-
-## Add dates of obs to the dea datasets to visually see the na, if there is one
-for(i in 1:length(means$Group.1) ) {
-  date <- means$Group.1[i]
-  if (sum(dea.data.agg.essen$Group.1 %in% date) == 0){
-    dea.data.agg.essen <- rbind(dea.data.agg.essen, data.frame(Group.1 = date, bs = NA, npv = NA, pv = NA, ue = NA))
-  }
+for (name in site.location.names) {
   
+  visit.data <- subset(dea.fc.means.df, subset = (site_location_name == name))
+  print(visit.data)
+  visit.data <- visit.data[order(visit.data$time, decreasing =  T),]
+  
+  #print(visit.data[, c("visit_start_date","green", "brown", "bare")])
+  change <- visit.data[1, c("pv", "npv", "bs")] - visit.data[2, c("pv", "npv", "bs")]
+  #print(change)
+  
+  change$visit_start_date_a <- visit.data$time[2]
+  change$visit_start_date_b <- visit.data$time[1]
+  change$site_location_name <- name
+  
+  #print(change)
+  dea.fc.change.df <- rbind(dea.fc.change.df, change)
 }
+dea.fc.change.df <- dea.fc.change.df[-1,]
+
+
+both.changs.df <- merge(dea.fc.change.df,site.fc.change.df, by = c("site_location_name", "visit_start_date_a",
+                                                 "visit_start_date_b"))
+
+bs.bare.pl <- ggplot(data = both.changs.df, aes(x = bare, y = bs)) + labs(x = "\u0394 bare cover (in-situ)", y = "\u0394 bare cover (remote)") +
+  geom_point() + geom_abline(slope = 1, intercept = 0)
+
+pv.green.pl <- ggplot(data = both.changs.df, aes(x = green, y = pv)) + labs(x = "\u0394 green cover (in-situ)", y = "\u0394 green cover (remote)") + 
+  geom_point() + geom_abline(slope = 1, intercept = 0)
+npv.brown.pl <- ggplot(data = both.changs.df, aes(x = brown, y = npv)) + geom_point() + labs(x = "\u0394 brown cover (in-situ)", y = "\u0394 brown cover (remote)") + 
+  geom_abline(slope = 1, intercept = 0)
+
+
+dea.fc.change.df.long <- reshape2::melt(dea.fc.change.df, id.vars = c('site_location_name', 'visit_start_date_a', 'visit_start_date_b'), value.name ="remote.cover")
+site.fc.change.df.long <- reshape2::melt(site.fc.change.df, id.vars = c('site_location_name', 'visit_start_date_a', 'visit_start_date_b'), value.name = "insitu.cover")
+
+dea.fc.change.df.long$variable <- as.character(dea.fc.change.df.long$variable)
+dea.fc.change.df.long$variable[which(dea.fc.change.df.long$variable == 'pv')] <- 'green'
+dea.fc.change.df.long$variable[which(dea.fc.change.df.long$variable == 'npv')] <- 'brown'
+dea.fc.change.df.long$variable[which(dea.fc.change.df.long$variable == 'bs')] <- 'bare'
+
+both.changes.df.long <- merge(dea.fc.change.df.long, site.fc.change.df.long, by = c("site_location_name", "visit_start_date_a",
+                                                            "visit_start_date_b", 'variable'))
+
+
+all.pl <- ggplot(data = both.changes.df.long, aes(x = insitu.cover, y = remote.cover, colour = variable)) + labs(x = "\u0394 cover (in-situ)", y = "\u0394 cover (remote)") + 
+  geom_point() + geom_abline(slope = 1, intercept = 0)
+
+
+plot_grid(bs.bare.pl,npv.brown.pl,pv.green.pl, all.pl) 
+
+
+
 
