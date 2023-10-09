@@ -79,6 +79,9 @@ sites.revisit.2.df <- subset(counts.df, Freq >= 2) # For sites that were visited
 site.info.df <- as.data.frame(veg.info$site.info)
 site.info.df <- merge(site.info.df, insitu.fractional.cover, by = "site_unique")
 
+# Remove in-situ fractional cover of sites with an NA. of above 10%.
+site.info.df <- subset(site.info.df, subset = (NA. <= 10))
+
 # Remeasure Counts 
 counts.df <- as.data.frame(table(site.info.df$site_location_name))
 sites.revisit.2.df <- subset(counts.df, Freq >= 2) # For sites that were visited two or more
@@ -89,6 +92,7 @@ site.info.df.revisit$visit_start_date <- as.Date(site.info.df.revisit$visit_star
 
 # Subset based on the avaliable dea information
 site.info.df.revisit <- subset(site.info.df.revisit, subset = site_location_name %in% fileNames)
+
 
 table(site.info.df.revisit$site_location_name)
 ## Some basic visualisations
@@ -294,38 +298,27 @@ for (name in site.location.names) {
 dea.fc.change.df <- dea.fc.change.df[-1,]
 
 
+### This visualisation is not aggregated i.e. 3 visits will count as two timestamps between visit dates (A,B) and (B,C)##
+
 both.changs.df <- merge(dea.fc.change.df,site.fc.change.df, by = c("site_location_name", "visit_start_date_a",
                                                  "visit_start_date_b"))
 
 bs.bare.pl <- ggplot(data = both.changs.df, aes(x = bare, y = bs)) + labs(x = "\u0394 bare cover (in-situ)", y = "\u0394 bare cover (remote)") +
-  geom_point() + geom_abline(slope = 1, intercept = 0) + coord_obs_pred()
+  geom_point() + geom_abline(slope = 1, intercept = 0) + coord_obs_pred() + xlim(c(-100,100)) + ylim(c(-100,100))
 
 pv.green.pl <- ggplot(data = both.changs.df, aes(x = green, y = pv)) + labs(x = "\u0394 green cover (in-situ)", y = "\u0394 green cover (remote)") + 
-  geom_point() + geom_abline(slope = 1, intercept = 0) + coord_obs_pred()
-npv.brown.pl <- ggplot(data = both.changs.df, aes(x = brown, y = npv)) + geom_point() + labs(x = "\u0394 brown cover (in-situ)", y = "\u0394 brown cover (remote)") + 
-  geom_abline(slope = 1, intercept = 0) + coord_obs_pred()
+  geom_point() + geom_abline(slope = 1, intercept = 0) + coord_obs_pred() + xlim(c(-100,100)) + ylim(c(-100,100))
+npv.brown.pl <- ggplot(data = both.changs.df, aes(x = brown, y = npv), colour = 'blue') + geom_point() + labs(x = "\u0394 brown cover (in-situ)", y = "\u0394 brown cover (remote)") + 
+  geom_abline(slope = 1, intercept = 0) + coord_obs_pred() + xlim(c(-100,100)) + ylim(c(-100,100))
 
 
-dea.fc.change.df.long <- reshape2::melt(dea.fc.change.df, id.vars = c('site_location_name', 'visit_start_date_a', 'visit_start_date_b'), value.name ="remote.cover")
-site.fc.change.df.long <- reshape2::melt(site.fc.change.df, id.vars = c('site_location_name', 'visit_start_date_a', 'visit_start_date_b'), value.name = "insitu.cover")
-
-dea.fc.change.df.long$variable <- as.character(dea.fc.change.df.long$variable)
-dea.fc.change.df.long$variable[which(dea.fc.change.df.long$variable == 'pv')] <- 'green'
-dea.fc.change.df.long$variable[which(dea.fc.change.df.long$variable == 'npv')] <- 'brown'
-dea.fc.change.df.long$variable[which(dea.fc.change.df.long$variable == 'bs')] <- 'bare'
-
-both.changes.df.long <- merge(dea.fc.change.df.long, site.fc.change.df.long, by = c("site_location_name", "visit_start_date_a",
-                                                            "visit_start_date_b", 'variable'))
-
-
-all.pl <- ggplot(data = both.changes.df.long, aes(x = insitu.cover, y = remote.cover, colour = variable)) + labs(x = "\u0394 cover (in-situ)", y = "\u0394 cover (remote)") + 
-  geom_point() + geom_abline(slope = 1, intercept = 0) + coord_obs_pred()
+all.pl <- ggplot(data = both.changs.df) + geom_point(aes(x = brown, y = npv, colour = 'brown')) + geom_point(aes(x = green, y = pv, colour = 'green')) + 
+  geom_point(aes(x = bare, y = bs, colour = 'bare')) +labs(x = "\u0394 cover (in-situ)", y = "\u0394 cover (remote)") + 
+  geom_abline(slope = 1, intercept = 0) + coord_obs_pred() + scale_colour_manual(name = 'Cover', values = c('brown' = 'blue', 'green' = 'green', 'bare' = 'red')) + 
+  xlim(c(-100,100)) + ylim(c(-100,100))
 
 
 plot_grid(bs.bare.pl,npv.brown.pl,pv.green.pl, all.pl) 
-
-ggplot(data = both.changes.df.long, aes(x = insitu.cover, y = remote.cover)) + labs(x = "\u0394 cover (in-situ)", y = "\u0394 cover (remote)") + 
-  geom_point() + geom_abline(slope = 1, intercept = 0) + coord_obs_pred() + facet_wrap(~variable)
 
 
 ### Averaging the change in cover over time in sites with 3 visits ###
@@ -335,17 +328,19 @@ both.changes.agg <- aggregate(both.changs.df[,c("pv","npv","bs", "green", "brown
 
 
 bs.bare.pl <- ggplot(data = both.changes.agg, aes(x = bare, y = bs)) + labs(x = "\u0394 bare cover (in-situ)", y = "\u0394 bare cover (remote)") +
-  geom_point() + geom_abline(slope = 1, intercept = 0) + coord_obs_pred()
+  geom_point() + geom_abline(slope = 1, intercept = 0) + coord_obs_pred() + xlim(c(-100,100)) + ylim(c(-100,100))
 
 pv.green.pl <- ggplot(data = both.changes.agg, aes(x = green, y = pv)) + labs(x = "\u0394 green cover (in-situ)", y = "\u0394 green cover (remote)") + 
-  geom_point() + geom_abline(slope = 1, intercept = 0) + coord_obs_pred()
-npv.brown.pl <- ggplot(data = both.changes.agg, aes(x = brown, y = npv)) + geom_point() + labs(x = "\u0394 brown cover (in-situ)", y = "\u0394 brown cover (remote)") + 
-  geom_abline(slope = 1, intercept = 0) + coord_obs_pred()
+  geom_point() + geom_abline(slope = 1, intercept = 0) + coord_obs_pred() + xlim(c(-100,100)) + ylim(c(-100,100))
+npv.brown.pl <- ggplot(data = both.changs.df, aes(x = brown, y = npv), colour = 'blue') + geom_point() + labs(x = "\u0394 brown cover (in-situ)", y = "\u0394 brown cover (remote)") + 
+  geom_abline(slope = 1, intercept = 0) + coord_obs_pred() + xlim(c(-100,100)) + ylim(c(-100,100))
 
 
-all.pl <- ggplot(data = both.changes.agg) + geom_point(aes(x = brown, y = npv), colour = 'blue') + geom_point(aes(x = green, y = pv), colour = 'green') + 
-  geom_point(aes(x = bare, y = bs), colour = 'red') +labs(x = "\u0394 cover (in-situ)", y = "\u0394 cover (remote)") + 
-  geom_abline(slope = 1, intercept = 0) + coord_obs_pred()
+all.pl <- ggplot(data = both.changes.agg) + geom_point(aes(x = brown, y = npv, colour = 'brown')) + geom_point(aes(x = green, y = pv, colour = 'green')) + 
+  geom_point(aes(x = bare, y = bs, colour = 'bare')) +labs(x = "\u0394 cover (in-situ)", y = "\u0394 cover (remote)") + 
+  geom_abline(slope = 1, intercept = 0) + coord_obs_pred() + scale_colour_manual(name = 'Cover', values = c('brown' = 'blue', 'green' = 'green', 'bare' = 'red')) + 
+  xlim(c(-100,100)) + ylim(c(-100,100))
+
 
 
 plot_grid(bs.bare.pl,npv.brown.pl,pv.green.pl, all.pl) 
