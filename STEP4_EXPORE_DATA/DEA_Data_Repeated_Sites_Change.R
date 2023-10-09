@@ -328,10 +328,24 @@ ggplot(data = both.changes.df.long, aes(x = insitu.cover, y = remote.cover)) + l
   geom_point() + geom_abline(slope = 1, intercept = 0) + coord_obs_pred() + facet_wrap(~variable)
 
 
+### Averaging the change in cover over time in sites with 3 visits ###
+
+both.changes.agg <- aggregate(both.changs.df[,c("pv","npv","bs", "green", "brown", "bare")],
+          list(both.changs.df$site_location_name), FUN = mean, na.rm = T)
 
 
+bs.bare.pl <- ggplot(data = both.changes.agg, aes(x = bare, y = bs)) + labs(x = "\u0394 bare cover (in-situ)", y = "\u0394 bare cover (remote)") +
+  geom_point() + geom_abline(slope = 1, intercept = 0) + coord_obs_pred()
+
+pv.green.pl <- ggplot(data = both.changes.agg, aes(x = green, y = pv)) + labs(x = "\u0394 green cover (in-situ)", y = "\u0394 green cover (remote)") + 
+  geom_point() + geom_abline(slope = 1, intercept = 0) + coord_obs_pred()
+npv.brown.pl <- ggplot(data = both.changes.agg, aes(x = brown, y = npv)) + geom_point() + labs(x = "\u0394 brown cover (in-situ)", y = "\u0394 brown cover (remote)") + 
+  geom_abline(slope = 1, intercept = 0) + coord_obs_pred()
 
 
+all.pl <- ggplot(data = both.changes.agg) + geom_point(aes(x = brown, y = npv), colour = 'blue') + geom_point(aes(x = green, y = pv), colour = 'green') + 
+  geom_point(aes(x = bare, y = bs), colour = 'red') +labs(x = "\u0394 cover (in-situ)", y = "\u0394 cover (remote)") + 
+  geom_abline(slope = 1, intercept = 0) + coord_obs_pred()
 
 
-
+plot_grid(bs.bare.pl,npv.brown.pl,pv.green.pl, all.pl) 

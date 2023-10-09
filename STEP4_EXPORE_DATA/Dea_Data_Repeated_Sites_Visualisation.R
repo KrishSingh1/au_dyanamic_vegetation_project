@@ -87,7 +87,9 @@ trim_to_nearest_coord <- function(ausplots.info.i.index, veg.info, dea.fc.i, ref
 #RI = 82 # NTAMAC0002
 #RI = 83 # WAAGES0003
 #RI = 35 # NTABRT0002 (2)
-RI = which(sites.revisit.df$site.names == 'NTAFIN0001') # A good triple one
+#RI = which(sites.revisit.df$site.names == 'NTAFIN0001') # A good triple one
+RI = 111
+
 
 which(fileNames == 'NTAFIN0001')
 

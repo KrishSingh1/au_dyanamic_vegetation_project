@@ -238,7 +238,7 @@ dea.fc.sites.nearest
 
 library(ggplot2)
 
-Original <- read.csv(file = "dea_fc_sites_nearest.csv")
+Original <- read.csv(file = "dea_fc_sites_nearest_.csv")
 
 #opaque.fc <- fractional_cover(veg.PI = veg.info$veg.PI, in_canopy_sky = "TRUE") 
 #dea.fc.sites.plotting <- merge(dea.fc.sites.nearest, opaque.fc, by = 'site_unique')
@@ -257,33 +257,34 @@ dea.fc.sites.plotting <- subset(dea.fc.sites.plotting, subset = (npixels > 100 &
 
 
 # Greenness 
-ggplot(dea.fc.sites.plotting, aes(y = pv, x = green)) + geom_point() + geom_abline() + 
-  xlim(0,100) + ylim(0,100) 
+cal.green <- ggplot(dea.fc.sites.plotting, aes(y = pv, x = green)) + geom_point() + geom_abline() + 
+  xlim(0,100) + ylim(0,100) + labs(x = "green cover (in-situ)", y = "green cover (remote)")
 
 Metrics::rmse(actual = dea.fc.sites.plotting$green, 
               predicted = dea.fc.sites.plotting$pv)
 
+
+
 # Bare
-ggplot(dea.fc.sites.plotting, aes(y = bs, x = bare)) + geom_point() + geom_abline() +
-  xlim(0,100) + ylim(0,100) 
+cal.bare <- ggplot(dea.fc.sites.plotting, aes(y = bs, x = bare)) + geom_point() + geom_abline() +
+  xlim(0,100) + ylim(0,100)  + labs(x = "bare cover (in-situ)", y = "bare cover (remote)")
 
 Metrics::rmse(actual = dea.fc.sites.plotting$bare, 
               predicted = dea.fc.sites.plotting$bs)
 
 # Brown
-ggplot(dea.fc.sites.plotting, aes(y = npv, x = brown)) + geom_point() + geom_abline() +
-  xlim(0,100) + ylim(0,100) 
+cal.brown <- ggplot(dea.fc.sites.plotting, aes(y = npv, x = brown)) + geom_point() + geom_abline() +
+  xlim(0,100) + ylim(0,100) + labs(x = "brown cover (in-situ)", y = "brown cover (remote)")
 
 Metrics::rmse(actual = dea.fc.sites.plotting$brown, 
               predicted = dea.fc.sites.plotting$npv)
 
-# Greenness 
-ggplot(dea.fc.sites.plotting, aes(y = (pv+npv), x = (green+brown))) + geom_point() + geom_abline() + 
-  xlim(0,100) + ylim(0,100) 
 
+cal.all <- ggplot(dea.fc.sites.plotting) + geom_point(aes(x = bare, y = bs), colour = 'red') + geom_point(aes(x = green, y = pv), colour = '#009E73') + geom_point(aes(x = brown, y = npv), colour = '#0072B2') + geom_abline() +
+  xlim(0,100) + ylim(0,100) + labs(x = "cover (in-situ)", y = "cover (remote)") 
 
-Metrics::rmse(actual = dea.fc.sites.plotting$brown + dea.fc.sites.plotting$green, 
-              predicted = dea.fc.sites.plotting$npv + dea.fc.sites.plotting$pv)
+cowplot::plot_grid(cal.green, cal.brown, cal.bare,cal.all )
+
 
 
 
