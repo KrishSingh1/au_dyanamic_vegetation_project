@@ -176,7 +176,7 @@ plot_grid(bare.pl, green.pl, brown.pl)
 # 4. (IN DEA FC) take the average of data points defined in 3.
 # 5. Export that data
 
-use.saved.data <- T
+use.saved.data <- F
 if(!use.saved.data) {
   dea.fc.means.df <- data.frame(site_location_name = NA,
                                 time = as.Date(NA),
@@ -195,6 +195,7 @@ if(!use.saved.data) {
   
     ausplots.info.i.index <- which(veg.info$site.info$site_location_name == site.location)
     dea.data <- read.csv(site.path)
+    dea.data <- subset(dea.data, subset = (ue < 27))
     dea.data <- trim_to_nearest_coord(ausplots.info.i.index, veg.info, dea.data, sites.query)
     
     if(nrow(dea.data) > 0){
@@ -344,18 +345,13 @@ all.pl <- ggplot(data = both.changes.agg) + geom_point(aes(x = brown, y = npv, c
 
 
 plot_grid(bs.bare.pl,npv.brown.pl,pv.green.pl, all.pl) 
+
 both.changes.agg
 
 summary(lm(green~pv,both.changes.agg))
 summary(lm(bare~bs,both.changes.agg))
 
 summary(lm(brown~npv,both.changes.agg))
-
-
-
-plot(lm(green~pv,both.changes.agg))
-
-view(both.changes.agg)
 
 
 

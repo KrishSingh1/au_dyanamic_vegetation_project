@@ -25,6 +25,7 @@ annual.precip.data <- data.frame(site_location_name = NA,
 for(RI in 1:length(fileNames)) {
   
   site.location.name <- stringr::str_split(fileNames[RI], "_")[[1]][1]
+  print(site.location.name)
   
   nc.path <- file.path(precip.path, files[RI])
   nc <- nc_open(filename = nc.path)
@@ -123,22 +124,30 @@ annual.fc.data <- data.frame(site_location_name = NA,
                              npv_cv = as.numeric(NA),
                              pv_mean = as.numeric(NA),
                              pv_sd = as.numeric(NA),
-                             pv_cv = as.numeric(NA))
+                             pv_cv = as.numeric(NA),
+                             missing_periods = NA,
+                             missing_periods_count = as.numeric(NA))
 
 missing.data <- c()
 for(RI in 1:length(fileNames)) {
-
+  print(RI)
   site.location <- fileNames[RI]
   ausplots.info.i.index <- which(veg.info$site.info$site_location_name == site.location)
   site.path <- file.path(directory,paste0(site.location,".csv"))
   dea.data <- read.csv(site.path)
   
+  
+  print(site.location)
+  #print(dea.data)
+    #view(dea.data)
+  dea.data <- subset(dea.data, subset = (ue < 27)) # reduce uncertainity
+  #print(dea.data)
+  dea.data <- trim_to_nearest_coord(ausplots.info.i.index, veg.info, dea.data, sites.query)
+  dea.data$time <- as.Date(dea.data$time)
+  dea.data <- subset(dea.data, subset = (time >= "1987-07-01" & time <= "2022-07-01"))
+  
   if(nrow(dea.data) > 0) {
-    
-    dea.data <- trim_to_nearest_coord(ausplots.info.i.index, veg.info, dea.data, sites.query)
-    dea.data$time <- as.Date(dea.data$time)
-    dea.data <- subset(dea.data, subset = (time >= "1987-07-01" & time <= "2022-07-01"))
-    
+    #print(dea.data)
     
     bs.mean <- mean(dea.data$bs, na.rm = T)
     pv.mean <- mean(dea.data$pv, na.rm = T)
@@ -147,17 +156,23 @@ for(RI in 1:length(fileNames)) {
     
     rownames(dea.data) <- 1:nrow(dea.data)
     dea.data$group.col <- rep(NA, nrow(dea.data)) 
+    #print(dea.data)
     
     #dea.data$group.col <- cut(dea.data$time, breaks = '365 days', labels = FALSE)
-    
+    missing_periods <- c()
     bound <- '-07-01'
     for(year in 1987:2021) {
       lower.b <- as.Date(paste0(year, bound))
       upper.b <- as.Date(paste0(year+1, bound))
-      dea.data[dea.data$time >= lower.b &  dea.data$time < upper.b,]$group.col <- paste(year,year+1, sep = "-")
+      affected.rows <- nrow(dea.data[dea.data$time >= lower.b &  dea.data$time < upper.b,])
+      if(affected.rows > 0) {
+        dea.data[dea.data$time >= lower.b &  dea.data$time < upper.b,]$group.col <- paste(year,year+1, sep = "-") 
+      } else {
+        missing_periods <- c(missing_periods, paste(year,year+1, sep = "-"))
+      }
     }
     
-    
+    #print(dea.data)
     single.annual.mean <- aggregate(dea.data[,c('bs', 'npv', 'pv')], by = list(dea.data$group.col),
                                     FUN = mean, na.rm = T)
     
@@ -179,6 +194,10 @@ for(RI in 1:length(fileNames)) {
     npv_cv = annual.sd$npv/annual.mean$npv
     pv_cv = annual.sd$pv/annual.mean$pv
     
+    # Count missing period 
+    missing_periods_str <- paste(missing_periods, collapse = ',')
+    missing_periods_count <- length(missing_periods)
+    
     
     annual.fc.data.i <- data.frame(site_location_name = site.location, 
                                  bs_mean = bs_mean,
@@ -189,7 +208,9 @@ for(RI in 1:length(fileNames)) {
                                  npv_cv = npv_cv,
                                  pv_mean = pv_mean,
                                  pv_sd = pv_sd,
-                                 pv_cv = pv_cv)
+                                 pv_cv = pv_cv,
+                                 missing_periods = missing_periods_str,
+                                 missing_periods_count = missing_periods_count)
     annual.fc.data <- rbind(annual.fc.data, annual.fc.data.i)
   } else {
     missing.data <- c(missing.data, site.location)

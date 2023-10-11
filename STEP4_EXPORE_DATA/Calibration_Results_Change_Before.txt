@@ -1,0 +1,66 @@
+> summary(lm(green~pv,both.changes.agg))
+
+Call:
+lm(formula = green ~ pv, data = both.changes.agg)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-47.870  -4.275   1.025   8.154  27.608 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  -0.6003     1.1469  -0.523    0.602    
+pv            0.9211     0.1358   6.783 7.15e-10 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 11.55 on 105 degrees of freedom
+  (7 observations deleted due to missingness)
+Multiple R-squared:  0.3047,	Adjusted R-squared:  0.298 
+F-statistic: 46.01 on 1 and 105 DF,  p-value: 7.154e-10
+
+#### --------------------------------------------- ###
+
+> summary(lm(bare~bs,both.changes.agg))
+
+Call:
+lm(formula = bare ~ bs, data = both.changes.agg)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-32.428  -5.788   1.611   5.652  28.716 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept) -1.64508    1.05715  -1.556    0.123    
+bs           0.53426    0.08351   6.397 4.48e-09 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 10.36 on 105 degrees of freedom
+  (7 observations deleted due to missingness)
+Multiple R-squared:  0.2805,	Adjusted R-squared:  0.2736 
+F-statistic: 40.93 on 1 and 105 DF,  p-value: 4.484e-09
+
+
+#### --------------------------------------------- ###
+> summary(lm(brown~npv,both.changes.agg))
+
+Call:
+lm(formula = brown ~ npv, data = both.changes.agg)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-26.166  -6.776  -1.858   5.781  33.459 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)  
+(Intercept)   1.9550     1.1743   1.665   0.0989 .
+npv           0.1534     0.1215   1.263   0.2095  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 11.84 on 105 degrees of freedom
+  (7 observations deleted due to missingness)
+Multiple R-squared:  0.01496,	Adjusted R-squared:  0.005576 
+F-statistic: 1.594 on 1 and 105 DF,  p-value: 0.2095
