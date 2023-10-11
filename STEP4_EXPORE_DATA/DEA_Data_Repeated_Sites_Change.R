@@ -328,7 +328,7 @@ both.changes.agg <- aggregate(both.changs.df[,c("pv","npv","bs", "green", "brown
 
 
 bs.bare.pl <- ggplot(data = both.changes.agg, aes(x = bare, y = bs)) + labs(x = "\u0394 bare cover (in-situ)", y = "\u0394 bare cover (remote)") +
-  geom_point() + geom_abline(slope = 1, intercept = 0) + coord_obs_pred() + xlim(c(-100,100)) + ylim(c(-100,100))
+  geom_point() + geom_abline(slope = 1, intercept = 0) + coord_obs_pred() + xlim(c(-100,100)) + ylim(c(-100,100)) 
 
 pv.green.pl <- ggplot(data = both.changes.agg, aes(x = green, y = pv)) + labs(x = "\u0394 green cover (in-situ)", y = "\u0394 green cover (remote)") + 
   geom_point() + geom_abline(slope = 1, intercept = 0) + coord_obs_pred() + xlim(c(-100,100)) + ylim(c(-100,100))
@@ -344,3 +344,20 @@ all.pl <- ggplot(data = both.changes.agg) + geom_point(aes(x = brown, y = npv, c
 
 
 plot_grid(bs.bare.pl,npv.brown.pl,pv.green.pl, all.pl) 
+both.changes.agg
+
+summary(lm(green~pv,both.changes.agg))
+summary(lm(bare~bs,both.changes.agg))
+
+summary(lm(brown~npv,both.changes.agg))
+
+
+
+plot(lm(green~pv,both.changes.agg))
+
+view(both.changes.agg)
+
+
+
+
+

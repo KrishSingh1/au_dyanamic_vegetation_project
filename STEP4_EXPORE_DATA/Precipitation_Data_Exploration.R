@@ -34,10 +34,15 @@ for(RI in 1:length(fileNames)) {
   daily.precip <- data.frame(precip = var, time = dates)
   
   # So its in the range of July-June
-  daily.precip <- subset(daily.precip, subset = (time >= "1987-07-01" & time <= "2022-06-30"))
+  daily.precip <- subset(daily.precip, subset = (time >= "1987-07-01" & time <= "2022-07-01"))
   rownames(daily.precip) <- 1:nrow(daily.precip)
-  
-  daily.precip$group.col <- cut(daily.precip$time, breaks = '365 days', labels = FALSE)
+  daily.precip$group.col <- rep(NA, nrow(daily.precip)) 
+  bound <- '-07-01'
+  for(year in 1987:2021) {
+    lower.b <- as.Date(paste0(year, bound))
+    upper.b <- as.Date(paste0(year+1, bound))
+    daily.precip[daily.precip$time >= lower.b &  daily.precip$time < upper.b,]$group.col <- paste(year,year+1, sep = "-")
+  }
   
   single.annual.mean <- aggregate(daily.precip[,c('precip')], by = list(daily.precip$group.col), FUN = mean)
   annual.sd <- sd(single.annual.mean$x)
@@ -54,7 +59,6 @@ for(RI in 1:length(fileNames)) {
 
 annual.precip.data <- annual.precip.data[-1,]
 save(... = annual.precip.data, file = 'annual.precip.data.RData')
-
 load('annual.precip.data.RData')
 
 
@@ -111,29 +115,117 @@ veg.info <- readRDS("../STEP2_VEG_EXTRACTION/site_veg.rds")
 sites.query <- read.csv("/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/query/sites_info_query.csv")
 
 annual.fc.data <- data.frame(site_location_name = NA, 
-                                 bs_mean = as.numeric(NA),
-                                 npv_mean = as.numeric(NA),
-                                 pv_mean = as.numeric(NA))
+                             bs_mean = as.numeric(NA),
+                             bs_sd = as.numeric(NA),
+                             bs_cv = as.numeric(NA),
+                             npv_mean = as.numeric(NA),
+                             npv_sd = as.numeric(NA),
+                             npv_cv = as.numeric(NA),
+                             pv_mean = as.numeric(NA),
+                             pv_sd = as.numeric(NA),
+                             pv_cv = as.numeric(NA))
 
+missing.data <- c()
 for(RI in 1:length(fileNames)) {
 
   site.location <- fileNames[RI]
   ausplots.info.i.index <- which(veg.info$site.info$site_location_name == site.location)
   site.path <- file.path(directory,paste0(site.location,".csv"))
   dea.data <- read.csv(site.path)
-  dea.data <- trim_to_nearest_coord(ausplots.info.i.index, veg.info, dea.data, sites.query)
-  dea.data <- subset(dea.data, subset = (time >= "1987-07-01" & time <= "2022-06-30"))
-  bs.mean <- mean(dea.data$bs, na.rm = T)
-  pv.mean <- mean(dea.data$pv, na.rm = T)
-  npv.mean <- mean(dea.data$npv, na.rm = T) 
   
-  annual.fc.data.i <- data.frame(site_location_name = site.location, 
-                               bs_mean = bs.mean,
-                               npv_mean = npv.mean,
-                               pv_mean = pv.mean)
-  annual.fc.data <- rbind(annual.fc.data, annual.fc.data.i)
-  print(RI)
+  if(nrow(dea.data) > 0) {
+    
+    dea.data <- trim_to_nearest_coord(ausplots.info.i.index, veg.info, dea.data, sites.query)
+    dea.data$time <- as.Date(dea.data$time)
+    dea.data <- subset(dea.data, subset = (time >= "1987-07-01" & time <= "2022-07-01"))
+    
+    
+    bs.mean <- mean(dea.data$bs, na.rm = T)
+    pv.mean <- mean(dea.data$pv, na.rm = T)
+    npv.mean <- mean(dea.data$npv, na.rm = T) 
+    
+    
+    rownames(dea.data) <- 1:nrow(dea.data)
+    dea.data$group.col <- rep(NA, nrow(dea.data)) 
+    
+    #dea.data$group.col <- cut(dea.data$time, breaks = '365 days', labels = FALSE)
+    
+    bound <- '-07-01'
+    for(year in 1987:2021) {
+      lower.b <- as.Date(paste0(year, bound))
+      upper.b <- as.Date(paste0(year+1, bound))
+      dea.data[dea.data$time >= lower.b &  dea.data$time < upper.b,]$group.col <- paste(year,year+1, sep = "-")
+    }
+    
+    
+    single.annual.mean <- aggregate(dea.data[,c('bs', 'npv', 'pv')], by = list(dea.data$group.col),
+                                    FUN = mean, na.rm = T)
+    
+    # standard deviation
+    annual.sd <- lapply(single.annual.mean[,c('bs','npv','pv')], sd, na.rm = T)
+    bs_sd <- annual.sd$bs
+    npv_sd <- annual.sd$npv
+    pv_sd <- annual.sd$pv
+    
+    ## mean
+    annual.mean <- lapply(single.annual.mean[,c('bs','npv', 'pv')], mean, na.rm = T)
+    bs_mean <- annual.mean$bs
+    npv_mean <- annual.mean$npv
+    pv_mean <- annual.mean$pv
+    
+    ## Coeficient of variation
+    
+    bs_cv = annual.sd$bs/annual.mean$bs
+    npv_cv = annual.sd$npv/annual.mean$npv
+    pv_cv = annual.sd$pv/annual.mean$pv
+    
+    
+    annual.fc.data.i <- data.frame(site_location_name = site.location, 
+                                 bs_mean = bs_mean,
+                                 bs_sd = bs_sd,
+                                 bs_cv = bs_cv,
+                                 npv_mean = npv_mean,
+                                 npv_sd = npv_sd,
+                                 npv_cv = npv_cv,
+                                 pv_mean = pv_mean,
+                                 pv_sd = pv_sd,
+                                 pv_cv = pv_cv)
+    annual.fc.data <- rbind(annual.fc.data, annual.fc.data.i)
+  } else {
+    missing.data <- c(missing.data, site.location)
+  }
 }
+annual.fc.data <- annual.fc.data[-1,]
+save(... = annual.fc.data, file = 'annual.fc.data.RData')
+load('annual.fc.data.RData')
+
+
+
+
+precip.fc.data <- merge(annual.fc.data, annual.precip.data, by = 'site_location_name')
+
+library(ggplot2)
+library(cowplot)
+
+pl.prec.pv <- ggplot(data = precip.fc.data) + geom_point(aes(x = precip_mean*365, y = pv_mean))
+pl.prec.bs <- ggplot(data = precip.fc.data) + geom_point(aes(x = precip_mean*365, y = bs_mean))
+pl.prec.npv <- ggplot(data = precip.fc.data) + geom_point(aes(x = precip_mean*365, y = npv_mean))
+
+plot_grid(pl.prec.bs, pl.prec.npv, pl.prec.pv)
+
+
+pl.prec.pv <- ggplot(data = precip.fc.data) + geom_point(aes(x = precip_cv, y = pv_cv))
+pl.prec.bs <- ggplot(data = precip.fc.data) + geom_point(aes(x = precip_cv, y = bs_cv))
+pl.prec.npv <- ggplot(data = precip.fc.data) + geom_point(aes(x = precip_cv, y = npv_cv))
+
+plot_grid(pl.prec.bs, pl.prec.npv, pl.prec.pv)
+
+
+
+
+
+
+
 
 
 

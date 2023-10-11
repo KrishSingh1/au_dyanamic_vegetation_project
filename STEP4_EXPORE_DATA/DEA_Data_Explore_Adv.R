@@ -158,7 +158,8 @@ for (file.i in fileNames) {
   dea.file.path <- file.path(directory, paste0(file.i, ".csv"))
   dea.fc.i <- read.csv(dea.file.path)
   dea.fc.i$time <- as.Date(dea.fc.i$time)
-  
+  dea.fc.i <- subset(dea.fc.i, subset = (ue < 27))
+
   site.info.index <- which(veg.info$site.info$site_location_name == file.i)
   dea.fc.i <- trim_to_nearest_coord(site.info.index, veg.info, dea.fc.i, sites.query)
   
@@ -209,12 +210,15 @@ for (file.i in fileNames) {
   print(paste(no.files - no.files.processed, "left"))
 }
 
-
 #write.csv(dea.fc.sites.nearest, "dea_fc_sites_nearest.csv")
 #write.csv(dea.fc.sites.nearest, "dea_fc_sites_nearest_pixel_inc.csv")
 #write.csv(dea.fc.sites.nearest, "dea_fc_sites_nearest_median.csv")
 #write.csv(dea.fc.sites.nearest, "dea_fc_sites_nearest_no_spatial.csv")
 write.csv(dea.fc.sites.nearest, "dea_fc_sites_nearest_adjusted_spatial.csv")
+
+dea.fc.sites.nearest <- dea.fc.sites.nearest[-1,]
+write.csv(dea.fc.sites.nearest, "dea_fc_sites_nearest_filtered_ue.csv")
+
 
 if(debug) {
   
@@ -244,13 +248,14 @@ Original <- read.csv(file = "dea_fc_sites_nearest_.csv")
 #dea.fc.sites.plotting <- merge(dea.fc.sites.nearest, opaque.fc, by = 'site_unique')
 
 #dea.fc.sites.nearest <- read.csv("dea_fc_sites_nearest_pixel_inc.csv")
-dea.fc.sites.nearest <- read.csv("dea_fc_sites_nearest_adjusted_spatial.csv")
+dea.fc.sites.nearest <- read.csv("dea_fc_sites_nearest_filtered_ue.csv")
 
 # Test subsetting for sites not in proper oriention or marked 
-valid_observations <- veg.info$site.info$site_unique[which(veg.info$site.info$plot_is_aligned_to_grid & veg.info$site.info$plot_is_permanently_marked)]
-dea.fc.sites.nearest <- subset(dea.fc.sites.nearest, subset = (site_unique %in% valid_observations))
+#valid_observations <- veg.info$site.info$site_unique[which(veg.info$site.info$plot_is_aligned_to_grid & veg.info$site.info$plot_is_permanently_marked)]
+#dea.fc.sites.nearest <- subset(dea.fc.sites.nearest, subset = (site_unique %in% valid_observations))
 
 
+insitu.fractional.cover <- subset(insitu.fractional.cover, (NA. <= 10))
 dea.fc.sites.plotting <- merge(dea.fc.sites.nearest, insitu.fractional.cover, by = 'site_unique')
 dea.fc.sites.plotting <- subset(dea.fc.sites.plotting, subset = (npixels > 100 & npixels <= 121))
 
@@ -259,6 +264,7 @@ dea.fc.sites.plotting <- subset(dea.fc.sites.plotting, subset = (npixels > 100 &
 # Greenness 
 cal.green <- ggplot(dea.fc.sites.plotting, aes(y = pv, x = green)) + geom_point() + geom_abline() + 
   xlim(0,100) + ylim(0,100) + labs(x = "green cover (in-situ)", y = "green cover (remote)")
+cal.green
 
 Metrics::rmse(actual = dea.fc.sites.plotting$green, 
               predicted = dea.fc.sites.plotting$pv)
@@ -268,6 +274,7 @@ Metrics::rmse(actual = dea.fc.sites.plotting$green,
 # Bare
 cal.bare <- ggplot(dea.fc.sites.plotting, aes(y = bs, x = bare)) + geom_point() + geom_abline() +
   xlim(0,100) + ylim(0,100)  + labs(x = "bare cover (in-situ)", y = "bare cover (remote)")
+cal.bare
 
 Metrics::rmse(actual = dea.fc.sites.plotting$bare, 
               predicted = dea.fc.sites.plotting$bs)
@@ -291,20 +298,29 @@ cowplot::plot_grid(cal.green, cal.brown, cal.bare,cal.all )
 
 ### Try with ausplots' other fc calcs. ###
 
-fc <- fractional_cover(veg.PI = veg.info$veg.PI, in_canopy_sky = "TRUE") 
+fc <- fractional_cover(veg.PI = veg.info$veg.PI, in_canopy_sky = T) 
+fc <- subset(fc, (other <= 10))
 dea.fc.sites.plotting <- merge(dea.fc.sites.nearest, fc, by = 'site_unique')
+
 dea.fc.sites.plotting <- subset(dea.fc.sites.plotting, subset = (npixels > 100 & npixels <= 121))
 
 # Greenness 
 ggplot(dea.fc.sites.plotting, aes(y = pv, x = green)) + geom_point() + geom_abline() + 
-  xlim(0,100) + ylim(0,100) + geom_smooth()
+  xlim(0,100) + ylim(0,100) 
+
+Metrics::rmse(actual = dea.fc.sites.plotting$green, 
+              predicted = dea.fc.sites.plotting$pv)
 
 ggplot(dea.fc.sites.plotting, aes(y = bs, x = bare)) + geom_point() + geom_abline() +
-  xlim(0,100) + ylim(0,100) + geom_smooth()
+  xlim(0,100) + ylim(0,100) 
+
+Metrics::rmse(actual = dea.fc.sites.plotting$bare, 
+              predicted = dea.fc.sites.plotting$bs)
 
 # Brown
 ggplot(dea.fc.sites.plotting, aes(y = npv, x = brown)) + geom_point() + geom_abline() +
-  xlim(0,100) + ylim(0,100) + geom_smooth()
+  xlim(0,100) + ylim(0,100) 
 
 
-
+Metrics::rmse(actual = dea.fc.sites.plotting$brown, 
+              predicted = dea.fc.sites.plotting$npv)

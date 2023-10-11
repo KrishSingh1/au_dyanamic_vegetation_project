@@ -88,10 +88,7 @@ trim_to_nearest_coord <- function(ausplots.info.i.index, veg.info, dea.fc.i, ref
 #RI = 83 # WAAGES0003
 #RI = 35 # NTABRT0002 (2)
 #RI = which(sites.revisit.df$site.names == 'NTAFIN0001') # A good triple one
-RI = 111
-
-
-which(fileNames == 'NTAFIN0001')
+RI = which(fileNames == 'WAAPIL0003')
 
 site.location <- sites.revisit.df$site.names[RI]
 site.path <- paste(directory,paste0(site.location,".csv"), sep = "/")
@@ -133,8 +130,10 @@ dea.data <- trim_to_nearest_coord(site.info.index, veg.info, dea.data, sites.que
 dea.data.agg <- aggregate(dea.data, by = list(dea.data$time),
                           FUN = mean, na.rm = T)
 
-posit.date <- as.POSIXlt(dea.data.agg$Group.1) # for use for a later section: smoothing time series 
 dea.data.agg$Group.1 <- as.Date(dea.data.agg$Group.1)
+
+
+
 
 ## Get essential data from Ausplots 
 site.info.data.essen <- site.info.data[,c("visit_start_date", "bare",
