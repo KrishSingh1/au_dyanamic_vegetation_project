@@ -16,12 +16,17 @@ library(caret)
 
 directory <- "/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtraction/BACKUP_DATA/csv_files/"
 
-
-trim_to_nearest_coord <- function(ausplots.info.i.index, veg.info, dea.fc.i ) {
+trim_to_nearest_coord <- function(ausplots.info.i.index, veg.info, dea.fc.i, reference.query ) {
+  
+  reference.query.index <- which(reference.query$site_location_name == veg.info$site.info$site_location_name[ausplots.info.i.index][1])
+  #print(reference.query.index)
   
   # Site End Points:   
-  W.site <- veg.info$site.info$pit_marker_easting[ausplots.info.i.index][1]
-  S.site <- veg.info$site.info$pit_marker_northing[ausplots.info.i.index][1]
+  #W.site <- veg.info$site.info$pit_marker_easting[ausplots.info.i.index][2]
+  #S.site <- veg.info$site.info$pit_marker_northing[ausplots.info.i.index][2]
+  W.site <- reference.query$pit_marker_easting[reference.query.index]
+  S.site <- reference.query$pit_marker_northing[reference.query.index]
+  
   N.site <- S.site + 100
   E.site <- W.site + 100
   
@@ -57,26 +62,25 @@ trim_to_nearest_coord <- function(ausplots.info.i.index, veg.info, dea.fc.i ) {
 
 # "NSTSYB0002" is 81
 # 'NTABRT0001' is  94
-RI = 81 # record index
+
+sites.query <- read.csv("/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/query/sites_info_query.csv")
+veg.info <- readRDS("../STEP2_VEG_EXTRACTION/site_veg.rds")
+insitu.fractional.cover <- readRDS("AusPlots_fractional_cover.rds")
 files <- list.files(directory, pattern = "\\.csv$", full.names = FALSE)
 file.names <- tools::file_path_sans_ext(files)
-site.path <- paste(directory,files[RI],sep = "")
 
-dea.data <- read.csv(site.path)
-veg.info <- readRDS("../STEP2_VEG_EXTRACTION/site_veg.rds")
-
+RI = which(file.names == 'NSAMDD0032') # record index
 site.info.data <- veg.info$site.info
 site.info.index <- which(site.info.data$site_location_name == file.names[RI])
-
 site.info.data <- site.info.data[site.info.index,]
-
-insitu.fractional.cover <- readRDS("AusPlots_fractional_cover.rds")
-
 ausplots.fc <- insitu.fractional.cover[grep(file.names[RI], insitu.fractional.cover$site_unique),]
 site.info.data <- merge(ausplots.fc, site.info.data, by = 'site_unique')
 
+site.path <- paste(directory,files[RI],sep = "")
+dea.data <- read.csv(site.path)
+dea.data <- subset(dea.data, subset = (ue < 27))
+dea.data <- trim_to_nearest_coord(site.info.index, veg.info, dea.data, sites.query)
 
-dea.data <- trim_to_nearest_coord(site.info.index, veg.info, dea.data)
 
 
 ###### Visualise The Data ######
@@ -101,7 +105,6 @@ colnames(site.info.data.essen) <- colnames(
 
 dea.data.agg.essen <- dea.data.agg[,c("Group.1","bs","npv","pv", "ue")]
 
-time.sequence <- data.frame(Group.1 =  seq(from = min(dea.data.agg.essen$Group.1), to = max(dea.data.agg.essen$Group.1), by='8 days'))
 
 #merged.data <- dea.data.agg.essen %>% full_join(time.sequence)
 #merged.data$Group.1 <- as.Date(merged.data$Group.1)
@@ -110,24 +113,24 @@ time.sequence <- data.frame(Group.1 =  seq(from = min(dea.data.agg.essen$Group.1
 
 ## Using ggplotly
 pl <- ggplot(dea.data.agg.essen, aes(x = Group.1)) +
-  geom_line(mapping = aes(y = bs, colour = "bs")) +
-  geom_line(mapping = aes(y = npv, colour = "npv")) +
-  geom_line(mapping = aes(y = pv, colour = "pv")) +
-  geom_line(mapping = aes(y = ue, colour = "ue")) +
+  geom_line(mapping = aes(y = bs, colour = "bare")) +
+  geom_line(mapping = aes(y = npv, colour = "brown")) +
+  geom_line(mapping = aes(y = pv, colour = "green")) +
+  #geom_line(mapping = aes(y = ue, colour = "ue")) +
   xlab("Time") +
-  ylab("Colour Intensity") +
+  ylab("Fractional Cover (%)") +
   labs(title = file.names[RI]) +
   geom_point(data = site.info.data.essen,
-             mapping = aes(x = Group.1, y = bs, colour = "bs.obs")) +
+             mapping = aes(x = Group.1, y = bs, colour = "bare.obs")) +
   geom_point(data = site.info.data.essen,
-             mapping = aes(x = Group.1, y = npv, colour = "npv.obs")) +
+             mapping = aes(x = Group.1, y = npv, colour = "brown.obs")) +
   geom_point(data = site.info.data.essen,
-             mapping = aes(x = Group.1, y = pv, colour = "pv.obs")) +
+             mapping = aes(x = Group.1, y = pv, colour = "green.obs")) +
   scale_color_manual(
-    name = "Colour Bands", 
-    values = c("bs" = "red", "npv" = "blue", "pv" = "green", "ue" = "yellow",
-               "bs.obs" = "darkred", "npv.obs" = "darkblue", 
-               "pv.obs" = "darkgreen")) +
+    name = "Cover Types", 
+    values = c("bare" = "red", "brown" = "blue", "green" = "green",# "ue" = "yellow",
+               "bare.obs" = "darkred", "brown.obs" = "darkblue", 
+               "green.obs" = "darkgreen")) +
   theme_minimal() +
   scale_x_date(date_breaks = "2 months", date_labels = "%Y %b",
                date_minor_breaks = "2 month") +
