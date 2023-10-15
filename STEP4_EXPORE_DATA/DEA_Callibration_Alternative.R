@@ -241,35 +241,66 @@ dea.fc.sites.plotting <- subset(dea.fc.sites.plotting, subset = (npixels >= 100 
 
 
 # Greenness 
-cal.green <- ggplot(dea.fc.sites.plotting, aes(y = pv, x = green)) + geom_point() + geom_abline() + 
-  xlim(0,100) + ylim(0,100) + labs(x = "green cover (in-situ)", y = "green cover (remote)")
+
+pv.stats <- lm(pv~green,dea.fc.sites.plotting)
+cal.green <- ggplot(dea.fc.sites.plotting, aes(y = pv, x = green)) + geom_point(alpha = 0.5) + 
+  xlim(0,100) + ylim(0,100) + labs(x = "green cover (in-situ)", y = "green cover (remote)") +
+  geom_abline(slope = 1, intercept = 0, lty = 2, size = 0.9) + coord_obs_pred() + geom_abline(slope = pv.stats$coefficients[["green"]], 
+                                                                                                        intercept = pv.stats$coefficients[["(Intercept)"]], size = 0.9) + stat_poly_eq(mapping = use_label(c("eq", "R2", 'p')))
 cal.green
 
 Metrics::rmse(actual = dea.fc.sites.plotting$green, 
               predicted = dea.fc.sites.plotting$pv)
 
 
-
 # Bare
-cal.bare <- ggplot(dea.fc.sites.plotting, aes(y = bs, x = bare)) + geom_point() + geom_abline() +
-  xlim(0,100) + ylim(0,100)  + labs(x = "bare cover (in-situ)", y = "bare cover (remote)")
+bs.stats <- lm(bs~bare,dea.fc.sites.plotting)
+cal.bare <- ggplot(dea.fc.sites.plotting, aes(y = bs, x = bare)) + geom_point(alpha = 0.5) +
+  xlim(0,100) + ylim(0,100)  + labs(x = "bare cover (in-situ)", y = "bare cover (remote)") +
+  geom_abline(slope = 1, intercept = 0, lty = 2, size = 0.9) + coord_obs_pred() + geom_abline(slope = bs.stats$coefficients[["bare"]], 
+                                                                                  intercept = bs.stats$coefficients[["(Intercept)"]], size = 0.9) + stat_poly_eq(mapping = use_label(c("eq", "R2", 'p')))
 cal.bare
 
 Metrics::rmse(actual = dea.fc.sites.plotting$bare, 
               predicted = dea.fc.sites.plotting$bs)
 
 # Brown
-cal.brown <- ggplot(dea.fc.sites.plotting, aes(y = npv, x = brown)) + geom_point() + geom_abline() +
-  xlim(0,100) + ylim(0,100) + labs(x = "brown cover (in-situ)", y = "brown cover (remote)")
+npv.stats <- lm(npv~brown,dea.fc.sites.plotting)
+cal.brown <- ggplot(dea.fc.sites.plotting, aes(y = npv, x = brown)) + geom_point(alpha = 0.5) +
+  xlim(0,100) + ylim(0,100) + labs(x = "brown cover (in-situ)", y = "brown cover (remote)") +
+  geom_abline(slope = 1, intercept = 0, lty = 2, size = 0.9) + coord_obs_pred() + geom_abline(slope = npv.stats$coefficients[["brown"]], 
+                                                                                  intercept = npv.stats$coefficients[["(Intercept)"]], size = 0.9) + stat_poly_eq(mapping = use_label(c("eq", "R2", 'p')))
 
 Metrics::rmse(actual = dea.fc.sites.plotting$brown, 
               predicted = dea.fc.sites.plotting$npv)
 
 
-cal.all <- ggplot(dea.fc.sites.plotting) + geom_point(aes(x = bare, y = bs), colour = 'red') + geom_point(aes(x = green, y = pv), colour = '#009E73') + geom_point(aes(x = brown, y = npv), colour = '#0072B2') + geom_abline() +
-  xlim(0,100) + ylim(0,100) + labs(x = "cover (in-situ)", y = "cover (remote)") 
 
-cowplot::plot_grid(cal.green, cal.brown, cal.bare,cal.all )
+########## Convert to long #######
+dea.fc.sites.plotting.long <- reshape2::melt(dea.fc.sites.plotting[, c('site_unique','bs','npv','pv')], id.vars = c('site_unique'), value.name ="remote.cover")
+site.fc.df.long <- reshape2::melt(dea.fc.sites.plotting[,c('site_unique','bare','brown','green')], id.vars = c('site_unique'), value.name = "insitu.cover")
+
+dea.fc.sites.plotting.long$variable <- as.character(dea.fc.sites.plotting.long$variable)
+dea.fc.sites.plotting.long$variable[which(dea.fc.sites.plotting.long$variable == 'pv')] <- 'green'
+dea.fc.sites.plotting.long$variable[which(dea.fc.sites.plotting.long$variable == 'npv')] <- 'brown'
+dea.fc.sites.plotting.long$variable[which(dea.fc.sites.plotting.long$variable == 'bs')] <- 'bare'
+
+both.plotting.df.long <- merge(dea.fc.sites.plotting.long, site.fc.df.long, by = c("site_unique", 'variable'))
+all.stats <- lm(remote.cover~insitu.cover,both.plotting.df.long)
+
+
+all.pl.validate <- ggplot(data = both.plotting.df.long, aes(x = insitu.cover, y = remote.cover, colour = variable)) + geom_point() + labs(x = "\u0394 cover (in-situ)", y = "\u0394 cover (remote)") + 
+  geom_abline(slope = 1, intercept = 0, lty = 2) + coord_obs_pred()  + xlim(c(0,100)) + ylim(c(0,100)) + geom_abline(slope = all.stats$coefficients[["insitu.cover"]], 
+                                                                                                                           intercept = all.stats$coefficients[["(Intercept)"]], size = 0.9) + stat_poly_eq(mapping = use_label(c("eq", "R2", 'p')))
+
+cal.all <- ggplot(dea.fc.sites.plotting) + geom_point(aes(x = bare, y = bs, colour = 'bare'), alpha = 0.5) + geom_point(aes(x = green, y = pv, colour = 'green'), alpha = 0.5) + geom_point(aes(x = brown, y = npv, colour = 'brown'), alpha = 0.5) + geom_abline(slope = 1, intercept = 0, lty = 2, size = 0.9) +
+  xlim(0,100) + ylim(0,100) + labs(x = "cover (in-situ)", y = "cover (remote)") + scale_colour_manual(name = 'Cover', values = c('brown' = '#0072B2', 'green' = '#009E73', 'bare' = 'red')) +
+  geom_abline(slope = all.stats$coefficients[["insitu.cover"]],intercept = all.stats$coefficients[["(Intercept)"]], size = 0.9) + stat_poly_eq(data = both.plotting.df.long, 
+                                                                                                                                     mapping = use_label(c("eq", "R2", 'p'), aes(x = insitu.cover, y =remote.cover)))
+
+
+cowplot::plot_grid(cal.green, cal.brown, cal.bare,all.pl.validate)
+cowplot::plot_grid(cal.green, cal.brown, cal.bare,cal.all)
 
 
 
