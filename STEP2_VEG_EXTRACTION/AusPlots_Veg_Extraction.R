@@ -14,3 +14,16 @@ library(ausplotsR)
 #saveRDS(my.data, file = "site_veg.rds")
 
 veg_info <- readRDS("site_veg.rds")
+
+
+# Obtain up-to-date data --------------------------------------------------
+
+library(ausplotsR)
+my.data <- get_ausplots(my.Plot_IDs = site.names, structural_summaries = T,
+                        veg.PI = T, site_info = T, 
+                        dictionary = T, veg.vouchers = T)
+saveRDS(my.data, file = "site_veg_2-0-3.rds")
+
+
+
+veg_info <- readRDS("site_veg.rds")

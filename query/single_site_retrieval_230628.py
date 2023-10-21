@@ -79,7 +79,7 @@ if debug == 0 or debug == 1 or debug == 2:
 
     ###### Create Query #######
     ## Load in query file (sites coords of interest)
-    site_info = pd.read_csv("sites_info_subquery_b.csv") # get df for sites info, I changed it from sites_info_query to subquery 
+    site_info = pd.read_csv("sites_info_subquery_c.csv") # get df for sites info, I changed it from sites_info_query to subquery 
     site_info = site_info.drop(columns = "Unnamed: 0").copy() 
 
 
@@ -99,7 +99,7 @@ if debug == 0 or debug == 1 or debug == 2:
     
     #Apply debug mode (1/1): reducing the spatiotemporal extent
     if debug == 1 or debug == 2:
-        end_date = datetime.date(1989, 4, 1)
+        end_date = datetime.date(2000, 4, 1)
         extent = 10 # reduce extent
         extent_2 = 0 
     
@@ -172,22 +172,24 @@ if debug == 0 or debug == 1 or debug == 2:
         fc = masking.mask_invalid_data(fc) # turn invalid data into NAN 
 
         if fc: # check if the query was found, (i.e., the retrieved data is not null)
-
-            # Retrieve additional data for water masking  
-            wo = dc.load(product='ga_ls_wo_3',
-                         group_by='solar_day',
-                         fuse_func=wofs_fuser,
-                         like=fc)  
-                             
-            if wo: # check if the query was found, (i.e., the retrieved data is not null)
-              wo_mask = masking.make_mask(wo.water, dry=True)  # find wet pixels 
-              fc_masked = fc.where(wo_mask).broadcast_like(fc) # turn wet pixels into NAN
-
-              # Append to the site result 
-              region = fc_masked.to_dataframe().reset_index()
-              sites_results_df = pd.concat([sites_results_df, region])
-
-              write_to_log(f"Query (sucessful!) ({site_info['site_location_name'][RI]}, Index = {RI})\n{query},  Extent = {extent}") # write_to_log query
+            try:
+              # Retrieve additional data for water masking  
+              wo = dc.load(product='ga_ls_wo_3',
+                           group_by='solar_day',
+                           fuse_func=wofs_fuser,
+                           like=fc)  
+                               
+              if wo: # check if the query was found, (i.e., the retrieved data is not null)
+                wo_mask = masking.make_mask(wo.water, dry=True)  # find wet pixels 
+                fc_masked = fc.where(wo_mask).broadcast_like(fc) # turn wet pixels into NAN
+  
+                # Append to the site result 
+                region = fc_masked.to_dataframe().reset_index()
+                sites_results_df = pd.concat([sites_results_df, region])
+  
+                write_to_log(f"Query (sucessful!) ({site_info['site_location_name'][RI]}, Index = {RI})\n{query},  Extent = {extent}") # write_to_log query
+            except:
+              write_to_log(f"Query (unsucessful) ({site_info['site_location_name'][RI]}, Index = {RI})\n{query},  Extent = {extent}") # write_to_log query
 
       # Export site data as a csv file
       file_name = f"{site_info['site_location_name'][RI]}.csv" # Simply location_name.csv
