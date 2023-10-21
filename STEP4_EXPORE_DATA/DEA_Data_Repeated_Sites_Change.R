@@ -75,6 +75,7 @@ site.names <- unique(veg.info$site.info$site_location_name)
 
 # Count the number of observations of each site
 counts.df <- as.data.frame(table(veg.info$site.info$site_location_name))
+round(table(counts.df$Freq)/sum(counts.df$Freq) * 100,1)
 sites.revisit.2.df <- subset(counts.df, Freq >= 2) # For sites that were visited two or more 
 
 # Merge sites with counts == 2 with current veg information
