@@ -62,15 +62,39 @@ precip.fc.data <- merge(precip.fc.data, growth.form.essen, by = 'site_location_n
 # cover_mean_vs_precip_mean -----------------------------------------------
 
 pl.prec.pv <- ggplot(data = precip.fc.data, aes(x = precip_mean, y = pv_mean)) + 
-  geom_point() + facet_wrap(~vegetation_type) + labs(x = 'Mean Annual Precipitation (mm/y)', y = 'Mean Green Cover (%)')
+  geom_point() + facet_wrap(~vegetation_type) +
+  labs(x = 'Mean Annual Precipitation (mm/yr)', y = 'Mean Green Cover (%)') + 
+  geom_smooth(method = 'gam')
 
-pl.prec.bs <- ggplot(data = precip.fc.data, aes(x = precip_mean, y = bs_mean)) +
-  geom_point() + facet_wrap(~vegetation_type) + labs(x = 'Mean Annual Precipitation (mm/y)', y = 'Mean Bare Cover (%)')  
+pl.prec.bs <- ggplot(data = precip.fc.data, aes(x = precip_mean, y = bs_mean)) + 
+  geom_point() + facet_wrap(~vegetation_type) +
+  labs(x = 'Mean Annual Precipitation (mm/yr)', y = 'Mean Bare Cover (%)') +
+    geom_smooth(method = 'gam')
+
 
 pl.prec.npv <- ggplot(data = precip.fc.data, aes(x = precip_mean, y = npv_mean)) +
-  geom_point() + facet_wrap(~vegetation_type) + labs(x = 'Mean Annual Precipitation (mm/y)', y = 'Mean Brown Cover (%)') 
+  geom_point() + facet_wrap(~vegetation_type) + 
+  labs(x = 'Mean Annual Precipitation (mm/yr)', y = 'Mean Brown Cover (%)') +
+  geom_smooth(method = 'gam')
+
+pl.prec.npv
 
 plot_grid(pl.prec.bs, pl.prec.npv, pl.prec.pv)
+
+
+pl.prec.pv <- ggplot(data = precip.fc.data, aes(x = precip_mean, y = pv_mean, colour = vegetation_type)) + 
+  geom_point() + labs(x = 'Mean Annual Precipitation (mm/y)', y = 'Mean Green Cover (%)')
+
+pl.prec.bs <- ggplot(data = precip.fc.data, aes(x = precip_mean, y = bs_mean, colour = vegetation_type)) +
+  geom_point()  + labs(x = 'Mean Annual Precipitation (mm/y)', y = 'Mean Bare Cover (%)')  
+
+pl.prec.npv <- ggplot(data = precip.fc.data, aes(x = precip_mean, y = npv_mean, colour = vegetation_type)) +
+  geom_point()  + labs(x = 'Mean Annual Precipitation (mm/y)', y = 'Mean Brown Cover (%)') 
+
+plot_grid(pl.prec.bs, pl.prec.npv, pl.prec.pv)
+
+
+
 
 
 # Try with temperature max colouring 
@@ -94,14 +118,17 @@ plot_grid(pl.prec.bs, pl.prec.npv, pl.prec.pv)
 # cover_mean_vs_precip_cv ---------------------------------------------------
 
 
-pl.prec.pv <- ggplot(data = precip.fc.data) + geom_point(aes(x = precip_cv, y = pv_mean)) + 
-  labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Green Cover (%)') + facet_wrap(~vegetation_type)
+pl.prec.pv <- ggplot(data = precip.fc.data,aes(x = precip_cv, y = pv_mean)) + geom_point() + 
+  labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Green Cover (%)') + facet_wrap(~vegetation_type) +
+  geom_smooth(method = 'gam')
 
-pl.prec.bs <- ggplot(data = precip.fc.data) + geom_point(aes(x = precip_cv, y = bs_mean)) + 
-  labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Bare Cover (%)') + facet_wrap(~vegetation_type)
+pl.prec.bs <- ggplot(data = precip.fc.data, aes(x = precip_cv, y = bs_mean)) + geom_point() + 
+  labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Bare Cover (%)') + facet_wrap(~vegetation_type) +
+  geom_smooth(method = 'gam')
 
-pl.prec.npv <- ggplot(data = precip.fc.data) + geom_point(aes(x = precip_cv, y = npv_mean)) +
-  labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Brown Cover (%)') + facet_wrap(~vegetation_type)
+pl.prec.npv <- ggplot(data = precip.fc.data, aes(x = precip_cv, y = npv_mean)) + geom_point() +
+  labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Brown Cover (%)') + facet_wrap(~vegetation_type) +
+  geom_smooth(method = 'gam')
 
 plot_grid(pl.prec.bs, pl.prec.npv, pl.prec.pv)
 
@@ -125,16 +152,24 @@ plot_grid(pl.prec.bs, pl.prec.npv, pl.prec.pv)
 # cover_cv_vs_precip_cv ---------------------------------------------------
 
 
-pl.prec.pv <- ggplot(data = precip.fc.data) +
-  geom_point(aes(x = precip_cv, y = pv_cv)) + facet_wrap(~vegetation_type) #+ labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Annual Green Cover (%)') 
+pl.prec.pv <- ggplot(data = precip.fc.data, aes(x = precip_cv, y = pv_cv)) +
+  geom_point() + 
+  facet_wrap(~vegetation_type) + 
+  labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Green Cover (CV)')
 
-pl.prec.bs <- ggplot(data = precip.fc.data) + 
-  geom_point(aes(x = precip_cv, y = bs_cv)) + facet_wrap(~vegetation_type) #+ labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Annual Bare Cover (%)')
+pl.prec.bs <- ggplot(data = precip.fc.data, aes(x = precip_cv, y = bs_cv)) + 
+  geom_point() + facet_wrap(~vegetation_type) +
+  labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Bare Cover (CV)')
 
-pl.prec.npv <- ggplot(data = precip.fc.data) + 
-  geom_point(aes(x = precip_cv, y = npv_cv)) + facet_wrap(~vegetation_type) #+ labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Annual Brown Cover (%)')
+pl.prec.npv <- ggplot(data = precip.fc.data,aes(x = precip_cv, y = npv_cv)) + 
+  geom_point() + facet_wrap(~vegetation_type) +
+  labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Brown Cover (CV)') 
 
 plot_grid(pl.prec.bs, pl.prec.npv, pl.prec.pv)
+
+
+####
+
 
 # Try with temperature max colouring 
 
@@ -165,6 +200,8 @@ pl.prec.npv <- ggplot(data = precip.fc.data) +
 
 
 plot_grid(pl.prec.bs, pl.prec.npv, pl.prec.pv)
+
+
 
 
 # tmax_cv_precip_mean -----------------------------------------------------
@@ -199,5 +236,5 @@ plot_grid(pl.prec.bs, pl.prec.npv, pl.prec.pv)
 
 
 
-
+table(growth.form.agg$vegetation_type)
 

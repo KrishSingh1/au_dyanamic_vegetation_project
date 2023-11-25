@@ -35,7 +35,7 @@ growth.form <- readRDS("growth_form_matrix.rds")
 
 
 ## Inspect fractional cover ## 
-#insitu.fractional.cover <- fractional_cover(veg.info$veg.PI)
+#insitu.fractional.cover.test <- fractional_cover(veg.info$veg.PI)
 #saveRDS(insitu.fractional.cover, file = "AusPlots_fractional_cover.rds")
 insitu.fractional.cover <- readRDS("AusPlots_fractional_cover.rds")
 

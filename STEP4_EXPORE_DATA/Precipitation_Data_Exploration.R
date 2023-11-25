@@ -97,10 +97,12 @@ for(RI in 1:length(fileNames)) {
   for(year in 1987:2021) {
     lower.b <- as.Date(paste0(year, bound))
     upper.b <- as.Date(paste0(year+1, bound))
-    daily.precip[daily.precip$time >= lower.b &  daily.precip$time < upper.b,]$group.col <- paste(year,year+1, sep = "-")
+    daily.precip[daily.precip$time >= lower.b & daily.precip$time < upper.b,]$group.col <- paste(year,year+1, sep = "-")
   }
   
-  single.annual.mean <- aggregate(daily.precip[,c('precip')], by = list(daily.precip$group.col), FUN = sum)
+  single.annual.mean <- aggregate(daily.precip[,c('precip')], by = list(daily.precip$group.col),
+                                  FUN = sum, na.rm = T)
+  
   annual.sd <- sd(single.annual.mean$x)
   annual.mean <- mean(single.annual.mean$x)
   annual.cv <- annual.sd / annual.mean
@@ -295,7 +297,6 @@ load('annual.tmax.data.RData')
 
 
 
-
 # Visualise the data ------------------------------------------------------
 
 
@@ -312,13 +313,16 @@ precip.fc.data <- merge(precip.fc.data, annual.tmax.data, by = 'site_location_na
 
 
 pl.prec.pv <- ggplot(data = precip.fc.data, aes(x = precip_mean, y = pv_mean)) + 
-  geom_point() + labs(x = 'Mean Annual Precipitation (mm/y)', y = 'Mean Green Cover (%)')
+  geom_point() + geom_smooth(method = 'gam') + 
+  labs(x = 'Mean Annual Precipitation (mm/yr)', y = 'Mean Green Cover (%)')
 
 pl.prec.bs <- ggplot(data = precip.fc.data, aes(x = precip_mean, y = bs_mean)) +
-  geom_point() + labs(x = 'Mean Annual Precipitation (mm/y)', y = 'Mean Bare Cover (%)')  
+  geom_point() + geom_smooth(method = 'gam') +
+  labs(x = 'Mean Annual Precipitation (mm/yr)', y = 'Mean Bare Cover (%)')  
 
 pl.prec.npv <- ggplot(data = precip.fc.data, aes(x = precip_mean, y = npv_mean)) +
-  geom_point() + labs(x = 'Mean Annual Precipitation (mm/y)', y = 'Mean Brown Cover (%)') 
+  geom_point() + geom_smooth(method = 'gam') +
+  labs(x = 'Mean Annual Precipitation (mm/yr)', y = 'Mean Brown Cover (%)') 
 
 plot_grid(pl.prec.bs, pl.prec.npv, pl.prec.pv)
 
@@ -327,13 +331,13 @@ plot_grid(pl.prec.bs, pl.prec.npv, pl.prec.pv)
 
 
 pl.prec.pv <- ggplot(data = precip.fc.data, aes(x = precip_mean, y = pv_mean, colour = tmax_mean)) + 
-  geom_point() + labs(x = 'Mean Annual Precipitation (mm/y)', y = 'Mean Green Cover (%)')
+  geom_point() + labs(x = 'Mean Annual Precipitation (mm/yr)', y = 'Mean Green Cover (%)')
 
 pl.prec.bs <- ggplot(data = precip.fc.data, aes(x = precip_mean, y = bs_mean, colour = tmax_mean)) +
-  geom_point() + labs(x = 'Mean Annual Precipitation (mm/y)', y = 'Mean Bare Cover (%)')  
+  geom_point() + labs(x = 'Mean Annual Precipitation (mm/yr)', y = 'Mean Bare Cover (%)')  
 
 pl.prec.npv <- ggplot(data = precip.fc.data, aes(x = precip_mean, y = npv_mean, colour = tmax_mean)) +
-  geom_point() + labs(x = 'Mean Annual Precipitation (mm/y)', y = 'Mean Brown Cover (%)') 
+  geom_point() + labs(x = 'Mean Annual Precipitation (mm/yr)', y = 'Mean Brown Cover (%)') 
 
 
 plot_grid(pl.prec.bs, pl.prec.npv, pl.prec.pv)
@@ -342,13 +346,13 @@ plot_grid(pl.prec.bs, pl.prec.npv, pl.prec.pv)
 # cover_mean_vs_precip_cv ---------------------------------------------------
 
 
-pl.prec.pv <- ggplot(data = precip.fc.data) + geom_point(aes(x = precip_cv, y = pv_mean)) + 
+pl.prec.pv <- ggplot(data = precip.fc.data, aes(x = precip_cv, y = pv_mean)) + geom_point() + 
   labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Green Cover (%)')
 
-pl.prec.bs <- ggplot(data = precip.fc.data) + geom_point(aes(x = precip_cv, y = bs_mean)) + 
+pl.prec.bs <- ggplot(data = precip.fc.data, aes(x = precip_cv, y = bs_mean)) + geom_point() + 
   labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Bare Cover (%)')
 
-pl.prec.npv <- ggplot(data = precip.fc.data) + geom_point(aes(x = precip_cv, y = npv_mean)) +
+pl.prec.npv <- ggplot(data = precip.fc.data, aes(x = precip_cv, y = npv_mean)) + geom_point() +
   labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Brown Cover (%)')
 
 plot_grid(pl.prec.bs, pl.prec.npv, pl.prec.pv)
@@ -373,16 +377,23 @@ plot_grid(pl.prec.bs, pl.prec.npv, pl.prec.pv)
 # cover_cv_vs_precip_cv ---------------------------------------------------
 
 
-pl.prec.pv <- ggplot(data = precip.fc.data) +
-  geom_point(aes(x = precip_cv, y = pv_cv)) #+ labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Annual Green Cover (%)')
+pl.prec.pv <- ggplot(data = precip.fc.data, aes(x = precip_cv, y = pv_cv)) +
+  geom_point() +
+  labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Green Cover (CV)')
+  
+  
+pl.prec.bs <- ggplot(data = precip.fc.data, aes(x = precip_cv, y = bs_cv)) + 
+  geom_point() + 
+  labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Bare Cover (CV)') 
+ 
 
-pl.prec.bs <- ggplot(data = precip.fc.data) + 
-  geom_point(aes(x = precip_cv, y = bs_cv)) #+ labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Annual Bare Cover (%)')
+pl.prec.npv <- ggplot(data = precip.fc.data, aes(x = precip_cv, y = npv_cv)) + 
+  geom_point() +
+  labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Brown Cover (CV)') 
 
-pl.prec.npv <- ggplot(data = precip.fc.data) + 
-  geom_point(aes(x = precip_cv, y = npv_cv)) #+ labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Annual Brown Cover (%)')
 
 plot_grid(pl.prec.bs, pl.prec.npv, pl.prec.pv)
+
 
 # Try with temperature max colouring 
 
@@ -402,14 +413,14 @@ plot_grid(pl.prec.bs, pl.prec.npv, pl.prec.pv)
 
 
 pl.prec.pv <- ggplot(data = precip.fc.data) +
-  geom_point(aes(x =tmax_mean , y = precip_mean, colour = pv_mean)) #+ labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Annual Green Cover (%)')
+  geom_point(aes(x =tmax_mean , y = precip_mean, colour = pv_mean)) + labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Green Cover (CV)')
 
 pl.prec.bs <- ggplot(data = precip.fc.data) +
-  geom_point(aes(x =tmax_mean , y = precip_mean, colour = bs_mean)) #+ labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Annual Green Cover (%)')
+  geom_point(aes(x =tmax_mean , y = precip_mean, colour = bs_mean)) + labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Annual Green Cover (CV)')
 
 
 pl.prec.npv <- ggplot(data = precip.fc.data) +
-  geom_point(aes(x =tmax_mean , y = precip_mean, colour = npv_mean)) #+ labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Annual Green Cover (%)')
+  geom_point(aes(x =tmax_mean , y = precip_mean, colour = npv_mean)) + labs(x = 'Mean Annual Precipitation (CV)', y = 'Mean Annual Green Cover (%)')
 
 
 plot_grid(pl.prec.bs, pl.prec.npv, pl.prec.pv)
@@ -444,5 +455,32 @@ pl.prec.npv <- ggplot(data = precip.fc.data) +
 
 plot_grid(pl.prec.bs, pl.prec.npv, pl.prec.pv)
 
+
+
+# For insitu --------------------------------------------------------------
+
+
+
+
+insitu.fractional.cover <- readRDS("AusPlots_fractional_cover.rds")
+df <- as.data.frame(t(data.frame(purrr::flatten(lapply(insitu.fractional.cover$site_unique, strsplit, '-')))))
+insitu.fractional.cover$site_location_name <- df$V1
+
+merged <- merge(insitu.fractional.cover,precip.fc.data, by = 'site_location_name')
+
+pl.prec.pv <- ggplot(data = merged, aes(x = precip_mean, y = green)) + 
+  geom_point() + labs(x = 'Mean Annual Precipitation (mm/y)', y = 'Mean Green Cover (%)')
+
+
+pl.prec.bs <- ggplot(data = merged, aes(x = precip_mean, y = bare)) +
+  geom_point() + labs(x = 'Mean Annual Precipitation (mm/y)', y = 'Mean Bare Cover (%)')  
+
+
+pl.prec.npv <- ggplot(data = merged, aes(x = precip_mean, y = brown)) +
+  geom_point() + labs(x = 'Mean Annual Precipitation (mm/y)', y = 'Mean Brown Cover (%)') 
+
+
+
+plot_grid(pl.prec.bs, pl.prec.npv, pl.prec.pv)
 
 

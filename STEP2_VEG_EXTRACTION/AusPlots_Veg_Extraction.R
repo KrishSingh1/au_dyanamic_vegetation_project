@@ -25,5 +25,16 @@ my.data <- get_ausplots(my.Plot_IDs = site.names, structural_summaries = T,
 saveRDS(my.data, file = "site_veg_2-0-3.rds")
 
 
+veg_info <- readRDS("site_veg_2-0-3.rds")
 
-veg_info <- readRDS("site_veg.rds")
+dictionary <- as.data.frame(veg_info$metadata.dictionary)
+
+
+# Get Soil Data -----------------------------------------------------------
+
+my.data <- get_ausplots(my.Plot_IDs = site.names, soil_subsites = T,
+                        site_info = T, 
+                        soil_bulk_density = T,
+                        soil_character = T)
+
+saveRDS(my.data, file = "site_soil_2-0-3.rds")

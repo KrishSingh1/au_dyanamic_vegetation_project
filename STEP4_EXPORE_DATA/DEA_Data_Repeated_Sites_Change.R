@@ -344,10 +344,21 @@ bs.bare.pl <- ggplot(data = both.changes.agg, aes(x = bare, y = bs)) + labs(x = 
                                                                                                                 intercept = bs.stats$coefficients[["(Intercept)"]]) + stat_poly_eq(mapping = use_label(c("eq", "R2", 'p')))
 bs.bare.pl
 
+overall.filtered <- na.omit(both.changes.agg)
+
+Metrics::rmse(actual = overall.filtered$bare, 
+              predicted = overall.filtered$bs)
+
 pv.stats <- lm(pv~green,both.changes.agg)
 pv.green.pl <- ggplot(data = both.changes.agg, aes(x = green, y = pv)) + labs(x = "\u0394 green cover (in-situ)", y = "\u0394 green cover (remote)") + 
-  geom_point() + geom_abline(slope = 1, intercept = 0, lty = 2) + coord_obs_pred() + xlim(c(-100,100)) + ylim(c(-100,100)) + geom_abline(slope = pv.stats$coefficients[["green"]], 
-                                                                                                                                  intercept = pv.stats$coefficients[["(Intercept)"]]) + stat_poly_eq(mapping = use_label(c("eq", "R2", 'p')))
+  geom_point() + geom_abline(slope = 1, intercept = 0, lty = 2) + coord_obs_pred() + xlim(c(-100,100)) + ylim(c(-100,100)) +
+  geom_abline(slope = pv.stats$coefficients[["green"]], intercept = pv.stats$coefficients[["(Intercept)"]]) + 
+  stat_poly_eq(mapping = use_label(c("eq", "R2", 'p')))
+
+pv.green.pl
+
+Metrics::rmse(actual = overall.filtered$green, 
+              predicted = overall.filtered$pv)
 
 
 npv.stats <- lm(npv~brown,both.changes.agg)
@@ -400,6 +411,124 @@ summary(lm(pv~green,both.changes.agg))
 
 
 
+# By vegetation type ------------------------------------------------------
+
+
+growth.form <- readRDS("growth_form_matrix.rds")
+
+get_location_name <- function(site.unique) {
+  return(unlist(strsplit(site.unique, split =  '-'))[1])
+}
+
+growth.form$site_location_name <- unlist(lapply(rownames(growth.form), get_location_name))
+growth.form.agg <- aggregate(growth.form, by = list(growth.form$site_location_name), FUN = mean, na.rm = T)
+colnames(growth.form.agg)[which(colnames(growth.form.agg) == 'Group.1')] <- 'site_location_name'
+
+# Sum Growth Forms by Classification --------------------------------------
+
+growth.form.classification <- read.csv("Growth_Type_Classification.csv",header = F)
+growth.form.classification <- na.omit(growth.form.classification)
+
+grass.names <- growth.form.classification$V1[growth.form.classification$V2 == 'Grass']
+shrub.names <- growth.form.classification$V1[growth.form.classification$V2 == 'Shrub']
+tree.names <- growth.form.classification$V1[growth.form.classification$V2 == 'Tree']
+
+growth.form.agg$grass <- rowSums(growth.form.agg[,grass.names], na.rm = T)
+growth.form.agg$shrub <- rowSums(growth.form.agg[,shrub.names], na.rm = T)
+growth.form.agg$tree <- rowSums(growth.form.agg[,tree.names], na.rm = T)
+
+
+# Begin classification ----------------------------------------------------
+
+classify <- function(dataset.row) {
+  return(names(which.max(dataset.row[c("grass","shrub","tree")])))
+}
+
+growth.form.agg$vegetation_type <- unlist(apply(growth.form.agg, MARGIN = 1, FUN = classify))
+
+
+
+# Combine with Fractional Data -----------------------------------------
+
+growth.form.essen <- growth.form.agg[,c("site_location_name", "vegetation_type")]
+both.changes.agg$site_location_name <- both.changes.agg$Group.1 
+both.changes.agg <- merge(both.changes.agg, growth.form.essen, by = 'site_location_name')
+
+
+bs.bare.pl <- ggplot(data = both.changes.agg, aes(x = bare, y = bs)) + labs(x = "\u0394 bare cover (in-situ)", y = "\u0394 bare cover (remote)") +
+  geom_point() + geom_abline(slope = 1, intercept = 0, lty = 2) + facet_wrap(~vegetation_type) + coord_obs_pred() + xlim(c(-100,100)) + 
+  stat_poly_eq(mapping = use_label(c("eq", "R2", 'p'))) + stat_smooth(method = 'lm', fullrange = T)
+
+bs.bare.pl
+
+overall.filtered <- na.omit(both.changes.agg)
+
+
+Metrics::rmse(actual = overall.filtered$bare, 
+              predicted = overall.filtered$bs)
+
+tree <- overall.filtered[overall.filtered$vegetation_type == 'tree',]
+
+Metrics::rmse(actual = tree$bare, 
+              predicted = tree$bs)
+
+shrub <- overall.filtered[overall.filtered$vegetation_type == 'shrub',]
+Metrics::rmse(actual = shrub$bare, 
+              predicted = shrub$bs)
+
+grass <- overall.filtered[overall.filtered$vegetation_type == 'grass',]
+Metrics::rmse(actual = grass$bare, 
+              predicted = grass$bs)
+
+
+
+pv.green.pl <- ggplot(data = both.changes.agg, aes(x = green, y = pv)) + labs(x = "\u0394 green cover (in-situ)", y = "\u0394 green cover (remote)") + 
+  geom_point() + geom_abline(slope = 1, intercept = 0, lty = 2) + coord_obs_pred() + xlim(c(-100,100)) + facet_wrap(~vegetation_type) + ylim(c(-100,100)) +
+  stat_poly_eq(mapping = use_label(c("eq", "R2", 'p'))) + stat_smooth(method = 'lm', fullrange = T) 
+pv.green.pl
+
+
+
+overall.filtered <- na.omit(both.changes.agg)
+
+tree <- overall.filtered[overall.filtered$vegetation_type == 'tree',]
+
+Metrics::rmse(actual = tree$green, 
+              predicted = tree$pv)
+
+shrub <- overall.filtered[overall.filtered$vegetation_type == 'shrub',]
+Metrics::rmse(actual = shrub$green, 
+              predicted = shrub$pv)
+
+grass <- overall.filtered[overall.filtered$vegetation_type == 'grass',]
+Metrics::rmse(actual = grass$green, 
+              predicted = grass$pv)
+
+
+
+npv.brown.pl <- ggplot(data = both.changes.agg, aes(x = brown, y = npv), colour = 'blue') + geom_point() + labs(x = "\u0394 brown cover (in-situ)", y = "\u0394 brown cover (remote)") +
+  facet_wrap(~vegetation_type) + geom_abline(slope = 1, intercept = 0, lty = 2) +
+  coord_obs_pred() + xlim(c(-100,100)) + ylim(c(-100,100)) + stat_poly_eq(mapping = use_label(c("eq", "R2", 'p'))) + stat_smooth(method = 'lm', fullrange = T) 
+npv.brown.pl
+
+overall.filtered <- na.omit(both.changes.agg)
+
+
+Metrics::rmse(actual = overall.filtered$brown, 
+              predicted = overall.filtered$npv)
+
+tree <- overall.filtered[overall.filtered$vegetation_type == 'tree',]
+
+Metrics::rmse(actual = tree$brown, 
+              predicted = tree$npv)
+
+shrub <- overall.filtered[overall.filtered$vegetation_type == 'shrub',]
+Metrics::rmse(actual = shrub$brown, 
+              predicted = shrub$npv)
+
+grass <- overall.filtered[overall.filtered$vegetation_type == 'grass',]
+Metrics::rmse(actual = grass$brown, 
+              predicted = grass$npv)
 
 
 

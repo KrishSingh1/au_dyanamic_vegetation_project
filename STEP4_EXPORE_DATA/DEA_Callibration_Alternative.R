@@ -23,6 +23,7 @@ sites.query <- read.csv("/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/a
 
 insitu.fractional.cover <- readRDS("AusPlots_fractional_cover.rds")
 
+
 ##### Algorithm #####
 # 1.  Obtain the insitu fractional cover 
 # 2.  In a site, obtain corresponding fractional cover 
@@ -219,6 +220,9 @@ dea.fc.sites.nearest
 ####### Generating plots ########
 
 library(ggplot2)
+library(ggpubr)
+library(ggpmisc)
+library(tune)
 
 #dea.fc.sites.nearest <- read.csv(file = "dea_fc_sites_nearest.csv")
 
@@ -232,6 +236,8 @@ dea.fc.sites.nearest <- read.csv("dea_fc_sites_nearest_new_aggregation.csv")
 # Test subsetting for sites not in proper oriention or marked 
 #valid_observations <- veg.info$site.info$site_unique[which(veg.info$site.info$plot_is_aligned_to_grid & veg.info$site.info$plot_is_permanently_marked)]
 #dea.fc.sites.nearest <- subset(dea.fc.sites.nearest, subset = (site_unique %in% valid_observations))
+
+#insitu.fractional.cover <- readRDS("../STEP2_VEG_EXTRACTION/insitu_fractional_cover_canopy_2-0-3rds")
 
 
 insitu.fractional.cover <- subset(insitu.fractional.cover, (NA. <= 10))
@@ -248,6 +254,8 @@ cal.green <- ggplot(dea.fc.sites.plotting, aes(y = pv, x = green)) + geom_point(
   geom_abline(slope = 1, intercept = 0, lty = 2, size = 0.9) + coord_obs_pred() + geom_abline(slope = pv.stats$coefficients[["green"]], 
                                                                                                         intercept = pv.stats$coefficients[["(Intercept)"]], size = 0.9) + stat_poly_eq(mapping = use_label(c("eq", "R2", 'p')))
 cal.green
+
+
 
 Metrics::rmse(actual = dea.fc.sites.plotting$green, 
               predicted = dea.fc.sites.plotting$pv)
@@ -275,6 +283,143 @@ Metrics::rmse(actual = dea.fc.sites.plotting$brown,
               predicted = dea.fc.sites.plotting$npv)
 
 
+# By vegetation type ------------------------------------------------------
+
+
+growth.form <- readRDS("growth_form_matrix.rds")
+
+get_location_name <- function(site.unique) {
+  return(unlist(strsplit(site.unique, split =  '-'))[1])
+}
+
+growth.form$site_location_name <- unlist(lapply(rownames(growth.form), get_location_name))
+growth.form.agg <- aggregate(growth.form, by = list(growth.form$site_location_name), FUN = mean, na.rm = T)
+colnames(growth.form.agg)[which(colnames(growth.form.agg) == 'Group.1')] <- 'site_location_name'
+
+# Sum Growth Forms by Classification --------------------------------------
+
+growth.form.classification <- read.csv("Growth_Type_Classification.csv",header = F)
+growth.form.classification <- na.omit(growth.form.classification)
+
+grass.names <- growth.form.classification$V1[growth.form.classification$V2 == 'Grass']
+shrub.names <- growth.form.classification$V1[growth.form.classification$V2 == 'Shrub']
+tree.names <- growth.form.classification$V1[growth.form.classification$V2 == 'Tree']
+
+growth.form.agg$grass <- rowSums(growth.form.agg[,grass.names], na.rm = T)
+growth.form.agg$shrub <- rowSums(growth.form.agg[,shrub.names], na.rm = T)
+growth.form.agg$tree <- rowSums(growth.form.agg[,tree.names], na.rm = T)
+
+
+# Begin classification ----------------------------------------------------
+
+classify <- function(dataset.row) {
+  return(names(which.max(dataset.row[c("grass","shrub","tree")])))
+}
+
+growth.form.agg$vegetation_type <- unlist(apply(growth.form.agg, MARGIN = 1, FUN = classify))
+
+
+
+# Combine with Fractional Data -----------------------------------------
+
+growth.form.essen <- growth.form.agg[,c("site_location_name", "vegetation_type")]
+
+dea.fc.sites.plotting$site_location_name <- unlist(lapply(dea.fc.sites.plotting$site_unique, get_location_name))
+dea.fc.sites.plotting <- merge(dea.fc.sites.plotting, growth.form.essen, by = 'site_location_name')
+
+cal.green <- ggplot(dea.fc.sites.plotting, aes(y = pv, x = green)) + geom_point(alpha = 0.5) + 
+  xlim(0,100) + ylim(0,100) + labs(x = "green cover (in-situ)", y = "green cover (remote)") +
+  facet_wrap(~vegetation_type) +
+  geom_abline(slope = 1, intercept = 0, lty = 2, size = 0.9) + coord_obs_pred() +  stat_poly_eq(mapping = use_label(c("eq", "R2", 'p'))) +
+  stat_smooth(method = 'lm', fullrange = T)
+
+cal.green
+
+tree <- dea.fc.sites.plotting[dea.fc.sites.plotting$vegetation_type == 'tree',]
+
+Metrics::rmse(actual = tree$green, 
+              predicted = tree$pv)
+
+shrub <- dea.fc.sites.plotting[dea.fc.sites.plotting$vegetation_type == 'shrub',]
+Metrics::rmse(actual = shrub$green, 
+              predicted = shrub$pv)
+
+grass <- dea.fc.sites.plotting[dea.fc.sites.plotting$vegetation_type == 'grass',]
+Metrics::rmse(actual = grass$green, 
+              predicted = grass$pv)
+
+# Bare --------------------------------------------------------------------
+
+
+# Bare
+cal.bare <- ggplot(dea.fc.sites.plotting, aes(y = bs, x = bare)) + geom_point(alpha = 0.5) +
+  xlim(0,100) + ylim(0,100)  + labs(x = "bare cover (in-situ)", y = "bare cover (remote)") +
+  geom_abline(slope = 1, intercept = 0, lty = 2, size = 0.9) + facet_wrap(~vegetation_type) + coord_obs_pred() + stat_poly_eq(mapping = use_label(c("eq", "R2", 'p'))) +
+  stat_smooth(method = 'lm', fullrange = T)
+  
+cal.bare
+
+Metrics::rmse(actual = dea.fc.sites.plotting$bare, 
+              predicted = dea.fc.sites.plotting$bs)
+
+
+tree <- dea.fc.sites.plotting[dea.fc.sites.plotting$vegetation_type == 'tree',]
+
+Metrics::rmse(actual = tree$bare, 
+              predicted = tree$bs)
+
+shrub <- dea.fc.sites.plotting[dea.fc.sites.plotting$vegetation_type == 'shrub',]
+Metrics::rmse(actual = shrub$bare, 
+              predicted = shrub$bs)
+
+grass <- dea.fc.sites.plotting[dea.fc.sites.plotting$vegetation_type == 'grass',]
+Metrics::rmse(actual = grass$bare, 
+              predicted = grass$bs)
+
+
+
+
+
+
+# Brown
+cal.brown <- ggplot(dea.fc.sites.plotting, aes(y = npv, x = brown)) + geom_point(alpha = 0.5) +
+  xlim(0,100) + ylim(0,100) + labs(x = "brown cover (in-situ)", y = "brown cover (remote)") +
+  geom_abline(slope = 1, intercept = 0, lty = 2, size = 0.9) + coord_obs_pred() + facet_wrap(~vegetation_type) + stat_poly_eq(mapping = use_label(c("eq", "R2", 'p'))) +
+  stat_smooth(method = 'lm', fullrange = T)
+
+cal.brown
+
+Metrics::rmse(actual = dea.fc.sites.plotting$brown, 
+              predicted = dea.fc.sites.plotting$npv)
+
+
+tree <- dea.fc.sites.plotting[dea.fc.sites.plotting$vegetation_type == 'tree',]
+
+Metrics::rmse(actual = tree$brown, 
+              predicted = tree$npv)
+
+shrub <- dea.fc.sites.plotting[dea.fc.sites.plotting$vegetation_type == 'shrub',]
+Metrics::rmse(actual = shrub$brown, 
+              predicted = shrub$npv)
+
+grass <- dea.fc.sites.plotting[dea.fc.sites.plotting$vegetation_type == 'grass',]
+Metrics::rmse(actual = grass$brown, 
+              predicted = grass$npv)
+
+
+
+library(gridExtra)
+library(grid)
+library(ggplot2)
+library(lattice)
+
+gridExtra::grid.arrange(cal.green, cal.brown, cal.bare)
+
+plot_space <- par(mfrow=c(3,1))
+plot_space <- c(cal.green, cal.bare, cal.brown)
+plot_space <- cal.bare
+plot_space <- cal.brown
+plot_space
 
 ########## Convert to long #######
 dea.fc.sites.plotting.long <- reshape2::melt(dea.fc.sites.plotting[, c('site_unique','bs','npv','pv')], id.vars = c('site_unique'), value.name ="remote.cover")

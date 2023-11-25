@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document id="root_doc">
+<Folder><name>site_subset</name>
+  <Placemark>
+	<name>NSAMDD0014</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>141.1918167,-33.16793889,0 141.1928889,-33.16794444,0 141.1928889,-33.16703889,0 141.1918167,-33.16703889,0 141.1918167,-33.16793889,0</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>NSANAN0002</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>150.1520639,-30.28228056,0 150.1530944,-30.28228889,0 150.1530889,-30.28140833,0 150.1520611,-30.28138333,0 150.1520639,-30.28228056,0</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>NSANSS0001</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>148.3476944,-32.74985556,0 148.34875,-32.74981389,0 148.3487417,-32.74892778,0 148.3476639,-32.74892222,0 148.3476944,-32.74985556,0</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>NTAFIN0002</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>133.4343111,-24.00942222,0 133.4352806,-24.00941667,0 133.4352806,-24.00851389,0 133.4343,-24.00851111,0 133.4343111,-24.00942222,0</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>NTAGFU0021</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>135.9429222,-16.71540278,0 135.9438639,-16.7154,0 135.9438611,-16.71449722,0 135.942925,-16.71449444,0 135.9429222,-16.71540278,0</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>QDAEIU0010</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>146.182391,-19.89337427,0 146.183351,-19.89337294,0 146.1833505,-19.89247802,0 146.182385,-19.89247465,0 146.182391,-19.89337427,0</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>QDASSD0015</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>138.1930944,-23.188075,0 138.1940722,-23.18808333,0 138.1940694,-23.18718056,0 138.1930917,-23.18717778,0 138.1930944,-23.188075,0</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>SATSTP0005</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>138.8487972,-29.45659722,0 138.8498278,-29.45661389,0 138.8498472,-29.45571389,0 138.8488167,-29.45569722,0 138.8487972,-29.45659722,0</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>TCATCH0006</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>146.6520273,-41.96580469,0 146.6532521,-41.96579488,0 146.6532435,-41.96490452,0 146.6520316,-41.96489643,0 146.6520273,-41.96580469,0</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>WAAGAS0002</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>120.4791389,-23.3847,0 120.4801194,-23.38469722,0 120.4801194,-23.3838,0 120.4791417,-23.3838,0 120.4791389,-23.3847,0</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>WAAPIL0003</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>117.0570056,-21.54110278,0 117.0579694,-21.54110278,0 117.0579722,-21.54019722,0 117.0570056,-21.5402,0 117.0570056,-21.54110278,0</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+</Folder>
+</Document></kml>
