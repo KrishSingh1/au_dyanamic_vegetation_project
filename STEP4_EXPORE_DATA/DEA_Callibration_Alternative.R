@@ -17,11 +17,11 @@ library(ausplotsR)
 directory <- "/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtraction/BACKUP_DATA/csv_files"
 files <- list.files(directory, pattern = "\\.csv$", full.names = FALSE)
 fileNames <- tools::file_path_sans_ext(files)
-veg.info <- readRDS("../STEP2_VEG_EXTRACTION/site_veg.rds")
-sites.query <- read.csv("/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/query/sites_info_query.csv")
+veg.info <- readRDS("../STEP2_AUSPLOTS_EXTRACTION/site_veg_2-0-3.rds")
+sites.query <- read.csv("../DATASETS/sites_info_query.csv")
 
 
-insitu.fractional.cover <- readRDS("AusPlots_fractional_cover.rds")
+insitu.fractional.cover <- read.csv('../DATASETS/AusPlots_FC_Iter_2_0_6.csv')
 
 
 ##### Algorithm #####
@@ -231,16 +231,16 @@ library(tune)
 
 #dea.fc.sites.nearest <- read.csv("dea_fc_sites_nearest_pixel_inc.csv")
 #dea.fc.sites.nearest <- read.csv("dea_fc_sites_nearest_filtered_ue.csv")
-dea.fc.sites.nearest <- read.csv("dea_fc_sites_nearest_new_aggregation.csv")
+dea.fc.sites.nearest <- read.csv("../STEP4_EXPORE_DATA/dea_fc_sites_nearest_new_aggregation.csv")
 
 # Test subsetting for sites not in proper oriention or marked 
 #valid_observations <- veg.info$site.info$site_unique[which(veg.info$site.info$plot_is_aligned_to_grid & veg.info$site.info$plot_is_permanently_marked)]
 #dea.fc.sites.nearest <- subset(dea.fc.sites.nearest, subset = (site_unique %in% valid_observations))
 
 #insitu.fractional.cover <- readRDS("../STEP2_VEG_EXTRACTION/insitu_fractional_cover_canopy_2-0-3rds")
+insitu.fractional.cover$other[is.na(insitu.fractional.cover$other)] <- 0
 
-
-insitu.fractional.cover <- subset(insitu.fractional.cover, (NA. <= 10))
+insitu.fractional.cover <- subset(insitu.fractional.cover, (other <= 10))
 dea.fc.sites.plotting <- merge(dea.fc.sites.nearest, insitu.fractional.cover, by = 'site_unique')
 dea.fc.sites.plotting <- subset(dea.fc.sites.plotting, subset = (npixels >= 100 & npixels <= 121))
 
@@ -278,7 +278,7 @@ cal.brown <- ggplot(dea.fc.sites.plotting, aes(y = npv, x = brown)) + geom_point
   xlim(0,100) + ylim(0,100) + labs(x = "brown cover (in-situ)", y = "brown cover (remote)") +
   geom_abline(slope = 1, intercept = 0, lty = 2, size = 0.9) + coord_obs_pred() + geom_abline(slope = npv.stats$coefficients[["brown"]], 
                                                                                   intercept = npv.stats$coefficients[["(Intercept)"]], size = 0.9) + stat_poly_eq(mapping = use_label(c("eq", "R2", 'p')))
-
+cal.brown
 Metrics::rmse(actual = dea.fc.sites.plotting$brown, 
               predicted = dea.fc.sites.plotting$npv)
 
@@ -298,7 +298,7 @@ colnames(growth.form.agg)[which(colnames(growth.form.agg) == 'Group.1')] <- 'sit
 
 # Sum Growth Forms by Classification --------------------------------------
 
-growth.form.classification <- read.csv("Growth_Type_Classification.csv",header = F)
+growth.form.classification <- read.csv("../DATASETS/Growth_Type_Classification.csv",header = F)
 growth.form.classification <- na.omit(growth.form.classification)
 
 grass.names <- growth.form.classification$V1[growth.form.classification$V2 == 'Grass']
