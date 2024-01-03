@@ -25,9 +25,13 @@ my.data <- get_ausplots(my.Plot_IDs = site.names, structural_summaries = T,
 saveRDS(my.data, file = "site_veg_2-0-3.rds")
 
 
-veg_info <- readRDS("site_veg_2-0-3.rds")
+veg_info <- readRDS("../STEP2_VEG_EXTRACTION/site_veg_2-0-3.rds")
 
 dictionary <- as.data.frame(veg_info$metadata.dictionary)
+
+fc_default <- fractional_cover(veg_info$veg.PI)
+saveRDS(fc_default, 'insitu_fractional_cover_default_2-0-3.rds')
+
 
 
 # Get Soil Data -----------------------------------------------------------
