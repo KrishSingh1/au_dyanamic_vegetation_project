@@ -20,8 +20,6 @@ growth.forms <- growth_form_table(veg_info$veg.PI, m_kind = "percent_cover",
 write.csv(growth.forms, paste0('../DATASETS/','growth_forms_pc_', version, '.csv'))
 
 
-
-
 # Junk Code (don't run) ---------------------------------------------------
 
 # Testing why fc iter gives different number of obs than fc obtained via batch
