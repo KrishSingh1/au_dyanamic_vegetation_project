@@ -1,7 +1,7 @@
 ##### DEA Evaluation Alternative by Type Plots #####
 ## Krish Singh
 # 240105
-# Purpose Plot DEA against fractional cover by site vegetation tyoe 
+# Purpose Plot DEA against fractional cover by site vegetation type 
 
 
 
