@@ -357,7 +357,8 @@ pv.NDVI <- ggplot(data = multi.rs.evaluation, aes(x = pv, y = NDVI)) +
   coord_obs_pred()  + xlim(c(0,100)) + ylim(c(0,100)) +
   geom_smooth(method = 'lm', se = F,
               fullrange = T, colour = 'black', linewidth = 0.5) + 
-  geom_abline(slope = 1, intercept = 0, lty = 2, fullrange = T)
+  geom_abline(slope = 1, intercept = 0, lty = 2) +
+  stat_poly_eq(mapping = use_label(c("eq", "R2", 'p')))
 pv.NDVI 
 
 pv.sfc <- ggplot(data = multi.rs.evaluation, aes(x = pv, y = green_mean)) +
@@ -365,7 +366,8 @@ pv.sfc <- ggplot(data = multi.rs.evaluation, aes(x = pv, y = green_mean)) +
   coord_obs_pred()  + xlim(c(0,100)) + ylim(c(0,100)) +
   geom_smooth(method = 'lm', se = F,
               fullrange = T, colour = 'black', linewidth = 0.5) + 
-  geom_abline(slope = 1, intercept = 0, lty = 2, fullrange = T)
+  geom_abline(slope = 1, intercept = 0, lty = 2) +
+  stat_poly_eq(mapping = use_label(c("eq", "R2", 'p')))
 pv.sfc 
 
 NDVI.sfc <- ggplot(data = multi.rs.evaluation, aes(x = NDVI, y = green_mean)) +
@@ -373,8 +375,11 @@ NDVI.sfc <- ggplot(data = multi.rs.evaluation, aes(x = NDVI, y = green_mean)) +
   coord_obs_pred()  + xlim(c(0,100)) + ylim(c(0,100)) +
   geom_smooth(method = 'lm', se = F,
               fullrange = T, colour = 'black', linewidth = 0.5) + 
-  geom_abline(slope = 1, intercept = 0, lty = 2, fullrange = T)
+  geom_abline(slope = 1, intercept = 0, lty = 2) + 
+  stat_poly_eq(mapping = use_label(c("eq", "R2", 'p')))
 NDVI.sfc 
+
+gridExtra::grid.arrange(pv.NDVI,pv.sfc,NDVI.sfc, ncol = 2)
 
 
 # With in-situ
@@ -384,7 +389,8 @@ aus.pv <- ggplot(data = multi.rs.evaluation, aes(x = aus_green, y = pv)) +
   coord_obs_pred()  + xlim(c(0,100)) + ylim(c(0,100)) +
   geom_smooth(method = 'lm', se = F,
               fullrange = T, colour = 'black', linewidth = 0.5) + 
-  geom_abline(slope = 1, intercept = 0, lty = 2, fullrange = T)
+  geom_abline(slope = 1, intercept = 0, lty = 2, fullrange = T) +
+  stat_poly_eq(mapping = use_label(c("eq", "R2", 'p')))
 aus.pv
 
 
@@ -393,7 +399,8 @@ aus.NDVI <- ggplot(data = multi.rs.evaluation, aes(x = aus_green, y = NDVI)) +
   coord_obs_pred()  + xlim(c(0,100)) + ylim(c(0,100)) +
   geom_smooth(method = 'lm', se = F,
               fullrange = T, colour = 'black', linewidth = 0.5) + 
-  geom_abline(slope = 1, intercept = 0, lty = 2, fullrange = T)
+  geom_abline(slope = 1, intercept = 0, lty = 2, fullrange = T) +
+  stat_poly_eq(mapping = use_label(c("eq", "R2", 'p')))
 aus.NDVI
 
 
@@ -402,7 +409,10 @@ aus.sfc <- ggplot(data = multi.rs.evaluation, aes(x = aus_green, y = green_mean)
   coord_obs_pred()  + xlim(c(0,100)) + ylim(c(0,100)) +
   geom_smooth(method = 'lm', se = F,
               fullrange = T, colour = 'black', linewidth = 0.5) + 
-  geom_abline(slope = 1, intercept = 0, lty = 2, fullrange = T)
+  geom_abline(slope = 1, intercept = 0, lty = 2, fullrange = T) +
+  stat_poly_eq(mapping = use_label(c("eq", "R2", 'p')))
 aus.sfc
+
+gridExtra::grid.arrange(aus.pv,aus.NDVI,aus.sfc,ncol = 2)
 
 
