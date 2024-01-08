@@ -3,6 +3,9 @@
 # 20230929
 # To see the change in fractional cover from site visit to another with DEA data. 
 
+
+# Libraries ---------------------------------------------------------------
+
 library(plotly)
 library(ggplot2)
 library(xts)
@@ -16,6 +19,9 @@ library(tune)
 library(ggpubr)
 library(ggpmisc)
 library(Matrix)
+
+
+# Functions ---------------------------------------------------------------
 
 
 trim_to_nearest_coord <- function(ausplots.info.i.index, veg.info, dea.fc.i, reference.query ) {
@@ -60,18 +66,23 @@ trim_to_nearest_coord <- function(ausplots.info.i.index, veg.info, dea.fc.i, ref
 }
 
 
+# Main --------------------------------------------------------------------
 
-# Get Needed datasets
+# Get DEA file names 
 directory <- "/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtraction/BACKUP_DATA/csv_files"
 files <- list.files(directory, pattern = "\\.csv$", full.names = FALSE)
 fileNames <- tools::file_path_sans_ext(files)
-veg.info <- readRDS("../STEP2_VEG_EXTRACTION/site_veg.rds")
-insitu.fractional.cover <- readRDS("AusPlots_fractional_cover.rds")
-sites.query <- read.csv("/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/query/sites_info_query.csv")
+sites.query <- read.csv("../DATASETS/sites_info_query.csv")
 
+# Load AusPlots data 
 
-# Get Site names
+veg.info <- readRDS("../DATASETS/site_veg_2-0-6.rds")
 site.names <- unique(veg.info$site.info$site_location_name)
+
+insitu.fractional.cover <- read.csv('../DATASETS/AusPlots_FC_Iter_2_0_6.csv')
+insitu.fractional.cover$other[is.na(insitu.fractional.cover$other)] <- 0 # set NA to 0 for 'other'
+insitu.fractional.cover <- subset(insitu.fractional.cover, (other <= 10)) # remove observations with 'other' at 10% or less
+insitu.fractional.cover[insitu.fractional.cover$site_unique == 'TCATCH0010-58826',]$bare = 0
 
 # Count the number of observations of each site
 counts.df <- as.data.frame(table(veg.info$site.info$site_location_name))
@@ -83,7 +94,7 @@ site.info.df <- as.data.frame(veg.info$site.info)
 site.info.df <- merge(site.info.df, insitu.fractional.cover, by = "site_unique")
 
 # Remove in-situ fractional cover of sites with an NA. of above 10%.
-site.info.df <- subset(site.info.df, subset = (NA. <= 10))
+site.info.df <- subset(site.info.df, subset = (other <= 10))
 
 # Remeasure Counts 
 counts.df <- as.data.frame(table(site.info.df$site_location_name))
@@ -163,6 +174,8 @@ for (name in site.location.names) {
   site.fc.change.df <- rbind(site.fc.change.df, change)
 }
 site.fc.change.df <- site.fc.change.df[-1,]
+vers <- packageVersion('ausplotsR')
+write.csv(site.fc.change.df, paste0("../DATASETS/AusPlots_FC_Change_", vers, ".csv"))
 
 bare.pl <- ggplot(data = site.fc.change.df, mapping = aes(x = bare)) + geom_histogram()
 green.pl <- ggplot(data = site.fc.change.df, mapping = aes(x = green)) + geom_histogram()
@@ -179,7 +192,7 @@ plot_grid(bare.pl, green.pl, brown.pl)
 # 4. (IN DEA FC) take the average of data points defined in 3.
 # 5. Export that data
 
-use.saved.data <- T
+use.saved.data <- F
 if(!use.saved.data) {
   dea.fc.means.df <- data.frame(site_location_name = NA,
                                 time = as.Date(NA),
@@ -237,9 +250,9 @@ if(!use.saved.data) {
     }
   } 
   dea.fc.means.df <- dea.fc.means.df[-1,] 
-  #save(dea.fc.means.df, file =  "dea.fc.means.df_23108.RData") 
+  write.csv(dea.fc.means.df, file =  "../DATASETS/DEA_fc_means.csv") 
 } else {
-  load('dea.fc.means.df_231011.RData')
+  dea.fc.means.df <- read.csv("../DATASETS/DEA_fc_means.csv")
 }
 
 
@@ -300,237 +313,74 @@ for (name in site.location.names) {
   dea.fc.change.df <- rbind(dea.fc.change.df, change)
 }
 dea.fc.change.df <- dea.fc.change.df[-1,]
+write.csv(dea.fc.change.df, file =  "../DATASETS/DEA_fc_change.csv") 
 
 
+# Junk Script (Don't Run) -------------------------------------------------
 
+dea.fc.change.df <- read.csv("../DATASETS/DEA_fc_change.csv", row.names =  1)
+site.fc.change.df <- read.csv("../DATASETS/AusPlots_FC_Change_2.0.6.csv", row.names = 1)
 
-### This visualisation is not aggregated i.e. 3 visits will count as two timestamps between visit dates (A,B) and (B,C)##
+## Testing why obs of site.fc.change.df is different to dea.fc.change.df
 
-both.changs.df <- merge(dea.fc.change.df,site.fc.change.df, by = c("site_location_name", "visit_start_date_a",
-                                                 "visit_start_date_b"))
+setdiff(site.fc.change.df$site_location_name, 
+        dea.fc.change.df$site_location_name)
+# [1] "SAAKAN0011" "SATFLB0007" "SATFLB0012" "SATFLB0014"
 
-bs.bare.pl <- ggplot(data = both.changs.df, aes(x = bare, y = bs)) + labs(x = "\u0394 bare cover (in-situ)", y = "\u0394 bare cover (remote)") +
-  geom_point() + geom_abline(slope = 1, intercept = 0) + coord_obs_pred() + xlim(c(-100,100)) + ylim(c(-100,100))
+setdiff(dea.fc.change.df$site_location_name, 
+        site.fc.change.df$site_location_name)
+#  character(0)
 
-pv.green.pl <- ggplot(data = both.changs.df, aes(x = green, y = pv)) + labs(x = "\u0394 green cover (in-situ)", y = "\u0394 green cover (remote)") + 
-  geom_point() + geom_abline(slope = 1, intercept = 0) + coord_obs_pred() + xlim(c(-100,100)) + ylim(c(-100,100))
-npv.brown.pl <- ggplot(data = both.changs.df, aes(x = brown, y = npv), colour = 'blue') + geom_point() + labs(x = "\u0394 brown cover (in-situ)", y = "\u0394 brown cover (remote)") + 
-  geom_abline(slope = 1, intercept = 0) + coord_obs_pred() + xlim(c(-100,100)) + ylim(c(-100,100))
+t <- get_ausplots(c("SAAKAN0011", "SATFLB0007", "SATFLB0012", "SATFLB0014"),
+                  veg.PI =T)
+fractional_cover(t$veg.PI) # looks fine
 
+#                       site_unique bare brown green other
+# SAAKAN0011-58628 SAAKAN0011-58628  1.0  11.2  87.0   0.8
+# SAAKAN0011-58879 SAAKAN0011-58879  2.4  21.7  75.9   0.0
+# SATFLB0007-53709 SATFLB0007-53709 36.6  47.9  15.4   0.0
+# SATFLB0007-58657 SATFLB0007-58657 30.5  30.7  38.8   0.0
+# SATFLB0012-53699 SATFLB0012-53699  9.2  34.0  56.8   0.0
+# SATFLB0012-58677 SATFLB0012-58677 13.3  21.6  65.1   0.0
+# SATFLB0014-53702 SATFLB0014-53702 16.6  31.0  52.4   0.0
+# SATFLB0014-58667 SATFLB0014-58667 13.2  26.5  60.1   0.2
 
-all.pl <- ggplot(data = both.changs.df) + geom_point(aes(x = brown, y = npv, colour = 'brown')) + geom_point(aes(x = green, y = pv, colour = 'green')) + 
-  geom_point(aes(x = bare, y = bs, colour = 'bare')) +labs(x = "\u0394 cover (in-situ)", y = "\u0394 cover (remote)") + 
-  geom_abline(slope = 1, intercept = 0) + coord_obs_pred() + scale_colour_manual(name = 'Cover', values = c('brown' = 'blue', 'green' = 'green', 'bare' = 'red')) + 
-  xlim(c(-100,100)) + ylim(c(-100,100))
+dea.SAAKAN0011 <- read.csv('C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtraction/BACKUP_DATA/csv_files/')
+# File is empty
 
+# SATFLB0007
+dea.fc.means <- read.csv("../DATASETS/DEA_fc_means.csv")
+dea.fc.means[dea.fc.means$site_location_name == 'SATFLB0007',]
 
-plot_grid(bs.bare.pl,npv.brown.pl,pv.green.pl, all.pl) 
+ site.location.names %in% setdiff(site.fc.change.df$site_location_name,
+        dea.fc.change.df$site_location_name)
 
+# FALSE FALSE FALSE FALSE
 
+ sites.revisit.2.df[sites.revisit.2.df$Var1 %in% setdiff(site.fc.change.df$site_location_name,
+                                     dea.fc.change.df$site_location_name),]
+ #           Var1 Freq
+ # 411 SAAKAN0011    2
+ # 482 SATFLB0007    2
+ # 487 SATFLB0012    2
+ # 489 SATFLB0014    2
+ 
 
 
+insitu.fractional.cover[insitu.fractional.cover$site_unique == 'SAAKAN0011-58879',]
+insitu.fractional.cover[insitu.fractional.cover$site_unique == 'SAAKAN0011-58628',]
 
-### Averaging the change in cover over time in sites with 3 visits ###
+site.path <- file.path(directory,paste0("SATFLB0007",".csv"))
+dea.data <- read.csv(site.path)
+mean(is.na(dea.data$ue))
 
-both.changs.df <- merge(dea.fc.change.df,site.fc.change.df, by = c("site_location_name", "visit_start_date_a",
-                                                                   "visit_start_date_b"))
+site.path <- file.path(directory,paste0("SATFLB0012",".csv"))
+dea.data <- read.csv(site.path)
+mean(is.na(dea.data$ue))
 
-both.changes.agg <- aggregate(both.changs.df[,c("pv","npv","bs", "green", "brown", "bare")],
-          list(both.changs.df$site_location_name), FUN = mean, na.rm = T)
+site.path <- file.path(directory,paste0("SATFLB0014",".csv"))
+dea.data <- read.csv(site.path)
+mean(is.na(dea.data$ue))
 
-bs.stats <- lm(bs~bare,both.changes.agg)
-bs.bare.pl <- ggplot(data = both.changes.agg, aes(x = bare, y = bs)) + labs(x = "\u0394 bare cover (in-situ)", y = "\u0394 bare cover (remote)") +
-  geom_point() + geom_abline(slope = 1, intercept = 0, lty = 2) + coord_obs_pred() + xlim(c(-100,100)) + geom_abline(slope = bs.stats$coefficients[["bare"]], 
-                                                                                                                intercept = bs.stats$coefficients[["(Intercept)"]]) + stat_poly_eq(mapping = use_label(c("eq", "R2", 'p')))
-bs.bare.pl
-
-overall.filtered <- na.omit(both.changes.agg)
-
-Metrics::rmse(actual = overall.filtered$bare, 
-              predicted = overall.filtered$bs)
-
-pv.stats <- lm(pv~green,both.changes.agg)
-pv.green.pl <- ggplot(data = both.changes.agg, aes(x = green, y = pv)) + labs(x = "\u0394 green cover (in-situ)", y = "\u0394 green cover (remote)") + 
-  geom_point() + geom_abline(slope = 1, intercept = 0, lty = 2) + coord_obs_pred() + xlim(c(-100,100)) + ylim(c(-100,100)) +
-  geom_abline(slope = pv.stats$coefficients[["green"]], intercept = pv.stats$coefficients[["(Intercept)"]]) + 
-  stat_poly_eq(mapping = use_label(c("eq", "R2", 'p')))
-
-pv.green.pl
-
-Metrics::rmse(actual = overall.filtered$green, 
-              predicted = overall.filtered$pv)
-
-
-npv.stats <- lm(npv~brown,both.changes.agg)
-npv.brown.pl <- ggplot(data = both.changes.agg, aes(x = brown, y = npv), colour = 'blue') + geom_point() + labs(x = "\u0394 brown cover (in-situ)", y = "\u0394 brown cover (remote)") + 
-  geom_abline(slope = 1, intercept = 0, lty = 2) + coord_obs_pred() + xlim(c(-100,100)) + ylim(c(-100,100)) +  geom_abline(slope = npv.stats$coefficients[["brown"]], 
-                                                                                                                   intercept = npv.stats$coefficients[["(Intercept)"]]) + stat_poly_eq(mapping = use_label(c("eq", "R2", 'p')))
-npv.brown.pl
-# To cleanly incorporate statistics for the overall plot, reformat datasets into long format and merge
-
-dea.fc.change.df.long <- reshape2::melt(dea.fc.change.df, id.vars = c('site_location_name', 'visit_start_date_a', 'visit_start_date_b'), value.name ="remote.cover")
-site.fc.change.df.long <- reshape2::melt(site.fc.change.df, id.vars = c('site_location_name', 'visit_start_date_a', 'visit_start_date_b'), value.name = "insitu.cover")
-
-dea.fc.change.df.long$variable <- as.character(dea.fc.change.df.long$variable)
-dea.fc.change.df.long$variable[which(dea.fc.change.df.long$variable == 'pv')] <- 'green'
-dea.fc.change.df.long$variable[which(dea.fc.change.df.long$variable == 'npv')] <- 'brown'
-dea.fc.change.df.long$variable[which(dea.fc.change.df.long$variable == 'bs')] <- 'bare'
-
-both.changes.df.long <- merge(dea.fc.change.df.long, site.fc.change.df.long, by = c("site_location_name", "visit_start_date_a",
-                                                                                    "visit_start_date_b", 'variable'))
-
-# Note: This means I averaged the changes in cover 
-both.changes.agg.long <-aggregate(cbind(remote.cover, insitu.cover) ~ site_location_name + variable, data = both.changes.df.long, FUN = mean, na.rm = T)
-
-all.stats <- lm(remote.cover~insitu.cover,both.changes.agg.long)
-
-# This is the validation plot - to see if the conversion process did not change the actual data and will produce equivalent statistics 
-all.pl.validate <- ggplot(data = both.changes.agg.long, aes(x = insitu.cover, y = remote.cover, colour = variable)) + geom_point() + labs(x = "\u0394 cover (in-situ)", y = "\u0394 cover (remote)") + 
-   geom_abline(slope = 1, intercept = 0, lty = 2) + coord_obs_pred()  + xlim(c(-100,100)) + ylim(c(-100,100)) + geom_abline(slope = all.stats$coefficients[["insitu.cover"]], 
-                                                       intercept = all.stats$coefficients[["(Intercept)"]]) + stat_poly_eq(mapping = use_label(c("eq", "R2", 'p')))
-
-
-all.pl <- ggplot(data = both.changes.agg) + geom_point(aes(x = brown, y = npv, colour = 'brown')) + geom_point(aes(x = green, y = pv, colour = 'green')) +
-  geom_point(aes(x = bare, y = bs, colour = 'bare')) +labs(x = "\u0394 cover (in-situ)", y = "\u0394 cover (remote)") +
-  geom_abline(slope = 1, intercept = 0, lty = 2) + coord_obs_pred() + scale_colour_manual(name = 'Cover', values = c('brown' = 'blue', 'green' = 'green', 'bare' = 'red')) +
-  xlim(c(-100,100)) + ylim(c(-100,100))  + geom_abline(slope = all.stats$coefficients[["insitu.cover"]],intercept = all.stats$coefficients[["(Intercept)"]]) + stat_poly_eq(data = both.changes.agg.long, 
-                                                                                                                                                                            mapping = use_label(c("eq", "R2", 'p'), aes(x = insitu.cover, y =remote.cover)))
-all.pl
-
-plot_grid(bs.bare.pl,npv.brown.pl,pv.green.pl, all.pl) 
-
-# This is to validate to see if the long format dataset is equivalent to the wide one
-plot_grid(bs.bare.pl,npv.brown.pl,pv.green.pl, all.pl.validate) 
-
-both.changes.agg
-
-summary(lm(bs~bare,both.changes.agg))
-summary(lm(npv~brown,both.changes.agg))
-summary(lm(pv~green,both.changes.agg))
-
-
-
-
-# By vegetation type ------------------------------------------------------
-
-
-growth.form <- readRDS("growth_form_matrix.rds")
-
-get_location_name <- function(site.unique) {
-  return(unlist(strsplit(site.unique, split =  '-'))[1])
-}
-
-growth.form$site_location_name <- unlist(lapply(rownames(growth.form), get_location_name))
-growth.form.agg <- aggregate(growth.form, by = list(growth.form$site_location_name), FUN = mean, na.rm = T)
-colnames(growth.form.agg)[which(colnames(growth.form.agg) == 'Group.1')] <- 'site_location_name'
-
-# Sum Growth Forms by Classification --------------------------------------
-
-growth.form.classification <- read.csv("Growth_Type_Classification.csv",header = F)
-growth.form.classification <- na.omit(growth.form.classification)
-
-grass.names <- growth.form.classification$V1[growth.form.classification$V2 == 'Grass']
-shrub.names <- growth.form.classification$V1[growth.form.classification$V2 == 'Shrub']
-tree.names <- growth.form.classification$V1[growth.form.classification$V2 == 'Tree']
-
-growth.form.agg$grass <- rowSums(growth.form.agg[,grass.names], na.rm = T)
-growth.form.agg$shrub <- rowSums(growth.form.agg[,shrub.names], na.rm = T)
-growth.form.agg$tree <- rowSums(growth.form.agg[,tree.names], na.rm = T)
-
-
-# Begin classification ----------------------------------------------------
-
-classify <- function(dataset.row) {
-  return(names(which.max(dataset.row[c("grass","shrub","tree")])))
-}
-
-growth.form.agg$vegetation_type <- unlist(apply(growth.form.agg, MARGIN = 1, FUN = classify))
-
-
-
-# Combine with Fractional Data -----------------------------------------
-
-growth.form.essen <- growth.form.agg[,c("site_location_name", "vegetation_type")]
-both.changes.agg$site_location_name <- both.changes.agg$Group.1 
-both.changes.agg <- merge(both.changes.agg, growth.form.essen, by = 'site_location_name')
-
-
-bs.bare.pl <- ggplot(data = both.changes.agg, aes(x = bare, y = bs)) + labs(x = "\u0394 bare cover (in-situ)", y = "\u0394 bare cover (remote)") +
-  geom_point() + geom_abline(slope = 1, intercept = 0, lty = 2) + facet_wrap(~vegetation_type) + coord_obs_pred() + xlim(c(-100,100)) + 
-  stat_poly_eq(mapping = use_label(c("eq", "R2", 'p'))) + stat_smooth(method = 'lm', fullrange = T)
-
-bs.bare.pl
-
-overall.filtered <- na.omit(both.changes.agg)
-
-
-Metrics::rmse(actual = overall.filtered$bare, 
-              predicted = overall.filtered$bs)
-
-tree <- overall.filtered[overall.filtered$vegetation_type == 'tree',]
-
-Metrics::rmse(actual = tree$bare, 
-              predicted = tree$bs)
-
-shrub <- overall.filtered[overall.filtered$vegetation_type == 'shrub',]
-Metrics::rmse(actual = shrub$bare, 
-              predicted = shrub$bs)
-
-grass <- overall.filtered[overall.filtered$vegetation_type == 'grass',]
-Metrics::rmse(actual = grass$bare, 
-              predicted = grass$bs)
-
-
-
-pv.green.pl <- ggplot(data = both.changes.agg, aes(x = green, y = pv)) + labs(x = "\u0394 green cover (in-situ)", y = "\u0394 green cover (remote)") + 
-  geom_point() + geom_abline(slope = 1, intercept = 0, lty = 2) + coord_obs_pred() + xlim(c(-100,100)) + facet_wrap(~vegetation_type) + ylim(c(-100,100)) +
-  stat_poly_eq(mapping = use_label(c("eq", "R2", 'p'))) + stat_smooth(method = 'lm', fullrange = T) 
-pv.green.pl
-
-
-
-overall.filtered <- na.omit(both.changes.agg)
-
-tree <- overall.filtered[overall.filtered$vegetation_type == 'tree',]
-
-Metrics::rmse(actual = tree$green, 
-              predicted = tree$pv)
-
-shrub <- overall.filtered[overall.filtered$vegetation_type == 'shrub',]
-Metrics::rmse(actual = shrub$green, 
-              predicted = shrub$pv)
-
-grass <- overall.filtered[overall.filtered$vegetation_type == 'grass',]
-Metrics::rmse(actual = grass$green, 
-              predicted = grass$pv)
-
-
-
-npv.brown.pl <- ggplot(data = both.changes.agg, aes(x = brown, y = npv), colour = 'blue') + geom_point() + labs(x = "\u0394 brown cover (in-situ)", y = "\u0394 brown cover (remote)") +
-  facet_wrap(~vegetation_type) + geom_abline(slope = 1, intercept = 0, lty = 2) +
-  coord_obs_pred() + xlim(c(-100,100)) + ylim(c(-100,100)) + stat_poly_eq(mapping = use_label(c("eq", "R2", 'p'))) + stat_smooth(method = 'lm', fullrange = T) 
-npv.brown.pl
-
-overall.filtered <- na.omit(both.changes.agg)
-
-
-Metrics::rmse(actual = overall.filtered$brown, 
-              predicted = overall.filtered$npv)
-
-tree <- overall.filtered[overall.filtered$vegetation_type == 'tree',]
-
-Metrics::rmse(actual = tree$brown, 
-              predicted = tree$npv)
-
-shrub <- overall.filtered[overall.filtered$vegetation_type == 'shrub',]
-Metrics::rmse(actual = shrub$brown, 
-              predicted = shrub$npv)
-
-grass <- overall.filtered[overall.filtered$vegetation_type == 'grass',]
-Metrics::rmse(actual = grass$brown, 
-              predicted = grass$npv)
-
-
-
-
-
+## What went wrong:
+# the DEA data for these sites were not retrieved properly, or the ue were not retrieved 
