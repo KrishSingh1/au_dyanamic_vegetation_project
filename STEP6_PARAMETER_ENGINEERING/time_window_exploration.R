@@ -27,6 +27,9 @@ library(ncdf4)
 library(zoo)
 library(TSstudio)
 library(dplyr)
+library(plotly)
+library(foreach)
+library(doParallel)
 
 # Functions ---------------------------------------------------------------
 
@@ -35,7 +38,7 @@ apply_sliding_window <- function(file, window){
   test.zoo <- read.zoo(file, index.column = 'time')
   window.sum <- rollapply(test.zoo, window, FUN = sum, na.rm = T, fill = NA, align = 'right')
   
-  return(fortify.zoo(window.sum))
+  return(data.table(fortify.zoo(window.sum)))
 }
 
 
@@ -46,20 +49,15 @@ get_precip_data <- function(site.focus, directory) {
   time.var <- ncvar_get(nc, "time")
   dates <- as.Date(time.var, origin = "1850-01-01")
   var <- ncvar_get(nc, 'precip')
-  daily.precip <- data.frame(precip = var, time = dates)
+  daily.precip <- data.table(precip = var, time = dates)
   return(daily.precip)
 }
 
-test.window <- function(window, site.focus, directory) {
+test.window <- function(window, site.focus, directory, site.greenness, precip.data) {
   
-  precip.window <- apply_sliding_window(get_precip_data(site.focus,directory),
-                                        window)
+  precip.window <- apply_sliding_window(precip.data, window)
   colnames(precip.window)[1] <- 'date'
   precip.window$date <- as.Date(precip.window$date)
-  
-  # Visualise the dataset 
-  site.greenness <- read.csv(paste0('../STEP6_PARAMETER_ENGINEERING/combined_data_', site.focus, '.csv'))
-  site.greenness$date <- as.Date(site.greenness$date)
   
   test <- precip.window %>% full_join(site.greenness, by = 'date')
   test <- test[order(test$date),]
@@ -73,20 +71,74 @@ test.window <- function(window, site.focus, directory) {
   return(ret)
 }
 
-fit_linear_models <- function(site.names, windows,
-                              directory = "C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtraction/BACKUP_DATA/ausplots_agcd"){
+# fit_linear_models <- function(site.names, windows,
+#                               directory = "C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtraction/BACKUP_DATA/ausplots_agcd"){
+#   
+#   site.focus <- site.subset.names[1]
+#   
+#   # Site.greenness data 
+#   site.greenness <- fread(paste0('../STEP6_PARAMETER_ENGINEERING/combined_data_', site.focus, '.csv'))
+#   site.greenness$date <- as.Date(site.greenness$date)
+#   # Precipitation data
+#   precip.data <- get_precip_data(site.focus,directory)
+#   
+#   first <- data.table(t(sapply(windows, FUN = test.window, 
+#                                   site.focus = site.focus,
+#                                   directory = directory,
+#                                   site.greenness = site.greenness,
+#                                   precip.data = precip.data)))
+#   
+#   for (site.focus in site.subset.names[-1]){
+#     # Site.greenness data
+#     site.greenness <- fread(paste0('../STEP6_PARAMETER_ENGINEERING/combined_data_', site.focus, '.csv'))
+#     site.greenness$date <- as.Date(site.greenness$date)
+#     
+#     # Precipitation data
+#     precip.data <- get_precip_data(site.focus,directory)
+#     
+#     site.r2 <- data.table(t(sapply(windows, FUN = test.window, 
+#                                       site.focus = site.focus,
+#                                       directory = directory,
+#                                       site.greenness = site.greenness,
+#                                       precip.data = precip.data)))
+#     
+#     first <- cbind(first, site.r2[,2])
+#     names(first)[length(names(first))] <- colnames(site.r2)[2]
+#   }
+#   
+#   
+#   
+#   return(first)
+# }
+
+
+fit_linear_models_2 <- function(site.names, windows,
+                              directory = "C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtraction/BACKUP_DATA/ausplots_agcd",
+                              num_cores = 4) {
   
-  first <- as.data.frame(t(sapply(windows, FUN = test.window, 
-                                  site.focus = site.subset.names[1],
-                                  directory = directory)))
-  for (ssn in site.subset.names[-1]){
-    site.r2 <- as.data.frame(t(sapply(windows, FUN = test.window, 
-                                      site.focus = ssn,
-                                      directory = directory)))
+  # ... other code
+  
+  # Inside fit_linear_models function
+  registerDoParallel(cores = num_cores)
+  
+  first <- foreach(ssn = site.subset.names, .combine = cbind, .export = c("test.window", "get_precip_data", "windows", "directory", "apply_sliding_window"), 
+                   .packages = c("ncdf4", "zoo", "TSstudio", "dplyr", "plotly", "data.table")) %dopar% {
+    site.greenness <- fread(paste0('../STEP6_PARAMETER_ENGINEERING/combined_data_', ssn, '.csv'))
+    site.greenness$date <- as.Date(site.greenness$date)
+    precip.data <- get_precip_data(ssn, directory)
     
-    first <- cbind(first, site.r2[,2])
-    names(first)[length(names(first))] <- colnames(site.r2)[2]
+    site.r2 <- data.table(t(sapply(windows, FUN = test.window, 
+                                      site.focus = ssn,
+                                      directory = directory,
+                                      site.greenness = site.greenness,
+                                      precip.data = precip.data)))
+    
+    return(site.r2)
   }
+  
+  # Stop parallel processing
+  stopImplicitCluster()
+  
   return(first)
 }
 
@@ -105,26 +157,38 @@ site.subset.names <- site.subset.names[-which(site.subset.names == exception)]
 
 windows <- seq(1,365*3,5)
 
-r2s <- fit_linear_models(site.subset.names, windows = windows)
-write.csv(r2s, "../DATASETS/linear_model_fitted_r2.csv")
+r2s <- fit_linear_models_2(site.subset.names, windows = windows, num_cores = 7)
+# 4 cores: 6 min 1 sec
+# 7 cores: 4 min 30 sec
 
-plot(r2s$window,r2s$WAAPIL0003.adjusted.R2)
-plot(r2s$window,r2s$TCATCH0006.adjusted.R2)
-plot(r2s$window,r2s$WAAGAS0002.adjusted.R2)
+#write.csv(r2s, "../DATASETS/linear_model_fitted_r2.csv")
+r2s.t <- read.csv("../DATASETS/linear_model_fitted_r2.csv")
+
+
+round(r2s.t$WAAPIL0003.adjusted.R2 - r2s$WAAPIL0003.adjusted.R2,10)
+round(r2s.t$TCATCH0006.adjusted.R2 - r2s$TCATCH0006.adjusted.R2,10)
+
+plot(r2s$window,r2s$WAAPIL0003.adjusted.R2) # Grass, consider fire history  
+plot(r2s$window,r2s$TCATCH0006.adjusted.R2) # Grass
 plot(r2s$window,r2s$NSAMDD0014.adjusted.R2)
-plot(r2s$window,r2s$NTAGFU0021.adjusted.R2)
-plot(r2s$window,r2s$NSANSS0001.adjusted.R2)
+
 plot(r2s$window,r2s$SATSTP0005.adjusted.R2)
 plot(r2s$window,r2s$QDASSD0015.adjusted.R2)
-plot(r2s$window,r2s$NTAFIN0002.adjusted.R2)
-plot(r2s$window,r2s$NSANAN0002.adjusted.R2)
-plot(r2s$window,r2s$QDAEIU0010.adjusted.R2)
+
+# Pattern
+plot(r2s$window,r2s$WAAGAS0002.adjusted.R2) # Grass
+plot(r2s$window,r2s$NTAGFU0021.adjusted.R2) # Grass
+plot(r2s$window,r2s$NTAFIN0002.adjusted.R2) # Grass
+plot(r2s$window,r2s$QDAEIU0010.adjusted.R2) # Grass
+
+
+plot(r2s$window,r2s$NSANAN0002.adjusted.R2) # Tree
+plot(r2s$window,r2s$NSANSS0001.adjusted.R2) # Tree
+
 
 # By vegetation type 
 
 classifications <- read.csv("../DATASETS/AusPlots_Sites_Classified_2-0-6.csv")
-
-
 # Grass 
 classifications[classifications$site_location_name == 'WAAPIL0003',]$vegetation_type
 classifications[classifications$site_location_name == 'TCATCH0006',]$vegetation_type
@@ -140,7 +204,19 @@ classifications[classifications$site_location_name == 'QDAEIU0010',]$vegetation_
 classifications[classifications$site_location_name == 'NSANSS0001',]$vegetation_type
 classifications[classifications$site_location_name == 'NSANAN0002',]$vegetation_type
 
+# Relationship with MAP
 
+load('../STEP4_EXPORE_DATA/annual.precip.data.RData')
+
+site.names <- mapply(colnames(r2s)[-c(1:2)],FUN = function(str) {
+  return(strsplit(str, split = ".", fixed = T)[[1]][1])
+})
+max.adj.r2 <- mapply(r2s[,-c(1:2)], FUN = max, na.rm = F)
+max.adj.r2.df <- data.frame("site_location_name" = site.names,max.adj.r2)
+
+r2.map <- merge(annual.precip.data, max.adj.r2.df, by =  "site_location_name")
+
+plot_ly(r2.map, x = ~precip_mean, y = ~max.adj.r2)
 
 
 
