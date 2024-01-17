@@ -30,22 +30,37 @@ BAI <- function(RED, NIR) {
   return(1/denominator)
 }
 
-plot_NBR <- function(site.name) {
-  burn.date <- read.csv('../DATASETS/AusPlots_BurnDate.csv')
-  burn.reflectances <- read.csv('../DATASETS/AusPlots_BurnReflectances.csv')
-  
+plot_NBR <- function(site.name,burn.date, burn.reflectances) {
+  site.focus <- subset(burn.reflectances, subset = (site_location_name ==  site.name))
+  site.focus$NBR <- NBR(site.focus$modis_nir, site.focus$modis_swir)
+  site.focus$date <- as.Date(site.focus$date)
+  return(ts_plot(site.focus[,c("date", "NBR")]))
+}
+
+plot_NBR_gg <- function(site.name, burn.date, burn.reflectances) {
   site.focus <- subset(burn.reflectances, subset = (site_location_name ==  site.name))
   site.focus$NBR <- NBR(site.focus$modis_nir, site.focus$modis_swir)
   site.focus$date <- as.Date(site.focus$date)
   
-  return(ts_plot(site.focus[,c("date", "NBR")]))
+  burn.date <- subset(burn.date, subset = (site_location_name ==  site.name))
+  burn.date$date <- as.Date(burn.date$date)
+  
+  g <- ggplot(data = site.focus, mapping = aes(x = date, y = NBR)) +
+    geom_line() + labs(title = paste0(site.name, " NBR and Burn Dates")) +
+    geom_hline(yintercept = 0, linetype = 4, color = 'green')
+  
+  for (d in 1:nrow(burn.date)) {
+    print(burn.date[d,]$date)
+    g <- g + geom_vline(xintercept = as.numeric(burn.date[d,]$date), 
+                          linetype = 4, color = 'red')
+  }
+  
+  return(g)
 }
 
 
-plot_BAI <- function(site.name) {
-  burn.date <- read.csv('../DATASETS/AusPlots_BurnDate.csv')
-  burn.reflectances <- read.csv('../DATASETS/AusPlots_BurnReflectances.csv')
-  
+
+plot_BAI <- function(site.name, burn.date, burn.reflectances) {
   site.focus <- subset(burn.reflectances, subset = (site_location_name ==  site.name))
   site.focus$BAI <- BAI(site.focus$modis_red, site.focus$modis_nir)
   site.focus$date <- as.Date(site.focus$date)
@@ -53,26 +68,20 @@ plot_BAI <- function(site.name) {
   return(ts_plot(site.focus[,c("date", "BAI")]))
 }
 
+
 # Main --------------------------------------------------------------------
 
 # Individual
 site.name <- 'NSANAN0002'
 burn.date <- read.csv('../DATASETS/AusPlots_BurnDate.csv')
 burn.reflectances <- read.csv('../DATASETS/AusPlots_BurnReflectances.csv')
-site.focus <- subset(burn.reflectances, subset = (site_location_name == 'NSANAN0002'))
-site.focus$NBR <- NBR(site.focus$modis_nir, site.focus$modis_swir)
-site.focus$date <- as.Date(site.focus$date)
-ts_plot(site.focus[,c("date", "NBR")])
 
 
 # Using function
-plot_NBR('NSANAN0002')
-plot_NBR('NSAMDD0014')
 
-
-
-
-plot_BAI('NSANAN0002')
-
-
+plot_NBR_gg('NSANAN0002', burn.date, burn.reflectances)
+plot_NBR_gg('NTAGFU0021', burn.date, burn.reflectances)
+plot_NBR_gg('QDAEIU0010', burn.date, burn.reflectances)
+plot_NBR_gg('WAAPIL0003', burn.date, burn.reflectances)
+plot_NBR_gg('NSANSS0001', burn.date, burn.reflectances)
 
