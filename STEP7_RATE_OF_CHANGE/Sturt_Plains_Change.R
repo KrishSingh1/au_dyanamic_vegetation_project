@@ -49,6 +49,7 @@ ggplot() +geom_line(data = data.frame("time" = as.Date(spline.fit$x),"pv" = spli
   geom_line(data = fc,mapping = aes(x = time, y = pv)) +
   geom_line(data = spline.fit.pv,mapping = aes(x = time, y = diff), color = 'green')
 
+write.csv(spline.fit.pv,'../DATASETS/spline_fit_pv.csv')
 
 # Brown -------------------------------------------------------------------
 
@@ -77,3 +78,5 @@ spline.fit.npv$diff <- c(NA, diff(spline.fit.npv$npv))
 ggplot() +geom_line(data = data.frame("time" = as.Date(spline.fit$x),"npv" = spline.fit$y), mapping = aes(x = time, y = npv), color = 'red') +
   geom_line(data = fc,mapping = aes(x = time, y = npv)) +
   geom_line(data = spline.fit.npv,mapping = aes(x = time, y = diff), color = 'brown')
+
+write.csv(spline.fit.pv,'../DATASETS/spline_fit_npv.csv')
