@@ -79,4 +79,4 @@ ggplot() +geom_line(data = data.frame("time" = as.Date(spline.fit$x),"npv" = spl
   geom_line(data = fc,mapping = aes(x = time, y = npv)) +
   geom_line(data = spline.fit.npv,mapping = aes(x = time, y = diff), color = 'brown')
 
-write.csv(spline.fit.pv,'../DATASETS/spline_fit_npv.csv')
+write.csv(spline.fit.npv,'../DATASETS/spline_fit_npv.csv')
