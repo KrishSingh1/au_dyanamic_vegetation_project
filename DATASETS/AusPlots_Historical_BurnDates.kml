@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document id="root_doc">
+<Schema name="AusPlots_Historical_BurnDates" id="AusPlots_Historical_BurnDates">
+	<SimpleField name="OBJECTID" type="int"></SimpleField>
+	<SimpleField name="fire_id" type="string"></SimpleField>
+	<SimpleField name="fire_name" type="string"></SimpleField>
+	<SimpleField name="ignition_d" type="string"></SimpleField>
+	<SimpleField name="capture_da" type="string"></SimpleField>
+	<SimpleField name="extinguish" type="string"></SimpleField>
+	<SimpleField name="fire_type" type="string"></SimpleField>
+	<SimpleField name="ignition_c" type="string"></SimpleField>
+	<SimpleField name="capt_metho" type="string"></SimpleField>
+	<SimpleField name="area_ha" type="int"></SimpleField>
+	<SimpleField name="perim_km" type="int"></SimpleField>
+	<SimpleField name="state" type="string"></SimpleField>
+	<SimpleField name="agency" type="string"></SimpleField>
+	<SimpleField name="Shape__Are" type="float"></SimpleField>
+	<SimpleField name="Shape__Len" type="float"></SimpleField>
+</Schema>
+<Folder><name>AusPlots_Historical_BurnDates</name>
+  <Placemark>
+	<name>WAAPIL0003</name>
+	<description></description>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#AusPlots_Historical_BurnDates">
+		<SimpleData name="OBJECTID">212007</SimpleData>
+		<SimpleData name="fire_id">999</SimpleData>
+		<SimpleData name="ignition_d">1989/11/28</SimpleData>
+		<SimpleData name="fire_type">Unknown</SimpleData>
+		<SimpleData name="capt_metho">Landsat</SimpleData>
+		<SimpleData name="area_ha">1384</SimpleData>
+		<SimpleData name="perim_km">95</SimpleData>
+		<SimpleData name="state">WA (Western Australia)</SimpleData>
+		<SimpleData name="agency">WA DFES</SimpleData>
+		<SimpleData name="Shape__Are">0.001273510908277</SimpleData>
+		<SimpleData name="Shape__Len">0.532847799733371</SimpleData>
+	</SchemaData></ExtendedData>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>117.0570056,-21.54110278 117.0579694,-21.54110278 117.0579722,-21.54019722 117.0570056,-21.5402 117.0570056,-21.54110278</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>NSANAN0002</name>
+	<description></description>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#AusPlots_Historical_BurnDates">
+		<SimpleData name="OBJECTID">160626</SimpleData>
+		<SimpleData name="fire_id">0</SimpleData>
+		<SimpleData name="fire_type">Bushfire</SimpleData>
+		<SimpleData name="area_ha">23271</SimpleData>
+		<SimpleData name="perim_km">120</SimpleData>
+		<SimpleData name="state">NSW (New South Wales)</SimpleData>
+		<SimpleData name="agency">NSW PWS</SimpleData>
+		<SimpleData name="Shape__Are">0.021797846909067</SimpleData>
+		<SimpleData name="Shape__Len">1.16956723510876</SimpleData>
+	</SchemaData></ExtendedData>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>150.152063324491,-30.2820961455371 150.153090800494,-30.2817126042623 150.1530889,-30.28140833 150.1520611,-30.28138333 150.152063324491,-30.2820961455371</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>NSANAN0002</name>
+	<description></description>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#AusPlots_Historical_BurnDates">
+		<SimpleData name="OBJECTID">126440</SimpleData>
+		<SimpleData name="fire_id">RFS-18867</SimpleData>
+		<SimpleData name="fire_name">Paleroo Creek Fire</SimpleData>
+		<SimpleData name="ignition_d">2006/11/14</SimpleData>
+		<SimpleData name="extinguish">2007/01/18</SimpleData>
+		<SimpleData name="fire_type">Bushfire</SimpleData>
+		<SimpleData name="area_ha">13327</SimpleData>
+		<SimpleData name="perim_km">152</SimpleData>
+		<SimpleData name="state">NSW (New South Wales)</SimpleData>
+		<SimpleData name="agency">NSW PWS</SimpleData>
+		<SimpleData name="Shape__Are">0.013339343658572</SimpleData>
+		<SimpleData name="Shape__Len">1.24222882372265</SimpleData>
+	</SchemaData></ExtendedData>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>150.1520639,-30.28228056 150.1530944,-30.28228889 150.1530889,-30.28140833 150.1520611,-30.28138333 150.1520639,-30.28228056</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>NSANAN0002</name>
+	<description></description>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#AusPlots_Historical_BurnDates">
+		<SimpleData name="OBJECTID">23647</SimpleData>
+		<SimpleData name="fire_id">0</SimpleData>
+		<SimpleData name="fire_type">Bushfire</SimpleData>
+		<SimpleData name="area_ha">24069</SimpleData>
+		<SimpleData name="perim_km">81</SimpleData>
+		<SimpleData name="state">NSW (New South Wales)</SimpleData>
+		<SimpleData name="agency">NSW PWS</SimpleData>
+		<SimpleData name="Shape__Are">0.022559932629065</SimpleData>
+		<SimpleData name="Shape__Len">0.78657478560864</SimpleData>
+	</SchemaData></ExtendedData>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>150.1520639,-30.28228056 150.1530944,-30.28228889 150.1530889,-30.28140833 150.1520611,-30.28138333 150.1520639,-30.28228056</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>NSANAN0002</name>
+	<description></description>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#AusPlots_Historical_BurnDates">
+		<SimpleData name="OBJECTID">73473</SimpleData>
+		<SimpleData name="fire_id">0</SimpleData>
+		<SimpleData name="fire_type">Bushfire</SimpleData>
+		<SimpleData name="area_ha">10513</SimpleData>
+		<SimpleData name="perim_km">44</SimpleData>
+		<SimpleData name="state">NSW (New South Wales)</SimpleData>
+		<SimpleData name="agency">NSW PWS</SimpleData>
+		<SimpleData name="Shape__Are">0.00985411206284</SimpleData>
+		<SimpleData name="Shape__Len">0.426932787398333</SimpleData>
+	</SchemaData></ExtendedData>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>150.1520639,-30.28228056 150.1530944,-30.28228889 150.1530889,-30.28140833 150.1520611,-30.28138333 150.1520639,-30.28228056</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>WAAPIL0003</name>
+	<description></description>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#AusPlots_Historical_BurnDates">
+		<SimpleData name="OBJECTID">168279</SimpleData>
+		<SimpleData name="fire_id">999</SimpleData>
+		<SimpleData name="ignition_d">2014/04/23</SimpleData>
+		<SimpleData name="fire_type">Unknown</SimpleData>
+		<SimpleData name="capt_metho">Landsat</SimpleData>
+		<SimpleData name="area_ha">16371</SimpleData>
+		<SimpleData name="perim_km">862</SimpleData>
+		<SimpleData name="state">WA (Western Australia)</SimpleData>
+		<SimpleData name="agency">WA DFES</SimpleData>
+		<SimpleData name="Shape__Are">0.015842626614585</SimpleData>
+		<SimpleData name="Shape__Len">2.33224624384958</SimpleData>
+	</SchemaData></ExtendedData>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>117.0570056,-21.54110278 117.0579694,-21.54110278 117.0579722,-21.54019722 117.0570056,-21.5402 117.0570056,-21.54110278</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>NSANAN0002</name>
+	<description></description>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#AusPlots_Historical_BurnDates">
+		<SimpleData name="OBJECTID">267090</SimpleData>
+		<SimpleData name="fire_id">18021290865</SimpleData>
+		<SimpleData name="fire_name">Bobbiwaa Creek Fire</SimpleData>
+		<SimpleData name="ignition_d">2018/02/11</SimpleData>
+		<SimpleData name="extinguish">2018/03/01</SimpleData>
+		<SimpleData name="fire_type">Bushfire</SimpleData>
+		<SimpleData name="area_ha">19</SimpleData>
+		<SimpleData name="perim_km">2</SimpleData>
+		<SimpleData name="state">NSW (New South Wales)</SimpleData>
+		<SimpleData name="agency">NSW PWS</SimpleData>
+		<SimpleData name="Shape__Are">1.794163154e-05</SimpleData>
+		<SimpleData name="Shape__Len">0.018323416783561</SimpleData>
+	</SchemaData></ExtendedData>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>150.1520639,-30.28228056 150.1530944,-30.28228889 150.1530889,-30.28140833 150.1520611,-30.28138333 150.1520639,-30.28228056</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>NSANAN0002</name>
+	<description></description>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#AusPlots_Historical_BurnDates">
+		<SimpleData name="OBJECTID">118895</SimpleData>
+		<SimpleData name="fire_id">19101751804</SimpleData>
+		<SimpleData name="fire_name">Kaputar Fire</SimpleData>
+		<SimpleData name="ignition_d">2019/10/16</SimpleData>
+		<SimpleData name="extinguish">2019/12/03</SimpleData>
+		<SimpleData name="fire_type">Bushfire</SimpleData>
+		<SimpleData name="area_ha">19667</SimpleData>
+		<SimpleData name="perim_km">207</SimpleData>
+		<SimpleData name="state">NSW (New South Wales)</SimpleData>
+		<SimpleData name="agency">NSW PWS</SimpleData>
+		<SimpleData name="Shape__Are">0.018927170312054</SimpleData>
+		<SimpleData name="Shape__Len">1.64876072001532</SimpleData>
+	</SchemaData></ExtendedData>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>150.1520639,-30.28228056 150.1530944,-30.28228889 150.1530889,-30.28140833 150.1520611,-30.28138333 150.1520639,-30.28228056</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>WAAPIL0003</name>
+	<description></description>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#AusPlots_Historical_BurnDates">
+		<SimpleData name="OBJECTID">264542</SimpleData>
+		<SimpleData name="fire_id">58</SimpleData>
+		<SimpleData name="fire_name">UCL WITTENOOM KNP</SimpleData>
+		<SimpleData name="ignition_d">2015/01/10</SimpleData>
+		<SimpleData name="fire_type">Bushfire</SimpleData>
+		<SimpleData name="ignition_c">Natural</SimpleData>
+		<SimpleData name="capt_metho">Landsat</SimpleData>
+		<SimpleData name="area_ha">16369</SimpleData>
+		<SimpleData name="perim_km">862</SimpleData>
+		<SimpleData name="state">WA (Western Australia)</SimpleData>
+		<SimpleData name="agency">WA DFES</SimpleData>
+		<SimpleData name="Shape__Are">0.015841476780452</SimpleData>
+		<SimpleData name="Shape__Len">2.32525457252305</SimpleData>
+	</SchemaData></ExtendedData>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>117.0570056,-21.54110278 117.0579694,-21.54110278 117.0579722,-21.54019722 117.0570056,-21.5402 117.0570056,-21.54110278</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>WAAPIL0003</name>
+	<description></description>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#AusPlots_Historical_BurnDates">
+		<SimpleData name="OBJECTID">180948</SimpleData>
+		<SimpleData name="fire_id">999</SimpleData>
+		<SimpleData name="ignition_d">2005/11/24</SimpleData>
+		<SimpleData name="fire_type">Unknown</SimpleData>
+		<SimpleData name="capt_metho">Landsat</SimpleData>
+		<SimpleData name="area_ha">34</SimpleData>
+		<SimpleData name="perim_km">6</SimpleData>
+		<SimpleData name="state">WA (Western Australia)</SimpleData>
+		<SimpleData name="agency">WA DFES</SimpleData>
+		<SimpleData name="Shape__Are">2.9330216421e-05</SimpleData>
+		<SimpleData name="Shape__Len">0.058862056949095</SimpleData>
+	</SchemaData></ExtendedData>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>117.0570056,-21.54110278 117.057605215034,-21.5411027806508 117.057604928,-21.5403711029999 117.0570056,-21.5405114999586 117.0570056,-21.54110278</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>WAAGAS0002</name>
+	<description></description>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#AusPlots_Historical_BurnDates">
+		<SimpleData name="OBJECTID">245362</SimpleData>
+		<SimpleData name="fire_id">999</SimpleData>
+		<SimpleData name="ignition_d">2015/02/07</SimpleData>
+		<SimpleData name="fire_type">Unknown</SimpleData>
+		<SimpleData name="capt_metho">Landsat</SimpleData>
+		<SimpleData name="area_ha">11461</SimpleData>
+		<SimpleData name="perim_km">453</SimpleData>
+		<SimpleData name="state">WA (Western Australia)</SimpleData>
+		<SimpleData name="agency">WA DFES</SimpleData>
+		<SimpleData name="Shape__Are">0.010648213072273</SimpleData>
+		<SimpleData name="Shape__Len">2.87418526787159</SimpleData>
+	</SchemaData></ExtendedData>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>120.479313576125,-23.3838000004403 120.479312324,-23.383866064 120.479605603,-23.383870788 120.479600488,-23.384141524 120.4801194,-23.3841498831299 120.4801194,-23.3838 120.479313576125,-23.3838000004403</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>NSANSS0001</name>
+	<description></description>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#AusPlots_Historical_BurnDates">
+		<SimpleData name="OBJECTID">82570</SimpleData>
+		<SimpleData name="fire_id">0</SimpleData>
+		<SimpleData name="fire_name">Claggers Spring</SimpleData>
+		<SimpleData name="ignition_d">2002/01/04</SimpleData>
+		<SimpleData name="fire_type">Bushfire</SimpleData>
+		<SimpleData name="area_ha">27538</SimpleData>
+		<SimpleData name="perim_km">104</SimpleData>
+		<SimpleData name="state">NSW (New South Wales)</SimpleData>
+		<SimpleData name="agency">NSW PWS</SimpleData>
+		<SimpleData name="Shape__Are">0.026491281812014</SimpleData>
+		<SimpleData name="Shape__Len">1.02932823812136</SimpleData>
+	</SchemaData></ExtendedData>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>148.3476944,-32.74985556 148.34875,-32.74981389 148.3487417,-32.74892778 148.3476639,-32.74892222 148.3476944,-32.74985556</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>NSANSS0001</name>
+	<description></description>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#AusPlots_Historical_BurnDates">
+		<SimpleData name="OBJECTID">89373</SimpleData>
+		<SimpleData name="fire_id">0</SimpleData>
+		<SimpleData name="fire_type">Bushfire</SimpleData>
+		<SimpleData name="area_ha">19263</SimpleData>
+		<SimpleData name="perim_km">84</SimpleData>
+		<SimpleData name="state">NSW (New South Wales)</SimpleData>
+		<SimpleData name="agency">NSW PWS</SimpleData>
+		<SimpleData name="Shape__Are">0.018523291728343</SimpleData>
+		<SimpleData name="Shape__Len">0.80386129721652</SimpleData>
+	</SchemaData></ExtendedData>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>148.3476944,-32.74985556 148.34875,-32.74981389 148.3487417,-32.74892778 148.3476639,-32.74892222 148.3476944,-32.74985556</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>WAAPIL0003</name>
+	<description></description>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#AusPlots_Historical_BurnDates">
+		<SimpleData name="OBJECTID">253186</SimpleData>
+		<SimpleData name="fire_id">999</SimpleData>
+		<SimpleData name="ignition_d">1995/12/15</SimpleData>
+		<SimpleData name="fire_type">Unknown</SimpleData>
+		<SimpleData name="capt_metho">Landsat</SimpleData>
+		<SimpleData name="area_ha">3490</SimpleData>
+		<SimpleData name="perim_km">213</SimpleData>
+		<SimpleData name="state">WA (Western Australia)</SimpleData>
+		<SimpleData name="agency">WA DFES</SimpleData>
+		<SimpleData name="Shape__Are">0.003307630790459</SimpleData>
+		<SimpleData name="Shape__Len">1.07724549282526</SimpleData>
+	</SchemaData></ExtendedData>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>117.0570056,-21.54110278 117.0579694,-21.54110278 117.0579722,-21.54019722 117.0570056,-21.5402 117.0570056,-21.54110278</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>NSANSS0001</name>
+	<description></description>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#AusPlots_Historical_BurnDates">
+		<SimpleData name="OBJECTID">261398</SimpleData>
+		<SimpleData name="fire_id">0</SimpleData>
+		<SimpleData name="fire_type">Bushfire</SimpleData>
+		<SimpleData name="area_ha">17613</SimpleData>
+		<SimpleData name="perim_km">74</SimpleData>
+		<SimpleData name="state">NSW (New South Wales)</SimpleData>
+		<SimpleData name="agency">NSW PWS</SimpleData>
+		<SimpleData name="Shape__Are">0.016937949720614</SimpleData>
+		<SimpleData name="Shape__Len">0.703923120779762</SimpleData>
+	</SchemaData></ExtendedData>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>148.3476944,-32.74985556 148.34875,-32.74981389 148.3487417,-32.74892778 148.3476639,-32.74892222 148.3476944,-32.74985556</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+</Folder>
+</Document></kml>

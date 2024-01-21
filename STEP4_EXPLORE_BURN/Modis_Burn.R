@@ -8,6 +8,7 @@
 # Library -----------------------------------------------------------------
 library(ausplotsR)
 library(TSstudio)
+library(sf)
 
 
 
@@ -45,6 +46,8 @@ plot_NBR_gg <- function(site.name, burn.date, burn.reflectances) {
   burn.date <- subset(burn.date, subset = (site_location_name ==  site.name))
   burn.date$date <- as.Date(burn.date$date)
   
+  
+  
   g <- ggplot(data = site.focus, mapping = aes(x = date, y = NBR)) +
     geom_line() + labs(title = paste0(site.name, " NBR and Burn Dates")) +
     geom_hline(yintercept = 0, linetype = 4, color = 'green')
@@ -75,13 +78,21 @@ plot_BAI <- function(site.name, burn.date, burn.reflectances) {
 site.name <- 'NSANAN0002'
 burn.date <- read.csv('../DATASETS/AusPlots_BurnDate.csv')
 burn.reflectances <- read.csv('../DATASETS/AusPlots_BurnReflectances.csv')
+hist.shp <- st_read("../DATASETS/AusPlots_Historical_BurnDates.shp")
+hist.shp <- hist.shp[!is.na(hist.shp$igntn_d)  | !is.na(hist.shp$captr_d),]
 
+
+dates <- data.frame("site_location_name" = c(burn.date$site_location_name, hist.shp$Name),
+                    "date" = c(burn.date$date, as.character(hist.shp$igntn_d)))
+
+unique(dates$site_location_name)
 
 # Using function
 
-plot_NBR_gg('NSANAN0002', burn.date, burn.reflectances)
-plot_NBR_gg('NTAGFU0021', burn.date, burn.reflectances)
-plot_NBR_gg('QDAEIU0010', burn.date, burn.reflectances)
-plot_NBR_gg('WAAPIL0003', burn.date, burn.reflectances)
-plot_NBR_gg('NSANSS0001', burn.date, burn.reflectances)
+plot_NBR_gg('NTAGFU0021', dates, burn.reflectances)
+plot_NBR_gg('NSANSS0001', dates, burn.reflectances)
+plot_NBR_gg('QDASSD0015', dates, burn.reflectances)
+plot_NBR_gg('WAAPIL0003', dates, burn.reflectances)
+plot_NBR_gg('NSANAN0002', dates, burn.reflectances)
+plot_NBR_gg('WAAGAS0002', dates, burn.reflectances)
 
