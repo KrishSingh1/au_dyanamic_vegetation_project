@@ -97,7 +97,7 @@ plot_Burn_gg <- function(dea.fc, query, burn.date, f_type = 'pv') {
 }
 
 main <- function(query, directory = 'C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtraction/BACKUP_DATA/csv_files'
-                 , veg.info){
+                 , veg.info, f_type){
   
   dea.fc <- get_preprocessed_dea_fc(query, veg.info = veg.info)
   dea.fc$time <- as.Date(dea.fc$time)
@@ -111,7 +111,7 @@ main <- function(query, directory = 'C:/Users/krish/Desktop/DYNAMIC MODEL VEGETA
   dates$date <- as.Date(dates$date)
   
   
-  return(plot_Burn_gg(dea.fc, query, dates))
+  return(plot_Burn_gg(dea.fc, query, dates, f_type))
 }
 
 
@@ -131,22 +131,31 @@ dea.fc$time <- as.Date(dea.fc$time)
 burn.date <- read.csv('../DATASETS/AusPlots_BurnDate.csv')
 burn.reflectances <- read.csv('../DATASETS/AusPlots_BurnReflectances.csv')
 hist.shp <- st_read("../DATASETS/AusPlots_Historical_BurnDates.shp")
+
+
+
 hist.shp <- hist.shp[!is.na(hist.shp$igntn_d)  | !is.na(hist.shp$captr_d),]
 dates <- data.frame("site_location_name" = c(burn.date$site_location_name, hist.shp$Name),
                     "date" = c(burn.date$date, as.character(hist.shp$igntn_d)))
 dates$date <- as.Date(dates$date)
 
+
 # Plot burn date 
 plot_Burn_gg(dea.fc, query, dates)
 
 # Streamline the process 
-main(query, veg.info =veg.info)
-main('NSANSS0001', veg.info =veg.info)
+main(query, veg.info =veg.info, f_type = 'pv')
+main('NSANSS0001', veg.info =veg.info, f_type = 'pv')
 main('NTAGFU0021', veg.info =veg.info)
 main('QDASSD0015', veg.info =veg.info)
 main('WAAPIL0003', veg.info =veg.info)
 main('NSANAN0002', veg.info =veg.info)
 main('WAAGAS0002', veg.info =veg.info)
+
+
+
+View(subset(hist.shp, subset = (Name == 'NSANAN0002')))
+subset(burn.date, subset = (site_location_name == 'NSANAN0002'))$date
 
 
 
