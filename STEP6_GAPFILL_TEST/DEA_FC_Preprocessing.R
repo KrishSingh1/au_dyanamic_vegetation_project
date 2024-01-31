@@ -15,31 +15,18 @@ library(dplyr)
 get_preprocessed_dea_fc <- function(query, 
                                     directory = 'C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtraction/BACKUP_DATA/csv_files',
                                     veg.info){
-  
-  files <- list.files(directory, pattern = "\\.csv$", full.names = FALSE)
-  file.names <- tools::file_path_sans_ext(files)
-  
-  if(all(query %in% file.names) == F) {
-    print(paste0("Error: Cannot find ", query, " in given directory"))
-    return(NULL)
-  }
-  
-  dea.fc <- fread(paste0(directory, "/", query, ".csv")) # use data.table for faster processing
-  
-  if(nrow(dea.fc) > 0) {
-    dea.fc <- trim_to_nearest_coord(data.table(veg.info$site.info), dea.fc, query)
-    dea.fc <- subset(dea.fc, subset = (ue <= 25.5))
-    
-    if(nrow(dea.fc) > 0) {
-      dea.fc <- aggregate(dea.fc[,c('bs', 'pv', 'npv')], 
-                          by = list(dea.fc$time), FUN = mean, na.rm = T) 
-      return(dea.fc)
-    }
-    colnames(dea.fc)[1] = 'time'
-  } else {
-    print(paste0(query, " has bad data"))
-  }
-  
+  dea.fc <- tryCatch({
+    temp <- fread(paste0(directory, "/", query, ".csv")) # use data.table for faster processing
+    temp <- trim_to_nearest_coord(data.table(veg.info$site.info), temp, query) # trim spatially
+    temp <- subset(temp, subset = (ue <= 25.5)) # filter based on unmixing error (25.5 ~ 10%)
+    temp <- aggregate(temp[,-1], 
+                          by = list(temp$time), FUN = mean, na.rm = T) # aggregate
+    colnames(temp)[1] = 'time'
+    return(temp)
+  }, error = function(e) {
+    print(paste0(conditionMessage(e), " in ", query))
+    return(NA)
+  })
   return(dea.fc)
 }
 
@@ -92,12 +79,17 @@ files <- list.files('C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/Dat
 file.names <- tools::file_path_sans_ext(files)
 veg.info <- readRDS('../DATASETS/site_veg_2-0-6.rds')
 
+error.messages <- c()
 
 for (query in file.names) {
   site.fc <- get_preprocessed_dea_fc(query, veg.info = veg.info)
-  write.csv(site.fc, paste0('../DATASETS/DEA_FC_PROCESSED/SPATIAL_AND_UE_FILTER/', query, '.csv'))
+  if(class(site.fc) != 'data.frame') {
+    error.messages <- c(error.messages, paste0('Error in processing ', query, '.csv'))
+  } else {
+    write.csv(site.fc, paste0('../DATASETS/DEA_FC_PROCESSED/SPATIAL_AND_UE_FILTER/', query, '.csv')) 
+  }
 }
-
+writeLines(error.messages, '../DATASETS/DEA_FC_PROCESSED/SPATIAL_AND_UE_FILTER/log.txt')
 
 
 
