@@ -356,7 +356,7 @@ class historical_burn_date_index_attribute_adder_lag(BaseEstimator, TransformerM
 #site_location_name = 'NSAMDD0002' # no fire, seasonal
 #site_location_name = 'NSANAN0002' # fire, seasonal, big drop
 site_location_name = 'WAAPIL0003'
-historical_fire_ds = gpd.read_file('..\DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/DATASETS/AusPlots_Historical_BurnDates.shp', parse_dates = ['igntn_d'])
+historical_fire_ds = gpd.read_file('../DATASETS/AusPlots_Historical_BurnDates.shp', parse_dates = ['igntn_d'])
 print(historical_fire_ds['Name'])
 time_lag = 5
 window_length = 5
@@ -373,7 +373,7 @@ historical_fire_ds = historical_fire_pipeline.fit_transform(historical_fire_ds)
 print(historical_fire_ds)
 
 
-site = pd.read_csv(f'au_dyanamic_vegetation_project/DATASETS/DEA_FC_PROCESSED/SPATIAL_AND_UE_FILTER/{site_location_name}.csv', parse_dates=['time'])
+site = pd.read_csv(f'../DATASETS/DEA_FC_PROCESSED/SPATIAL_AND_UE_FILTER/{site_location_name}.csv', parse_dates=['time'])
 
 time_fc_pipeline = Pipeline([
     ('preprocess_fc_time_series', preprocess_fc_time_series(window_length = window_length_smooth, polyorder = polyorder)),
@@ -396,7 +396,7 @@ datasets = dict()
 
 for index, row in climate_variables.iterrows():
 
-    climate = pd.read_csv(f'..\DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/DATASETS/Climate_Gridded/{row["climate_var"]}/{site_location_name}_1987_2022.csv', parse_dates=['time'])
+    climate = pd.read_csv(f'../DATASETS/Climate_Gridded/{row["climate_var"]}/{site_location_name}_1987_2022.csv', parse_dates=['time'])
     print(climate)
     
     datasets[row['climate_var']] = climate
