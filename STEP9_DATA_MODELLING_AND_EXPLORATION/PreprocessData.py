@@ -35,7 +35,6 @@ class time_attributes_adder(BaseEstimator, TransformerMixin):
         
         X['month_cir'] = np.sin(X['month']/12)
         X['dayofyear_cir'] =  (X['dayofyear']/365)
-        print(X)
       
         return X
     
@@ -124,8 +123,9 @@ class preprocess_climate_time_series(BaseEstimator, TransformerMixin):
 
 class climate_time_series_attributes_adder(BaseEstimator, TransformerMixin):
     
-    def __init__(self, window):
+    def __init__(self, window, lag):
         self.window = window 
+        self.lag = lag
         
     def fit(self, X, y=None):
         return self 
@@ -149,7 +149,7 @@ class climate_time_series_attributes_adder(BaseEstimator, TransformerMixin):
         ## Add rolling time window  
         ## Here, I took the rolling window, then I shifted it by the window size,
         ## Note: the fact that they, the size of rolling window and lag number, the same is arbituary 
-        X[climate_variable + '_rolling'] = X[climate_variable].rolling(window = self.window).sum().shift(self.window)
+        X[climate_variable + '_rolling'] = X[climate_variable].rolling(window = self.window).sum().shift(self.lag)
         
         return X
 
@@ -238,7 +238,8 @@ class historical_burn_date_attribute_adder(BaseEstimator, TransformerMixin):
         
         X['days_since_fire'] = days_since
         X['days_since_fire'] = X['days_since_fire'].astype('Int64')
-        X['days_since_fire_lag'] =  X['days_since_fire'].shift(self.time_lag)
+        X['days_since_fire'] = X['days_since_fire'].replace(pd.NA, -100)
+        #X['days_since_fire_lag'] =  X['days_since_fire'].shift(self.time_lag)
         print(X)
         return X
     
@@ -287,54 +288,24 @@ class historical_burn_date_index_attribute_adder(BaseEstimator, TransformerMixin
         # problem here is that the machine learning model does not accept NA for 
     
      print(X)
+     X['mean_pv_drop_after_fire'] = X['mean_pv_drop_after_fire'].replace(pd.NA, -100)
      return X
+ 
 
-
-# =============================================================================
-class historical_burn_date_index_attribute_adder_lag(BaseEstimator, TransformerMixin):
-     
-    def __init__(self, time_lag, verbose = False, time_period = 16, month_baseline = 6):
-        self.verbose = verbose
-        self.time_period = time_period
-        self.month_baseline = month_baseline
-        self.time_lag = time_lag
-        
+class precip_scenarios_adder(BaseEstimator, TransformerMixin):
+    
     def fit(self, X, y=None):
         return self 
     
     def transform(self, X, y=None):
         
-      X = X.copy()
-      fire_dates = X.loc[(X['days_since_fire_lag'] < self.time_period) & (X['days_since_fire_lag'] >= 0)]
-      if self.verbose: print(fire_dates)
-      X['mean_pv_drop_per_days_since_fire'] = pd.NA
+        X = X.copy()
+        X['precip_null'] = [0 for i in range(len(X))] # add a null precip scenario 
+        X['precip_constant'] = X['precip']
+        
+        return X
 
-      for i in range(len(fire_dates)):
-  
-        #if self.verbose: print(lag_correction)
-        if self.verbose: print(fire_dates.index[i])
-        
-        prior = fire_dates.index[i] - relativedelta(months = self.month_baseline)
-        if self.verbose: print(prior)
-        mean_selector = ( X.index >= prior) & (X.index  < fire_dates.index[i])
-        mean_pv = X.iloc[mean_selector]['pv_lag'].mean()
-        if self.verbose: print(mean_pv)
-        
-        if i != 2:
-            df_selector = (X.index >= fire_dates.index[i]) & (X.index <fire_dates.index[i+1]) # only go up to the next fire date
-        else:
-            df_selector = (X.index >= fire_dates.index[i]) # there is no recorded fire date so go up to the very end of the dataset 
-            
-        selected_df = X.iloc[df_selector].copy()
-        selected_df['days_since_fire_lag'].loc[selected_df['days_since_fire_lag'] == 0] = 1
-        #selected_df['days_since_fire'] -= (self.time_period * self.time_lag) # correct for lag in the pv_lag
-        if self.verbose: print(selected_df[['pv','pv_lag','days_since_fire', 'days_since_fire_lag']])
-        
-        X.loc[df_selector,'mean_pv_drop_per_sqrt_days_since_fire'] = (mean_pv - selected_df['pv_lag'])/np.sqrt(selected_df['days_since_fire_lag'])
-        X.loc[df_selector,'mean_pv_drop_per_log_days_since_fire'] = (mean_pv - selected_df['pv_lag'])/(np.log(selected_df['days_since_fire_lag']) + 1)
-        X.loc[df_selector,'mean_pv_drop_per_days_since_fire'] = (mean_pv - selected_df['pv_lag'])/(selected_df['days_since_fire_lag'])
-        
-        X = X.astype('Float64')
-        
-      return X
+    
+ 
+
 # =============================================================================

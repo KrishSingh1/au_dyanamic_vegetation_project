@@ -1,0 +1,33 @@
+digraph Tree {
+node [shape=box, fontname="helvetica"] ;
+edge [fontname="helvetica"] ;
+0 [label="precip_rolling <= 192.462\npoisson = 0.978\nsamples = 647\nvalue = [[9.228]\n[37.103]\n[52.202]]"] ;
+1 [label="npv_lag <= 47.964\npoisson = 0.924\nsamples = 560\nvalue = [[8.358]\n[37.741]\n[52.435]]"] ;
+0 -> 1 [labeldistance=2.5, labelangle=45, headlabel="True"] ;
+2 [label="pv_lag <= 6.701\npoisson = 0.826\nsamples = 141\nvalue = [[6.667]\n[45.804]\n[45.992]]"] ;
+1 -> 2 ;
+3 [label="poisson = 0.56\nsamples = 65\nvalue = [[3.45]\n[52.047]\n[42.962]]"] ;
+2 -> 3 ;
+4 [label="poisson = 0.339\nsamples = 76\nvalue = [[9.418]\n[40.465]\n[48.584]]"] ;
+2 -> 4 ;
+5 [label="bs_lag <= 39.867\npoisson = 0.746\nsamples = 419\nvalue = [[8.927]\n[35.028]\n[54.603]]"] ;
+1 -> 5 ;
+6 [label="npv_lag <= 53.207\npoisson = 0.656\nsamples = 342\nvalue = [[9.633]\n[33.569]\n[55.35]]"] ;
+5 -> 6 ;
+7 [label="poisson = 0.36\nsamples = 112\nvalue = [[12.044]\n[33.626]\n[52.834]]"] ;
+6 -> 7 ;
+8 [label="mean_pv_drop_after_fire <= 0.425\npoisson = 0.72\nsamples = 230\nvalue = [[8.459]\n[33.542]\n[56.576]]"] ;
+6 -> 8 ;
+9 [label="bs_change <= 0.151\npoisson = 0.332\nsamples = 132\nvalue = [[11.494]\n[31.847]\n[55.232]]"] ;
+8 -> 9 ;
+10 [label="poisson = 0.311\nsamples = 67\nvalue = [[12.03]\n[30.422]\n[56.129]]"] ;
+9 -> 10 ;
+11 [label="poisson = 0.345\nsamples = 65\nvalue = [[10.94]\n[33.317]\n[54.306]]"] ;
+9 -> 11 ;
+12 [label="poisson = 0.574\nsamples = 98\nvalue = [[4.372]\n[35.824]\n[58.387]]"] ;
+8 -> 12 ;
+13 [label="poisson = 0.623\nsamples = 77\nvalue = [[5.788]\n[41.507]\n[51.281]]"] ;
+5 -> 13 ;
+14 [label="poisson = 0.732\nsamples = 87\nvalue = [[14.826]\n[32.996]\n[50.707]]"] ;
+0 -> 14 [labeldistance=2.5, labelangle=-45, headlabel="False"] ;
+}

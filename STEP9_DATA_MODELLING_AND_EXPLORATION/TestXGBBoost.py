@@ -256,7 +256,10 @@ print(f"Mean RMSE of fractions: {np.mean(scores,axis = 0)}")
 print(f"Overall Mean RMSE of fractions: {np.mean(scores)}")
 
 
-#%%
+#%% Export Dataset
+
+
+site_merged.to_csv(f'{site_location_name}_XGBBoost_{np.mean(scores):0.2f}.csv')
 
 
     

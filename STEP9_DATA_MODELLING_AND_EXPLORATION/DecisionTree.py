@@ -4,6 +4,7 @@ Created on Wed Feb 28 13:48:01 2024
 
 @author: krish
 """
+
 import numpy as np
 import pandas as pd
 import geopandas as gpd
@@ -16,7 +17,6 @@ from sklearn.metrics import mean_squared_error
 from sklearn.pipeline import Pipeline
 from PreprocessData import * # import from custom transformers
 from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import cross_validate
 
 #%% Main 
 #  %% Preprocess and create train/test'
@@ -42,6 +42,11 @@ print(historical_fire_ds)
 
 
 site = pd.read_csv(f'../DATASETS/DEA_FC_PROCESSED/SPATIAL_AND_UE_FILTER/{site_location_name}.csv', parse_dates=['time'])
+
+
+# site1 = pd.read_csv(f'C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtraction/BACKUP_DATA/csv_files/{site_location_name}.csv', parse_dates=['time']).copy()
+# slight inspection on the raw ts. 
+
 
 time_fc_pipeline = Pipeline([
     ('preprocess_fc_time_series', preprocess_fc_time_series(window_length = window_length_smooth, polyorder = polyorder)),
@@ -101,9 +106,10 @@ FIRE_FEATURES = ['mean_pv_drop_after_fire', 'days_since_fire']
 # FEATURES = SEASONAL_FEATURES + PRECIP_FEATURES + LAG_FEATURES
 # PRECIP_FEATURES
 FEATURES = LAG_FEATURES + LAGGED_CHANGE_FEATURES + FIRE_FEATURES + SEASONAL_FEATURES + PRECIP_FEATURES + TEMP_FEATURESS
-
-
 TARGET = ['pv_filter', 'bs_filter', 'npv_filter']
+
+# site_merged = site_merged.dropna(subset = FEATURES) NA is allowed, not needed for decision tree 
+
 scores = []
 
 #%% Show CV splits 
@@ -122,14 +128,16 @@ for train_idx, val_idx in tss.split(site_merged):
     fold += 1
 plt.show()
 
-#%% Run Cross Validation
+#%% Run Grid Search
 
 random_state = 20240228
+
 hyp_params = { 
-    'min_samples_split' : [i for i in range(2, 11)],
-    'min_samples_leaf' : [i for i in range(1, 11)],
-    'max_features'     : ['sqrt', 'log2', None, int, float],
+    'min_samples_split' : np.linspace(0.05,0.5,10),
+    'min_samples_leaf' : np.linspace(0.05,0.5,10),
+    'max_features'     : ['sqrt', 'log2', None] + list(np.linspace(0.1,1,10)),
     'criterion': ['squared_error','friedman_mse', 'poisson'],
+    'splitter': ['best', 'random'],
     'random_state' : [random_state]
 }
 
@@ -196,7 +204,7 @@ reg.fit(X_train, y_train)
 
 dot_data = tree.export_graphviz(reg, out_file=None, feature_names = FEATURES) 
 graph = graphviz.Source(dot_data) 
-graph.render("DecisionTre", 
+graph.render(f"{site_location_name}_Decision_Tree", 
              view = True, 
              overwrite_source= True) 
 
@@ -248,5 +256,13 @@ print(f"Mean RMSE of fractions: {np.mean(scores,axis = 0)}")
 
 print(f"Overall Mean RMSE of fractions: {np.mean(scores)}")
 
+#%% Export Dataset
+
+
+site_merged.to_csv(f'{site_location_name}_DecisionTree_{np.mean(scores):0.2f}.csv')
+
+
+
+ 
 
 
