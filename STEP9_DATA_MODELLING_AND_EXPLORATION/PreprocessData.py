@@ -34,7 +34,7 @@ class time_attributes_adder(BaseEstimator, TransformerMixin):
         #X['weekofyear'] = X.index.isocalendar().week
         
         X['month_cir'] = np.sin(X['month']/12)
-        X['dayofyear_cir'] =  (X['dayofyear']/365)
+        X['dayofyear_cir'] =  np.sin(X['dayofyear']/365)
       
         return X
     
@@ -193,7 +193,11 @@ class historical_burn_date_preprocess(BaseEstimator, TransformerMixin):
         X = X.iloc[[i is not None for i in  X['igntn_d']]]
         X['igntn_d'] = pd.to_datetime(X['igntn_d'])
         X = X.sort_values(by = 'igntn_d')
-        print(X)
+        
+        # Mention that the dataset is empty
+        if(X.empty):
+            print(f'No Fire Dates for {self.site_location_name} avaliable')
+        
         return X
     
     

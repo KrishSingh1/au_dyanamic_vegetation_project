@@ -28,9 +28,9 @@ from PreprocessData import * # import from custom transformers
 #%% Main 
 #  %% Preprocess and create train/test'
 
-#site_location_name = 'NSAMDD0002' # no fire, seasonal
+site_location_name = 'NSAMDD0002' # no fire, seasonal
 #site_location_name = 'NSANAN0002' # fire, seasonal, big drop
-site_location_name = 'WAAPIL0003'
+#site_location_name = 'WAAPIL0003'
 historical_fire_ds = gpd.read_file('../DATASETS/AusPlots_Historical_BurnDates.shp', parse_dates = ['igntn_d'])
 print(historical_fire_ds['Name'])
 time_lag = 5
@@ -80,7 +80,7 @@ for index, row in climate_variables.iterrows():
         ('preprocess_climate_time_series', preprocess_climate_time_series()),
         ('climate_time_series_downsample', climate_time_series_downsample(start_time = site_resampled.index[0], resample_method = row['resample_type'])),
         ('time_attributes_adder', time_attributes_adder()),
-        ('climate_time_series_attributes_adder', climate_time_series_attributes_adder(window = window_length))
+        ('climate_time_series_attributes_adder', climate_time_series_attributes_adder(window = window_length, lag = window_length))
     ])
     climate_new = time_climate_pipeline.fit_transform(climate)
     site_resampled = site_resampled.merge(climate_new, how = 'left', left_index = True, right_index = True, validate = "one_to_one",
