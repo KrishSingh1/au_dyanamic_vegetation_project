@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import TimeSeriesSplit
 import graphviz 
 
+
 from sklearn import tree
 from sklearn.metrics import mean_squared_error
 from sklearn.pipeline import Pipeline
@@ -86,6 +87,7 @@ for index, row in climate_variables.iterrows():
     site_resampled = site_resampled.drop(columns =  site_resampled.filter(regex = '_DUPLICATE$').columns)
 
 site_merged = site_resampled.copy()
+write.csv(f'Site_Preprocessed_Test_{site_location_name}.csv')
 
 tss = TimeSeriesSplit(n_splits= 7)
 #%% Model the dataset

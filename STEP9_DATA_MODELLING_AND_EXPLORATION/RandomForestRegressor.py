@@ -14,6 +14,11 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import TimeSeriesSplit
 import graphviz 
 
+import sys
+sys.path.append('/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/STEP9_DATA_MODELLING_AND_EXPLORATION')
+sys.path.append('/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/STEP9_DATA_MODELLING_AND_EXPLORATION')
+
+
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 from sklearn.pipeline import Pipeline
@@ -76,7 +81,7 @@ for index, row in climate_variables.iterrows():
         ('preprocess_climate_time_series', preprocess_climate_time_series()),
         ('climate_time_series_downsample', climate_time_series_downsample(start_time = site_resampled.index[0], resample_method = row['resample_type'])),
         ('time_attributes_adder', time_attributes_adder()),
-        ('climate_time_series_attributes_adder', climate_time_series_attributes_adder(window = window_length))
+        ('climate_time_series_attributes_adder', climate_time_series_attributes_adder(window = window_length, lag = window_length)) ## Note, change lag accordingly
     ])
     climate_new = time_climate_pipeline.fit_transform(climate)
     site_resampled = site_resampled.merge(climate_new, how = 'left', left_index = True, right_index = True, validate = "one_to_one",
@@ -84,6 +89,7 @@ for index, row in climate_variables.iterrows():
     site_resampled = site_resampled.drop(columns =  site_resampled.filter(regex = '_DUPLICATE$').columns)
 
 site_merged = site_resampled.copy()
+site_merged.to_csv(f'Input_DataSet_{site_location_name}.csv')
 
 tss = TimeSeriesSplit(n_splits= 7)
 #%% Model the dataset

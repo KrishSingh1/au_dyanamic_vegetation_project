@@ -19,10 +19,14 @@ import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
 from sklearn.model_selection import TimeSeriesSplit
+import sys
+sys.path.append('/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/STEP9_DATA_MODELLING_AND_EXPLORATION')
 
 import xgboost as xgb
 from sklearn.metrics import mean_squared_error
 from sklearn.pipeline import Pipeline
+
+
 from PreprocessData import * # import from custom transformers 
 
 #%% Main 

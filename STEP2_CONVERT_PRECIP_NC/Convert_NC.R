@@ -36,12 +36,36 @@ get_tmax_data <- function(site.focus, directory) {
 # Main --------------------------------------------------------------------
 
 
+# # For initial Subset
+# site.list <- read.csv('../DATASETS/Sites_Subset_20231010/ausplots_site_info/sites_subset.csv')
+# site.unique.names <- unique(site.list$site_location_name)
+# 
+# for (site.name in site.unique.names) {
+# 
+#   directory <- "C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtraction/BACKUP_DATA/ausplots_agcd"
+#   file.output.name <- paste0(site.name, '_1987_2022.csv')
+#   
+#   # Precip data 
+#   data.export.precip <- get_precip_data(site.name, directory = directory)
+#   write.csv(data.export.precip, paste0("../DATASETS/Climate_Gridded/Precip/", file.output.name))
+#   print(paste0("Exported precip data for ", site.name))
+#   
+#   # Tmax data 
+#   
+#   data.export.tmax <- get_tmax_data(site.name, directory = directory)
+#   write.csv(data.export.tmax, paste0("../DATASETS/Climate_Gridded/tmax/", file.output.name))
+#   print(paste0("Exported tmax data for ", site.name))
+# }
 
-site.list <- read.csv('../DATASETS/Sites_Subset_20231010/ausplots_site_info/sites_subset.csv')
+
+# For bigger subset
+
+
+site.list <- read.csv('../DATASETS/Sites_Bigger_Subset_20240124/ausplots_bigger_subset.csv')
 site.unique.names <- unique(site.list$site_location_name)
 
 for (site.name in site.unique.names) {
-
+  
   directory <- "C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtraction/BACKUP_DATA/ausplots_agcd"
   file.output.name <- paste0(site.name, '_1987_2022.csv')
   
@@ -56,3 +80,4 @@ for (site.name in site.unique.names) {
   write.csv(data.export.tmax, paste0("../DATASETS/Climate_Gridded/tmax/", file.output.name))
   print(paste0("Exported tmax data for ", site.name))
 }
+

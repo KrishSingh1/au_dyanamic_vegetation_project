@@ -27,14 +27,13 @@ class time_attributes_adder(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
         
         X = X.copy()
-        #X['quarter'] = X.index.quarter
+   
         X['month'] = X.index.month
         X['year'] = X.index.year
         X['dayofyear'] = X.index.dayofyear
-        #X['weekofyear'] = X.index.isocalendar().week
         
-        X['month_cir'] = np.sin(X['month']/12)
-        X['dayofyear_cir'] =  np.sin(X['dayofyear']/365)
+        #X['month_cir'] = np.sin(X['month']/12)
+        #X['dayofyear_cir'] =  np.sin(X['dayofyear']/365)
       
         return X
     
@@ -81,6 +80,39 @@ class time_attributes_fc_diff_adder(BaseEstimator, TransformerMixin):
             X['bs_change'] = X["bs"].diff().rolling(window = self.window_size).mean()
         print(X)
           
+        return X
+    
+    
+    
+# Translated from R code by R package 'geosphere', 
+# Who used the following paper to calc photoperiod:
+    #Forsythe, William C., Edward J. Rykiel Jr., Randal S. Stahl, Hsin-i Wu and Robert M. Schoolfield, 1995. A model comparison for daylength as a function of latitude and day of the year. Ecological Modeling 80:87-95.
+# https://github.com/rspatial/geosphere/blob/master/R/daylength.R
+def calc_photoperiod(J, L):
+    theta = 0.2163108 + 2 * np.arctan(0.9671396 * np.tan(0.0086 * (J - 186))) # calc theta
+    psi = np.arcsin(0.39795 * np.cos(theta)) # calc psi 
+    square_bracket = (np.sin(0.8333*np.pi/180) + np.sin(L*np.pi/180)*np.sin(psi))/(np.cos(L*np.pi/180)*np.cos(psi))
+    square_bracket = np.minimum(np.maximum(square_bracket, -1), 1) # Enforce Constraints 
+    D = 24 - (24/np.pi) * np.arccos(square_bracket)   
+    return D
+    
+
+class daylength_attributes_adder(BaseEstimator, TransformerMixin):
+    
+    def __init__(self, latitude):
+        self.latitude = latitude
+        
+        
+    def fit(self, X, y=None):
+        return self 
+    
+    def transform(self, X, y=None):
+        
+        X = X.copy()
+        
+        X['photoperiod'] =  list(map(calc_photoperiod, X['dayofyear'] , [self.latitude]*len(X)))
+        X['photoperiod_gradient'] = X['photoperiod'].diff()
+        
         return X
 
 class preprocess_fc_time_series(BaseEstimator, TransformerMixin):
