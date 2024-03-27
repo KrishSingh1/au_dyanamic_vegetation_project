@@ -16,8 +16,6 @@ import graphviz
 
 import sys
 sys.path.append('/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/STEP9_DATA_MODELLING_AND_EXPLORATION')
-sys.path.append('/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/STEP9_DATA_MODELLING_AND_EXPLORATION')
-
 
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
@@ -27,95 +25,27 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.inspection import PartialDependenceDisplay
 
 #%% Main 
-#  %% Preprocess and create train/test'
 
-#site_location_name = 'NSAMDD0002' # no fire, seasonal
-#site_location_name = 'NSANAN0002' # fire, seasonal, big drop
-site_location_name = 'WAAPIL0003'
-historical_fire_ds = gpd.read_file('../DATASETS/AusPlots_Historical_BurnDates.shp', parse_dates = ['igntn_d'])
-print(historical_fire_ds['Name'])
-time_lag = 5
-window_length = 5
-month_baseline = 3
+site_location_name = 'NSANAN0002'
+site_merged = pd.read_csv(f'Input_DataSet_{site_location_name}.csv', parse_dates = ['time']).copy()
+site_merged = site_merged.set_index('time')
 
-# savgol_filter parameters 
-window_length_smooth = 15
-polyorder = 4 
-
-historical_fire_pipeline = Pipeline([
-    ('historical_burn_date_preprocess', historical_burn_date_preprocess(site_location_name))
-    ])
-historical_fire_ds = historical_fire_pipeline.fit_transform(historical_fire_ds)
-print(historical_fire_ds)
-
-
-site = pd.read_csv(f'../DATASETS/DEA_FC_PROCESSED/SPATIAL_AND_UE_FILTER/{site_location_name}.csv', parse_dates=['time'])
-
-time_fc_pipeline = Pipeline([
-    ('preprocess_fc_time_series', preprocess_fc_time_series(window_length = window_length_smooth, polyorder = polyorder)),
-    ('time_attributes_adder', time_attributes_adder()),
-    ('time_attributes_fc_lag_adder', time_attributes_fc_lag_adder(time_lag)),
-    ('time_attributes_fc_diff_adder', time_attributes_fc_diff_adder(False)),
-    ('historical_burn_date_attribute_adder', historical_burn_date_attribute_adder(historical_fire_ds, time_lag = time_lag)),
-    ('historical_burn_date_index_attribute_adder', historical_burn_date_index_attribute_adder(verbose = True,
-                                                                                              month_baseline = month_baseline))
-    #('historical_burn_date_index_attribute_adder_lag', historical_burn_date_index_attribute_adder_lag(time_lag = time_lag,
-    #                                                                                            month_baseline = month_baseline, verbose = True))
- ])
-site_resampled = time_fc_pipeline.fit_transform(site)
-print('FC and fire data successfully preprocessed')
-
-
-climate_variables = pd.DataFrame({'climate_var': ['Precip','tmax'],
-                                 'resample_type': ['sum', 'mean']})
-datasets = dict()
-
-for index, row in climate_variables.iterrows():
-
-    climate = pd.read_csv(f'../DATASETS/Climate_Gridded/{row["climate_var"]}/{site_location_name}_1987_2022.csv', parse_dates=['time'])
-    print(climate)
-    
-    datasets[row['climate_var']] = climate
-    
-    time_climate_pipeline = Pipeline([
-        ('preprocess_climate_time_series', preprocess_climate_time_series()),
-        ('climate_time_series_downsample', climate_time_series_downsample(start_time = site_resampled.index[0], resample_method = row['resample_type'])),
-        ('time_attributes_adder', time_attributes_adder()),
-        ('climate_time_series_attributes_adder', climate_time_series_attributes_adder(window = window_length, lag = window_length)) ## Note, change lag accordingly
-    ])
-    climate_new = time_climate_pipeline.fit_transform(climate)
-    site_resampled = site_resampled.merge(climate_new, how = 'left', left_index = True, right_index = True, validate = "one_to_one",
-                                       suffixes = ('', '_DUPLICATE'))
-    site_resampled = site_resampled.drop(columns =  site_resampled.filter(regex = '_DUPLICATE$').columns)
-
-site_merged = site_resampled.copy()
-site_merged.to_csv(f'Input_DataSet_{site_location_name}.csv')
-
-tss = TimeSeriesSplit(n_splits= 7)
 #%% Model the dataset
 
-# SEASONAL_FEATURES: ['month_x', 'year_x', 'dayofyear_x', 'month_cir_x', ''dayofyear_cir_x'']
-SEASONAL_FEATURES = ['dayofyear_cir', 'year']
-
-# PRECIP_FEATURES =  ['precip_rolling', 'precip_sum', 'precip_cv']
-PRECIP_FEATURES =  ['precip_rolling', 'precip_sum']
-TEMP_FEATURESS = ['tmax']
+SEASONAL_FEATURES = ['photoperiod', 'photoperiod_gradient', 'year']
+PRECIP_FEATURES = ['precip_30', 'precip_90', 'precip_180', 'precip_365', 'precip_730', 'precip_1095', 'precip_1460', 'precip_sum']
+TEMP_FEATURES = ['tmax_lag', 'tmax_7', 'tmax_14', 'tmax_30', 'tmax_sum']
+VPD_FEATURES = ['VPD_lag','VPD_7, VPD_14, VPD_30']
 LAG_FEATURES = ['pv_lag', 'npv_lag', 'bs_lag']
 LAGGED_CHANGE_FEATURES = ['pv_change', 'npv_change', 'bs_change']
-#FIRE_FEATURES = ['mean_pv_drop_per_days_since_fire', 'mean_pv_drop_per_sqrt_days_since_fire',
-#                 'mean_pv_drop_per_log_days_since_fire','days_since_fire']
 FIRE_FEATURES = ['mean_pv_drop_after_fire', 'days_since_fire']
-#FIRE_FEATURES = ['days_since_fire']
-
-# FEATURES = SEASONAL_FEATURES + PRECIP_FEATURES + LAG_FEATURES
-# PRECIP_FEATURES
-FEATURES = LAG_FEATURES + LAGGED_CHANGE_FEATURES + FIRE_FEATURES + SEASONAL_FEATURES + PRECIP_FEATURES + TEMP_FEATURESS
-
+FEATURES =  FIRE_FEATURES + SEASONAL_FEATURES + PRECIP_FEATURES + TEMP_FEATURES
 
 TARGET = ['pv_filter', 'bs_filter', 'npv_filter']
 site_merged = site_merged.dropna(subset = FEATURES) # drop na based on chosen features, needed for random forest 
 scores = []
 
+tss = TimeSeriesSplit(n_splits= 7)
 #%% Show CV splits 
 fig, axs = plt.subplots(10, 1, figsize=(15, 15), sharex=True)
 
@@ -138,11 +68,13 @@ random_state = 20240228
 
 reg = RandomForestRegressor()
 
+# Perform optimisation based on given hyper params
 hyp_params = { 
-    'min_samples_split' : np.linspace(0.05,0.5,10),
-    'min_samples_leaf' : np.linspace(0.05,0.5,10),
-    'max_features'     : ['sqrt', 'log2', None] + list(np.linspace(0.1,1,10)),
+    'min_samples_split' : np.linspace(0.05,0.5,5),
+    'min_samples_leaf' : np.linspace(0.05,0.5,5),
+    'max_features'     : ['sqrt', 'log2', None] + list(np.linspace(0.1,1,5)),
     'criterion': ['squared_error','friedman_mse', 'poisson'],
+    'oob_score': [False],
     'random_state' : [random_state]
 }
 grid = GridSearchCV(estimator=reg,

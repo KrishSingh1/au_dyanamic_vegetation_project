@@ -28,10 +28,10 @@ from PreprocessData import * # import from custom transformers
 #site_location_name = 'NSAMDD0002' # no fire, seasonal
 #site_location_name = 'NSANAN0002' # fire, seasonal, big drop
 
-site_location_name = 'WAAPIL0003'
+site_location_name = 'NSANAN0002'
 historical_fire_ds = gpd.read_file('../DATASETS/AusPlots_Historical_BurnDates.shp', parse_dates = ['igntn_d'])
 print(historical_fire_ds['Name'])
-time_lag = 5
+time_lag = 1
 window_length = 5
 month_baseline = 3
 
@@ -58,7 +58,7 @@ time_fc_pipeline = Pipeline([
     ('time_attributes_fc_lag_adder', time_attributes_fc_lag_adder(time_lag)),
     ('time_attributes_fc_diff_adder', time_attributes_fc_diff_adder(False)),
     ('daylength_attributes_adder', daylength_attributes_adder(latitude)),
-    ('historical_burn_date_attribute_adder', historical_burn_date_attribute_adder(historical_fire_ds, time_lag = time_lag)),
+    ('historical_burn_date_attribute_adder', historical_burn_date_attribute_adder(historical_fire_ds)),
     ('historical_burn_date_index_attribute_adder', historical_burn_date_index_attribute_adder(verbose = True,
                                                                                               month_baseline = month_baseline))
     #('historical_burn_date_index_attribute_adder_lag', historical_burn_date_index_attribute_adder_lag(time_lag = time_lag,
@@ -68,10 +68,12 @@ site_resampled = time_fc_pipeline.fit_transform(site)
 print('FC and fire data successfully preprocessed')
 
 
-climate_variables = pd.DataFrame({'climate_var': ['Precip','tmax'],
-                                 'resample_type': ['sum', 'mean']})
+# The climate variables as named in my directory and the resampling method
+climate_variables = pd.DataFrame({'climate_var': ['precip','tmax','tmin','vapourpres_h09','vapourpres_h15'],
+                                 'resample_type': ['sum', 'mean','mean','mean','mean']})
 datasets = dict()
 
+# Used to add climate attributes directly from climate data 
 for index, row in climate_variables.iterrows():
 
     climate = pd.read_csv(f'../DATASETS/Climate_Gridded/{row["climate_var"]}/{site_location_name}_1987_2022.csv', parse_dates=['time'])
@@ -89,7 +91,14 @@ for index, row in climate_variables.iterrows():
     site_resampled = site_resampled.merge(climate_new, how = 'left', left_index = True, right_index = True, validate = "one_to_one",
                                        suffixes = ('', '_DUPLICATE'))
     site_resampled = site_resampled.drop(columns =  site_resampled.filter(regex = '_DUPLICATE$').columns)
-
+    
+## Derive VPD from preprocessed climate data 
+derive_climate_vars_pipeline = Pipeline([
+    ('calc_VPD', calc_VPD()),
+    ('pages_precip_variables_adder', pages_precip_variables_adder(site_location_name)),
+    ('pages_VPD_variables_adder', pages_VPD_variables_adder(site_location_name)),
+    ('pages_temp_variables_adder', pages_temp_variables_adder(site_location_name))
+])
+site_resampled = derive_climate_vars_pipeline.fit_transform(site_resampled)
 site_merged = site_resampled.copy()
-
 site_merged.to_csv(f'Input_DataSet_{site_location_name}.csv')
