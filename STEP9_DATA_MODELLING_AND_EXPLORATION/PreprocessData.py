@@ -288,7 +288,7 @@ class pages_precip_variables_adder(BaseEstimator, TransformerMixin):
     
     def transform(self, X, y=None):
         X = X.copy()
-        precip = pd.read_csv(f'../DATASETS/Climate_Gridded/precip/{self.site_location_name}_1987_2022.csv', parse_dates = ['time'], usecols = ['precip','time']).copy()
+        precip = pd.read_csv(f'../DATASETS/Climate_Gridded/precip/{self.site_location_name}_1980_2022.csv', parse_dates = ['time'], usecols = ['precip','time']).copy()
         precip = precip.sort_values('time')
         precip_col_names = ['precip_30', 'precip_90', 'precip_180', 'precip_365', 'precip_730', 'precip_1095', 'precip_1460'] # set columns of precip
         
@@ -318,7 +318,7 @@ class pages_VPD_variables_adder(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
         X = X.copy()
         
-        file_name = f'{self.site_location_name}_1987_2022.csv'
+        file_name = f'{self.site_location_name}_1980_2022.csv'
         tmin = pd.read_csv(f'../DATASETS/Climate_Gridded/tmin/{file_name}', usecols = ['tmin', 'time'], parse_dates = ['time']).copy()
         tmax = pd.read_csv(f'../DATASETS/Climate_Gridded/tmax/{file_name}', usecols = ['tmax', 'time'], parse_dates = ['time']).copy()
         vapourpres_h09 = pd.read_csv(f'../DATASETS/Climate_Gridded/vapourpres_h09/{file_name}', usecols = ['vapourpres_h09', 'time'], parse_dates = ['time']).copy()
@@ -371,7 +371,7 @@ class pages_temp_variables_adder(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
             X = X.copy()
             
-            file_name = f'{self.site_location_name}_1987_2022.csv'
+            file_name = f'{self.site_location_name}_1980_2022.csv' # now include new data
             tmin = pd.read_csv(f'../DATASETS/Climate_Gridded/tmin/{file_name}', usecols = ['tmin', 'time'], parse_dates = ['time']).copy()
             tmax = pd.read_csv(f'../DATASETS/Climate_Gridded/tmax/{file_name}', usecols = ['tmax', 'time'], parse_dates = ['time']).copy()
             

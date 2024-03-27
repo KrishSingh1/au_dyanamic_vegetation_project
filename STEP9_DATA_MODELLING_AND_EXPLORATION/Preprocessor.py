@@ -76,7 +76,7 @@ datasets = dict()
 # Used to add climate attributes directly from climate data 
 for index, row in climate_variables.iterrows():
 
-    climate = pd.read_csv(f'../DATASETS/Climate_Gridded/{row["climate_var"]}/{site_location_name}_1987_2022.csv', parse_dates=['time'])
+    climate = pd.read_csv(f'../DATASETS/Climate_Gridded/{row["climate_var"]}/{site_location_name}_1980_2022.csv', parse_dates=['time'])
     print(climate)
     
     datasets[row['climate_var']] = climate
