@@ -372,13 +372,16 @@ class pages_temp_variables_adder(BaseEstimator, TransformerMixin):
             X = X.copy()
             
             file_name = f'{self.site_location_name}_1980_2022.csv' # now include new data
+            
+            # Get temperature  data 
             tmin = pd.read_csv(f'../DATASETS/Climate_Gridded/tmin/{file_name}', usecols = ['tmin', 'time'], parse_dates = ['time']).copy()
             tmax = pd.read_csv(f'../DATASETS/Climate_Gridded/tmax/{file_name}', usecols = ['tmax', 'time'], parse_dates = ['time']).copy()
-            
+
+    
             climate_data = tmin.copy().merge(tmax, left_on = 'time', right_on = 'time')
             climate_data = climate_data.sort_values('time')
-
-            temp = climate_data[['time', 'tmax']]
+            climate_data['tmean'] = (climate_data['tmin'] + climate_data['tmax'])/2 # calc avg temperature 
+ 
             temp_col_names = ['tmax_lag','tmax_7', 'tmax_14', 'tmax_30']
             
             # Specify time ranges: 
@@ -388,7 +391,11 @@ class pages_temp_variables_adder(BaseEstimator, TransformerMixin):
             ts_3 = [15, 30]
             ts_all = [ts_lag, ts_1, ts_2, ts_3]
             
-            X = pages_variables_constructor(X, tmax, ts_all, temp_col_names)
+            # Construct Page's variables
+            X = pages_variables_constructor(X, tmax, ts_all, temp_col_names) # for tmax
+            
+            temp_col_names = ['tmean_lag','tmean_7', 'tmean_14', 'tmean_30']
+            X = pages_variables_constructor(X, climate_data[['time','tmean']], ts_all, temp_col_names) # for tmean
                     
             return X
         

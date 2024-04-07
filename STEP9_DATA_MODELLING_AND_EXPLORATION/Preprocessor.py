@@ -28,7 +28,8 @@ from PreprocessData import * # import from custom transformers
 #site_location_name = 'NSAMDD0002' # no fire, seasonal
 #site_location_name = 'NSANAN0002' # fire, seasonal, big drop
 
-site_location_name = 'NSANAN0002'
+
+site_location_name = 'NSAMDD0002'
 historical_fire_ds = gpd.read_file('../DATASETS/AusPlots_Historical_BurnDates.shp', parse_dates = ['igntn_d'])
 print(historical_fire_ds['Name'])
 time_lag = 1
