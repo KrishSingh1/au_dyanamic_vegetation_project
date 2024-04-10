@@ -380,7 +380,6 @@ class pages_temp_variables_adder(BaseEstimator, TransformerMixin):
     
             climate_data = tmin.copy().merge(tmax, left_on = 'time', right_on = 'time')
             climate_data = climate_data.sort_values('time')
-            climate_data['tmean'] = (climate_data['tmin'] + climate_data['tmax'])/2 # calc avg temperature 
  
             temp_col_names = ['tmax_lag','tmax_7', 'tmax_14', 'tmax_30']
             
@@ -394,8 +393,8 @@ class pages_temp_variables_adder(BaseEstimator, TransformerMixin):
             # Construct Page's variables
             X = pages_variables_constructor(X, tmax, ts_all, temp_col_names) # for tmax
             
-            temp_col_names = ['tmean_lag','tmean_7', 'tmean_14', 'tmean_30']
-            X = pages_variables_constructor(X, climate_data[['time','tmean']], ts_all, temp_col_names) # for tmean
+            temp_col_names = ['tmin_lag','tmin_7', 'tmin_14', 'tmin_30']
+            X = pages_variables_constructor(X, climate_data[['time','tmin']], ts_all, temp_col_names) # for tmean
                     
             return X
         
@@ -417,6 +416,7 @@ class historical_burn_date_preprocess(BaseEstimator, TransformerMixin):
         X = X.iloc[[i is not None for i in  X['igntn_d']]]
         X['igntn_d'] = pd.to_datetime(X['igntn_d'])
         X = X.sort_values(by = 'igntn_d')
+        X = X.reset_index(drop = True)
         
         # Mention that the dataset is empty
         if(X.empty):
@@ -465,56 +465,68 @@ class historical_burn_date_attribute_adder(BaseEstimator, TransformerMixin):
         
         X['days_since_fire'] = days_since
         X['days_since_fire'] = X['days_since_fire'].astype('Int64')
-        X['days_since_fire'] = X['days_since_fire'].replace(pd.NA, -100)
+        X['days_since_fire'] = X['days_since_fire'].replace(pd.NA, 365 * 30) # Records before the fire will adopt an extreme number equivalent to 30 years since fire 
         print(X)
         return X
     
     
 class historical_burn_date_index_attribute_adder(BaseEstimator, TransformerMixin):
     
-    def __init__(self, verbose = False, time_period = 16, month_baseline = 6):
+    def __init__(self, historical_fire_ds, verbose = False, time_range = 3):
         self.verbose = verbose
-        self.time_period = time_period
-        self.month_baseline = month_baseline
+        self.historical_fire_ds = historical_fire_ds
+        
+        self.time_range = time_range
  
     def fit(self, X, y=None):
         return self 
     
     def transform(self, X, y=None):
+        # with the actual fire dates, we can
+        # for fire date (1), we can do a rough search with records within 3 months before and after the fire
+        # select first three data points prior to the fire (a)
+        # select first three data points after the fire (b)
+        # get mean pv of (a) and (b) and take the difference 
         
      X = X.copy()
-     fire_dates = X.loc[(X['days_since_fire'] < self.time_period) & (X['days_since_fire'] >= 0)]
-     if self.verbose: print(fire_dates)
-     X['mean_pv_drop_after_fire'] = pd.NA
-    
+     X['fire_severity'] = pd.NA
      X = X.astype('Float64')
-     for i in range(len(fire_dates)):
+     
+     for i, v in self.historical_fire_ds.iterrows():
 
-        if self.verbose: print(fire_dates.index[i])
-        prior = fire_dates.index[i] - relativedelta(months = self.month_baseline)
-        if self.verbose: print(prior)
-        mean_selector = (X.index >= prior) & (X.index < fire_dates.index[i])
-        mean_pv = X.iloc[mean_selector]['pv'].mean()
-        if self.verbose: print(mean_pv)
+        if self.verbose: print(v)
+        prior_search = v['igntn_d'] - relativedelta(months = self.time_range)
+        after_search = v['igntn_d'] + relativedelta(months = self.time_range)
         
-        if i != (len(fire_dates) - 1):
-            df_selector = (X.index >= fire_dates.index[i]) & (X.index <fire_dates.index[i+1]) # only go up to the next fire date
+        
+        # Note: I am not including the date of the fire in the search
+        ## Get df of prior
+        a_df = X.iloc[(X.index >= prior_search) & (X.index < v['igntn_d'])]
+        a_df = a_df.iloc[-3:, :]
+        if self.verbose: print(a_df[['pv_filter','days_since_fire', 'fire_severity']])
+        a = a_df['pv_filter'].mean()
+        if self.verbose: print(a)
+        
+        ## Get df of after 
+        b_df = X.iloc[(X.index < after_search) & (X.index > v['igntn_d'])]
+        b_df = b_df.iloc[:3, :]
+        if self.verbose: print(b_df[['pv_filter','days_since_fire', 'fire_severity']])
+        b = b_df['pv_filter'].mean()
+        if self.verbose: print(b)
+        
+        fire_severity = a - b
+        
+        if self.verbose: print(f"at {v['igntn_d']}:{fire_severity}")
+        
+        if i != (len(self.historical_fire_ds) - 1):
+            df_selector = (X.index >= v['igntn_d']) & (X.index < self.historical_fire_ds.iloc[i + 1]['igntn_d']) # only go up to the next fire date
         else:
-            df_selector = (X.index >= fire_dates.index[i]) # there is no recorded fire date so go up to the very end of the dataset 
+            df_selector = (X.index > v['igntn_d']) # there is no recorded fire date so go up to the very end of the dataset 
             
         selected_df = X.iloc[df_selector].copy()
-        selected_df['days_since_fire'].loc[selected_df['days_since_fire'] == 0] = 1
+        X.loc[df_selector,'fire_severity'] = fire_severity
         
-        X.loc[df_selector,'mean_pv_drop_after_fire'] = (mean_pv - selected_df['pv_filter'])/(mean_pv)
-        
-       # for f in ['pv_filter', 'npv_filter', 'bs_filter']:
-       #     selected_df[f].loc[(selected_df['days_since_fire'] >= 1) & (selected_df['days_since_fire'] <= month_baseline*16*2)] = pd.NA
-       #     X.loc[df_selector, f] = selected_df[f]
-            
-        # problem here is that the machine learning model does not accept NA for 
-    
-     print(X)
-     X['mean_pv_drop_after_fire'] = X['mean_pv_drop_after_fire'].replace(pd.NA, -100)
+     X['fire_severity'] = X['fire_severity'].replace(pd.NA, 0) # set all records prior to the first fire to 0
      return X
  
 

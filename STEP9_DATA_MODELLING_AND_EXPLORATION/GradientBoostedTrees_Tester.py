@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Apr  4 17:58:38 2024
 
-@author: krish
-"""
 
 import numpy as np
 import pandas as pd
@@ -24,6 +20,8 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.inspection import PartialDependenceDisplay
 from sklearn.inspection import permutation_importance
 from skopt import BayesSearchCV
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.multioutput import RegressorChain
 
 #%% Functions 
 
@@ -91,88 +89,64 @@ plt.show()
 
 main_scorer = 'neg_mean_squared_error'
 # Possible scorers:
-    #  neg_mean_absolute_percentage_error'
+    # neg_mean_absolute_percentage_error'
     #  mean_squared_log_error
     # See more below:
     # https://scikit-learn.org/stable/modules/model_evaluation.html#regression-metrics
     
 
 ## Test with Default RF 
-reg = RandomForestRegressor(random_state = random_state)
+reg = RegressorChain(GradientBoostingRegressor(random_state = random_state))
 
 default_RF_CV = pd.DataFrame(cross_validate(reg, X = train[FEATURES],
-                     y = train[TARGET], cv=tss, 
-                     scoring=np.unique(['r2', main_scorer]).tolist(),
-                     return_train_score = True))
+                      y = train[TARGET], cv=tss, 
+                      scoring=('r2', main_scorer),
+                      return_train_score = True))
 print(f'Default\nTrain R2 {default_RF_CV["train_" + main_scorer].mean()}\nTest R2 {default_RF_CV["test_" + main_scorer].mean()}')
 
 
-#%% Checking the CV calculations 
-scores_train = [] 
-scores_test = [] 
+# Default Model 
+reg.fit(train[FEATURES], train[TARGET])
+y_pred = reg.predict(site_merged[FEATURES])
+TARGET_names = [ 'prediction_' + i for i in TARGET]
+df = pd.DataFrame(y_pred, columns = TARGET_names)
+df.index = site_merged[FEATURES].index
+plotPredictions(site_merged,df,TARGET, split = time_split)
 
-for train_idx, val_idx in tss.split(train):
-    train_f = train.iloc[train_idx]
-    val_f = train.iloc[val_idx]
-    reg = RandomForestRegressor(random_state = random_state)
-    reg.fit(train_f[FEATURES], train_f[TARGET])
-    scores_train.append(mean_squared_error(reg.predict(train_f[FEATURES]), train_f[TARGET]))
-    scores_test.append(mean_squared_error(reg.predict(val_f[FEATURES]), val_f[TARGET]))
-    
-    
-print(np.mean(np.array(scores_train)))
-print(np.mean(np.array(scores_test)))
+reg = Pipeline([
+    ('RegressorChain', RegressorChain(GradientBoostingRegressor()))
+])
 
-
-#%%
-
-
-reg = RandomForestRegressor()
 # Perform optimisation based on given hyper params
 hyp_params = { 
-    'n_estimators': [100],
-    'max_depth': [10,20,30,40, None],
-    #'min_weight_fraction_leaf': np.linspace(0,0.5,5),
-    #'min_samples_split': [2, 10, 30],
-    'bootstrap': [True],
-    #'max_leaf_nodes': [10,20,30,100, None],
-    'max_features'     : ['sqrt', 'log2', None, 1.0],
-    #'warm_start': [True, False],
-    'criterion': ['squared_error','friedman_mse', 'poisson'],
-    'random_state' : [random_state]
+    'RegressorChain__base_estimator__learning_rate': np.linspace(0, 5, 10),
+    'RegressorChain__base_estimator__random_state' : [random_state]
 }
 
 grid = GridSearchCV(estimator=reg,
-             param_grid = hyp_params,
-             cv = tss, scoring = ('neg_mean_squared_error'),
-             n_jobs = 7)
+              param_grid = hyp_params,
+              cv = tss, scoring = ('neg_mean_squared_error'),
+              n_jobs = 7)
 
 grid.fit(X = train[FEATURES], y = train[TARGET])
 reg = grid.best_estimator_
 
 print(grid.best_params_)
 
-Tuned_RF_CV = pd.DataFrame(cross_validate(RandomForestRegressor(**grid.best_params_), X = train[FEATURES],
-                     y = train[TARGET], cv=tss, 
-                     scoring=np.unique(['r2', main_scorer]).tolist(),
-                     return_train_score = True))
+Tuned_RF_CV = pd.DataFrame(cross_validate(reg, X = train[FEATURES],
+                      y = train[TARGET], cv=tss, 
+                      scoring=('r2', main_scorer),
+                      return_train_score = True))
 print(f'Tuned\nTrain R2 {Tuned_RF_CV["train_" + main_scorer].mean()}\nTest R2 {Tuned_RF_CV["test_" + main_scorer].mean()}')
 
 
-#%% Fit the Models
+# #%% Fit the Models
 
 
-# Default Model 
-reg = RandomForestRegressor(random_state = random_state)
-reg.fit(train[FEATURES], train[TARGET])
-y_pred = reg.predict(site_merged[FEATURES])
-TARGET_names = [ 'prediction_' + i for i in TARGET]
-df = pd.DataFrame(y_pred, columns = TARGET_names)
-df.index = site_merged[FEATURES].index
-plotPredictions(site_merged,df,TARGET, split = time_split)
+# # Default Model 
+
 
 # Fine-Tuned Model
-reg = RandomForestRegressor(**grid.best_params_)
 reg.fit(train[FEATURES], train[TARGET])
 y_pred = reg.predict(site_merged[FEATURES])
 TARGET_names = [ 'prediction_' + i for i in TARGET]
@@ -181,26 +155,26 @@ df.index = site_merged[FEATURES].index
 plotPredictions(site_merged,df,TARGET, split = time_split)
 
 
-#%% Examine Importances 
 
-# Get importance 
-# https://scikit-learn.org/stable/modules/generated/sklearn.inspection.permutation_importance.html#sklearn.inspection.permutation_importance
-# https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-multicollinear-py
-# Comparion between plots code inspired by above links 
+# #%% Examine Importances 
 
-reg = RandomForestRegressor(**grid.best_params_)
-reg.fit(train[FEATURES], train[TARGET])
+# # Get importance 
+# # https://scikit-learn.org/stable/modules/generated/sklearn.inspection.permutation_importance.html#sklearn.inspection.permutation_importance
+# # https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-multicollinear-py
+# # Comparion between plots code inspired by above links 
 
-fig, ax = plt.subplots(1,2)
-gini_importance = pd.DataFrame(reg.feature_importances_.T, index = FEATURES, columns = ['Gini_importance'])
-gini_importance.sort_values(by = 'Gini_importance', inplace = True, ascending = True)
-gini_importance.plot.barh(figsize = (15,5), ax = ax[0])
+# reg = RandomForestRegressor(**grid.best_params_)
+# reg.fit(train[FEATURES], train[TARGET])
 
-n_repeats = 10
-perm_importance = permutation_importance(reg, train[FEATURES], train[TARGET], n_repeats=n_repeats, random_state = random_state)
-perm_sorted_idx = perm_importance.importances_mean.argsort()
+# fig, ax = plt.subplots(1,2)
+# gini_importance = pd.DataFrame(reg.feature_importances_.T, index = FEATURES, columns = ['Gini_importance'])
+# gini_importance.sort_values(by = 'Gini_importance', inplace = True, ascending = True)
+# gini_importance.plot.barh(figsize = (15,5), ax = ax[0])
 
-perm_importance_df = pd.DataFrame(perm_importance.importances[perm_sorted_idx].T, columns = train[FEATURES].columns[perm_sorted_idx])
-perm_importance_df.boxplot(vert = False, figsize = (15,10), ax = ax[1])
-fig.tight_layout()
+# n_repeats = 10
+# perm_importance = permutation_importance(reg, train[FEATURES], train[TARGET], n_repeats=n_repeats, random_state = random_state)
+# perm_sorted_idx = perm_importance.importances_mean.argsort()
 
+# perm_importance_df = pd.DataFrame(perm_importance.importances[perm_sorted_idx].T, columns = train[FEATURES].columns[perm_sorted_idx])
+# perm_importance_df.boxplot(vert = False, figsize = (15,10), ax = ax[1])
+# fig.tight_layout()

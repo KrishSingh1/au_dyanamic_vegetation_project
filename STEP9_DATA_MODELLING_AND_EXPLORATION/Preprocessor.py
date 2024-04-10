@@ -29,12 +29,12 @@ from PreprocessData import * # import from custom transformers
 #site_location_name = 'NSANAN0002' # fire, seasonal, big drop
 
 
-site_location_name = 'NSAMDD0002'
+site_location_name = 'NSANAN0002'
 historical_fire_ds = gpd.read_file('../DATASETS/AusPlots_Historical_BurnDates.shp', parse_dates = ['igntn_d'])
 print(historical_fire_ds['Name'])
 time_lag = 1
 window_length = 5
-month_baseline = 3
+time_range = 3
 
 # savgol_filter parameters 
 window_length_smooth = 15
@@ -61,7 +61,8 @@ time_fc_pipeline = Pipeline([
     ('daylength_attributes_adder', daylength_attributes_adder(latitude)),
     ('historical_burn_date_attribute_adder', historical_burn_date_attribute_adder(historical_fire_ds)),
     ('historical_burn_date_index_attribute_adder', historical_burn_date_index_attribute_adder(verbose = True,
-                                                                                              month_baseline = month_baseline))
+                                                                                              historical_fire_ds = historical_fire_ds,
+                                                                                              time_range = time_range))
     #('historical_burn_date_index_attribute_adder_lag', historical_burn_date_index_attribute_adder_lag(time_lag = time_lag,
     #                                                                                            month_baseline = month_baseline, verbose = True))
  ])
@@ -86,7 +87,8 @@ for index, row in climate_variables.iterrows():
         ('preprocess_climate_time_series', preprocess_climate_time_series()),
         ('climate_time_series_downsample', climate_time_series_downsample(start_time = site_resampled.index[0], resample_method = row['resample_type'])),
         ('time_attributes_adder', time_attributes_adder()),
-        ('climate_time_series_attributes_adder', climate_time_series_attributes_adder(window = window_length, lag = window_length))
+        ('climate_time_series_attributes_adder', climate_time_series_attributes_adder(window = window_length, 
+                                                                                      lag = window_length))
     ])
     climate_new = time_climate_pipeline.fit_transform(climate)
     site_resampled = site_resampled.merge(climate_new, how = 'left', left_index = True, right_index = True, validate = "one_to_one",
