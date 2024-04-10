@@ -36,6 +36,13 @@ def plotPredictions(actual, prediction, TARGET, msg = '', split = ''):
         ax[i].legend()
         if split:
             ax[i].axvline(time_split, color='black', ls='--')
+            
+def antiOverFitterScorer(y_train_pred, y_train_act, y_val_pred, y_val_act):
+    train_score = -mean_squared_error(y_train_pred, y_train_act)
+    val_score = -mean_squared_error(y_val_pred, y_val_act)
+    score = ((train_score + val_score)/2) * val_score/train_score
+    return score
+    
 
 
 #%% Main 
@@ -114,8 +121,10 @@ scores_test = []
 for train_idx, val_idx in tss.split(train):
     train_f = train.iloc[train_idx]
     val_f = train.iloc[val_idx]
-    reg = RandomForestRegressor(random_state = random_state)
+    reg= RandomForestRegressor(random_state = random_state)
     reg.fit(train_f[FEATURES], train_f[TARGET])
+    print(antiOverFitterScorer(reg.predict(train_f[FEATURES]),train_f[TARGET], reg.predict(val_f[FEATURES]), val_f[TARGET] ))
+    
     scores_train.append(mean_squared_error(reg.predict(train_f[FEATURES]), train_f[TARGET]))
     scores_test.append(mean_squared_error(reg.predict(val_f[FEATURES]), val_f[TARGET]))
     
@@ -125,7 +134,6 @@ print(np.mean(np.array(scores_test)))
 
 
 #%%
-
 
 reg = RandomForestRegressor()
 # Perform optimisation based on given hyper params
@@ -138,7 +146,7 @@ hyp_params = {
     #'max_leaf_nodes': [10,20,30,100, None],
     'max_features'     : ['sqrt', 'log2', None, 1.0],
     #'warm_start': [True, False],
-    'criterion': ['squared_error','friedman_mse', 'poisson'],
+    'criterion': ['squared_error','friedman_mse', 'poisson', 'absolute_error'],
     'random_state' : [random_state]
 }
 
@@ -150,6 +158,9 @@ grid = GridSearchCV(estimator=reg,
 grid.fit(X = train[FEATURES], y = train[TARGET])
 reg = grid.best_estimator_
 
+#{'bootstrap': True, 'criterion': 'poisson', 'max_depth': 30, 'max_features': 'sqrt', 
+#   'n_estimators': 100, 'random_state': 20240228}
+
 print(grid.best_params_)
 
 Tuned_RF_CV = pd.DataFrame(cross_validate(RandomForestRegressor(**grid.best_params_), X = train[FEATURES],
@@ -160,7 +171,6 @@ print(f'Tuned\nTrain R2 {Tuned_RF_CV["train_" + main_scorer].mean()}\nTest R2 {T
 
 
 #%% Fit the Models
-
 
 # Default Model 
 reg = RandomForestRegressor(random_state = random_state)
