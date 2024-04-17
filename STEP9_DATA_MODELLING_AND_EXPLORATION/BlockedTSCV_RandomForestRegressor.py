@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 Created on Thu Apr  4 17:58:38 2024
 
@@ -24,8 +25,8 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.inspection import PartialDependenceDisplay
 from sklearn.inspection import permutation_importance
 from skopt import BayesSearchCV
-from sklearn.model_selection import KFold
-from sklearn.model_selection import GroupKFold
+from sklearn.model_selection import train_test_split
+
 
 #%% Functions 
 
@@ -62,20 +63,9 @@ def antiOverFitterScorer(y_train_pred, y_train_act, y_val_pred, y_val_act):
 # NSANAN0002
 # QDAEIU0010
 
-
-
-
-sites_list = ['WAAPIL0003', 'NSABHC0023', 'TCATCH0006',
-               'WAAGAS0002', 'NSAMDD0014', 'NTAGFU0021', 
-               'NSANSS0001', 'SATSTP0005', 'QDASSD0015', 
-               'NTAFIN0002', 'NSANAN0002', 'QDAEIU0010']
-datasets = {}
-
-for site_location_name in sites_list:
-    
-    site_merged = pd.read_csv(f'Input_DataSet_{site_location_name}.csv', parse_dates = ['time']).copy()
-    datasets[site_location_name] = site_merged
-    
+site_location_name = 'WAAPIL0003'
+site_merged = pd.read_csv(f'Input_DataSet_{site_location_name}.csv', parse_dates = ['time']).copy()
+site_merged = site_merged.set_index('time')
 
 #%% Model the dataset
 
@@ -91,16 +81,16 @@ FIRE_FEATURES = ['days_since_fire', 'fire_severity']
 
 FEATURES =  SEASONAL_FEATURES + PRECIP_FEATURES + TEMP_FEATURES + VPD_FEATURES + FIRE_FEATURES# final features 
 TARGET = ['pv_filter', 'npv_filter', 'bs_filter']
-site_merged = pd.concat(datasets).dropna(subset = FEATURES) # drop na based on chosen features, needed for random forest 
-site_merged.sort_values('time', inplace = True)
-site_merged.set_index('time', inplace = True)
+site_merged = site_merged.dropna(subset = FEATURES) # drop na based on chosen features, needed for random forest 
 scores = []
+
 
 #%% Create Train/test set 
 time_split = '2015-12-01' # This aprox splits the dataset from 80/20
 train = site_merged.iloc[site_merged.index <= time_split]
 test = site_merged.iloc[site_merged.index > time_split]
 random_state = 20240228
+
 
 n_splits = 5
 total = len(train)//n_splits
@@ -113,9 +103,10 @@ for n in range(n_splits):
     train_idx = np.array([(number + n*total) for number in range(1,train_size +1)])
     test_idx = np.array([(number + train_idx.max()) for number in range(1, test_size + 1)])
     cv_splits.append((train_idx, test_idx))
-
+    
+    
 #%% Show CV splits 
-fig, axs = plt.subplots(n_splits, 1, figsize=(15, 15), sharex=True)
+fig, axs = plt.subplots(n_splits, 1, figsize=(15, 15), sharex=False)
 
 fold = 0
 for train_idx, val_idx in cv_splits: # split train into k-folds 
@@ -130,12 +121,17 @@ for train_idx, val_idx in cv_splits: # split train into k-folds
     fold += 1
 plt.show()
 
+
+
+
 #%% Run The model 
 
 main_scorer = 'r2'
 # Possible scorers:
     #  neg_mean_absolute_percentage_error'
     #  mean_squared_log_error
+    #  neg_mean_squared_error
+    # 
     # See more below:
     # https://scikit-learn.org/stable/modules/model_evaluation.html#regression-metrics
     
@@ -163,14 +159,15 @@ hyp_params = {
     'bootstrap': [True],
     #'max_leaf_nodes': [10,20,30,100, None],
     'max_features'     : ['sqrt', 'log2', None, 1.0],
+    #'warm_start': [True, False],
     'criterion': ['squared_error','friedman_mse', 'poisson', 'absolute_error'],
     'random_state' : [random_state]
 }
 
 grid = GridSearchCV(estimator=reg,
-              param_grid = hyp_params,
-              cv = cv_splits, scoring = (main_scorer),
-              n_jobs = 7)
+             param_grid = hyp_params,
+             cv = cv_splits, scoring = (main_scorer),
+             n_jobs = 7)
 
 grid.fit(X = train[FEATURES], y = train[TARGET])
 reg = grid.best_estimator_
@@ -181,9 +178,9 @@ reg = grid.best_estimator_
 print(grid.best_params_)
 
 Tuned_RF_CV = pd.DataFrame(cross_validate(RandomForestRegressor(**grid.best_params_), X = train[FEATURES],
-                      y = train[TARGET], cv=cv_splits, 
-                      scoring=np.unique(['r2', main_scorer]).tolist(),
-                      return_train_score = True))
+                     y = train[TARGET], cv=cv_splits, 
+                     scoring=np.unique(['r2', main_scorer]).tolist(),
+                     return_train_score = True))
 
 print(f'Tuned\nTrain R2 {Tuned_RF_CV["train_" + main_scorer].mean()}\nTest R2 {Tuned_RF_CV["test_" + main_scorer].mean()}')
 
@@ -193,16 +190,13 @@ print(f'Tuned\nTrain R2 {Tuned_RF_CV["train_" + main_scorer].mean()}\nTest R2 {T
 # Default Model 
 reg = RandomForestRegressor(random_state = random_state)
 reg.fit(train[FEATURES], train[TARGET])
-
-NSANAN0002 = datasets['NSANAN0002'].set_index('time').dropna(subset = FEATURES)
-y_pred = reg.predict(NSANAN0002[FEATURES])
+y_pred = reg.predict(site_merged[FEATURES])
 TARGET_names = [ 'prediction_' + i for i in TARGET]
 df = pd.DataFrame(y_pred, columns = TARGET_names)
-df.index = NSANAN0002[FEATURES].index
-plotPredictions(NSANAN0002,df,TARGET, split = time_split)
+df.index = site_merged[FEATURES].index
+plotPredictions(site_merged,df,TARGET, split = time_split)
 
-mean_squared_error(NSANAN0002[NSANAN0002.index > time_split][TARGET], df[NSANAN0002.index > time_split])
-
+mean_squared_error(NSANAN0002[TARGET], y_pred)
 
 # Fine-Tuned Model
 reg = RandomForestRegressor(**grid.best_params_)
