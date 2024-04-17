@@ -31,8 +31,9 @@ class time_attributes_adder(BaseEstimator, TransformerMixin):
         X['year'] = X.index.year
         X['dayofyear'] = X.index.dayofyear
         
-        #X['month_cir'] = np.sin(X['month']/12)
-        #X['dayofyear_cir'] =  np.sin(X['dayofyear']/365)
+        # Add circular variables
+        X['month_cir'] = np.sin(X['month']/12)
+        X['dayofyear_cir'] =  np.sin(X['dayofyear']/365)
       
         return X
     
@@ -411,11 +412,11 @@ class historical_burn_date_preprocess(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
         
         X = X.copy()
-        X = X[['igntn_d', 'Name']]
+        X = X[['ignition_d', 'Name']]
         X = X[self.site_location_name == X['Name']]
-        X = X.iloc[[i is not None for i in  X['igntn_d']]]
-        X['igntn_d'] = pd.to_datetime(X['igntn_d'])
-        X = X.sort_values(by = 'igntn_d')
+        X = X.iloc[[i is not None for i in  X['ignition_d']]]
+        X['ignition_d'] = pd.to_datetime(X['ignition_d'])
+        X = X.sort_values(by = 'ignition_d')
         X = X.reset_index(drop = True)
         
         # Mention that the dataset is empty
@@ -424,13 +425,12 @@ class historical_burn_date_preprocess(BaseEstimator, TransformerMixin):
         
         return X
     
-    
+   
 class historical_burn_date_attribute_adder(BaseEstimator, TransformerMixin):
     
     def __init__(self, historical_fire_ds, verbose = False):
         self.historical_fire_ds = historical_fire_ds
         self.verbose = verbose
-        
         
     def fit(self, X, y=None):
         return self 
@@ -439,34 +439,25 @@ class historical_burn_date_attribute_adder(BaseEstimator, TransformerMixin):
         
         X = X.copy()
         
-        days_since = []
+        if self.historical_fire_ds.empty: # if there is no recorded fire, just give the default value
+            X['days_since_fire'] = 365 * 30 
+            return X
         
-        for i in range(len(self.historical_fire_ds['igntn_d']) - 1):
-        
-            a_date, b_date = self.historical_fire_ds['igntn_d'].iloc[i], self.historical_fire_ds['igntn_d'].iloc[i+1]
-            temp_list = []
+        number_of_records = len(self.historical_fire_ds['ignition_d'])
+        record_idx = 0 # on the current fire record 
+        X['days_since_fire'] = 0 
+        for index, row in X.iterrows():
+            # check whether or not the record index is the last one from the database
+            if (record_idx != number_of_records - 1):
+                if index >= self.historical_fire_ds.iloc[record_idx + 1]['ignition_d']: # update record_idx whenever the current date goes pass the next fire record 
+                    record_idx += 1
             
-            if i == 0:
-                if self.verbose: print(f'{"-"*10} Before {a_date}{"-"*10}')
-                temp_df = X[(X.index < a_date)]
-                temp_list += [pd.NA for i in range(len(temp_df))]
-        
-            if self.verbose: print(f'{"-"*10} Between {a_date}-{b_date} {"-"*10}')
-            temp_df = X[(X.index >= a_date) & (X.index < b_date)]
-            temp_list += [(times_date - a_date).days  for times_date in temp_df.index]
-            
-            if (i+1) == len(self.historical_fire_ds['igntn_d']) - 1:
-                if self.verbose: print(f'{"-"*10} After {b_date} {"-"*10}')
-                temp_df = X[(X.index >= b_date)]
-                temp_list += [(times_date - b_date).days for times_date in temp_df.index]
-            
-            print(len(temp_list))
-            days_since += temp_list
-        
-        X['days_since_fire'] = days_since
-        X['days_since_fire'] = X['days_since_fire'].astype('Int64')
-        X['days_since_fire'] = X['days_since_fire'].replace(pd.NA, 365 * 30) # Records before the fire will adopt an extreme number equivalent to 30 years since fire 
-        print(X)
+            current_fire_date = self.historical_fire_ds.iloc[record_idx]['ignition_d']
+            if (index < current_fire_date) and (record_idx == 0):
+                X.at[index, 'days_since_fire'] = 365 * 30
+            else:
+                X.at[index, 'days_since_fire'] = (index - current_fire_date).days
+    
         return X
     
     
@@ -489,26 +480,32 @@ class historical_burn_date_index_attribute_adder(BaseEstimator, TransformerMixin
         # get mean pv of (a) and (b) and take the difference 
         
      X = X.copy()
+     
+     if self.historical_fire_ds.empty: # if there is no recorded fire, just give the default value 0 
+         X['fire_severity'] = 0 
+         return X
+     
+     
      X['fire_severity'] = pd.NA
      X = X.astype('Float64')
      
      for i, v in self.historical_fire_ds.iterrows():
 
         if self.verbose: print(v)
-        prior_search = v['igntn_d'] - relativedelta(months = self.time_range)
-        after_search = v['igntn_d'] + relativedelta(months = self.time_range)
+        prior_search = v['ignition_d'] - relativedelta(months = self.time_range)
+        after_search = v['ignition_d'] + relativedelta(months = self.time_range)
         
         
         # Note: I am not including the date of the fire in the search
         ## Get df of prior
-        a_df = X.iloc[(X.index >= prior_search) & (X.index < v['igntn_d'])]
+        a_df = X.iloc[(X.index >= prior_search) & (X.index < v['ignition_d'])]
         a_df = a_df.iloc[-3:, :]
         if self.verbose: print(a_df[['pv_filter','days_since_fire', 'fire_severity']])
         a = a_df['pv_filter'].mean()
         if self.verbose: print(a)
         
         ## Get df of after 
-        b_df = X.iloc[(X.index < after_search) & (X.index > v['igntn_d'])]
+        b_df = X.iloc[(X.index < after_search) & (X.index > v['ignition_d'])]
         b_df = b_df.iloc[:3, :]
         if self.verbose: print(b_df[['pv_filter','days_since_fire', 'fire_severity']])
         b = b_df['pv_filter'].mean()
@@ -516,17 +513,18 @@ class historical_burn_date_index_attribute_adder(BaseEstimator, TransformerMixin
         
         fire_severity = a - b
         
-        if self.verbose: print(f"at {v['igntn_d']}:{fire_severity}")
+        if self.verbose: print(f"at {v['ignition_d']}:{fire_severity}")
         
         if i != (len(self.historical_fire_ds) - 1):
-            df_selector = (X.index >= v['igntn_d']) & (X.index < self.historical_fire_ds.iloc[i + 1]['igntn_d']) # only go up to the next fire date
+            df_selector = (X.index >= v['ignition_d']) & (X.index < self.historical_fire_ds.iloc[i + 1]['ignition_d']) # only go up to the next fire date
         else:
-            df_selector = (X.index > v['igntn_d']) # there is no recorded fire date so go up to the very end of the dataset 
+            df_selector = (X.index > v['ignition_d']) # there is no recorded fire date so go up to the very end of the dataset 
             
         selected_df = X.iloc[df_selector].copy()
         X.loc[df_selector,'fire_severity'] = fire_severity
         
      X['fire_severity'] = X['fire_severity'].replace(pd.NA, 0) # set all records prior to the first fire to 0
+     X.loc[X.fire_severity < 0, 'fire_severity'] = 0 # in cases where PV increases after the fire, set to 0
      return X
  
 

@@ -3,6 +3,10 @@
 <Document id="root_doc">
 <Folder><name>site_subset</name>
   <Placemark>
+	<name>NSABHC0023</name>
+      <Point><coordinates>142.1365528,-31.34395,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
 	<name>NSAMDD0014</name>
 	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
       <Polygon><outerBoundaryIs><LinearRing><coordinates>141.1918167,-33.16793889,0 141.1928889,-33.16794444,0 141.1928889,-33.16703889,0 141.1918167,-33.16703889,0 141.1918167,-33.16793889,0</coordinates></LinearRing></outerBoundaryIs></Polygon>

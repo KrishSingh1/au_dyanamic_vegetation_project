@@ -39,6 +39,20 @@ def plotPredictions(actual, prediction, TARGET, msg = '', split = ''):
         
 #%% Main 
 
+
+# WAAPIL0003
+# NSABHC0023 [issue with fire history]
+# TCATCH0006 [Issue with fire history]
+# WAAGAS0002 [Issue with fire history]
+# NSAMDD0014 [Issue with fire history]
+# NTAGFU0021 [Issue with fire history]
+# NSANSS0001 [Issue with fire history]
+# SATSTP0005 [Issue with fie history]
+# QDASSD0015 [Issue  with fire history]
+# NTAFIN0002 []
+# NSANAN0002
+# QDAEIU0010
+
 site_location_name = 'NSANAN0002'
 site_merged = pd.read_csv(f'Input_DataSet_{site_location_name}.csv', parse_dates = ['time']).copy()
 site_merged = site_merged.set_index('time')
