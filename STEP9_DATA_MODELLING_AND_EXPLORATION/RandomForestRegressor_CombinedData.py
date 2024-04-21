@@ -173,7 +173,7 @@ reg = RandomForestRegressor()
 # Perform optimisation based on given hyper params
 hyp_params = { 
     'n_estimators': [100],
-    'max_depth': [10,20,30,40, None],
+    'max_depth': [10,20,30,40],
     #'min_weight_fraction_leaf': np.linspace(0,0.5,5),
     #'min_samples_split': [2, 10, 30],
     'bootstrap': [True],

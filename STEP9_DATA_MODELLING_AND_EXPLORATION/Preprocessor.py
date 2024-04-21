@@ -45,11 +45,122 @@ from PreprocessData import * # import from custom transformers
 
 
 
-sites_list = ['WAAPIL0003', 'NSABHC0023', 'TCATCH0006',
-               'WAAGAS0002', 'NSAMDD0014', 'NTAGFU0021', 
-               'NSANSS0001', 'SATSTP0005', 'QDASSD0015', 
-               'NTAFIN0002', 'NSANAN0002', 'QDAEIU0010']
+# sites_list = ['WAAPIL0003', 'NSABHC0023', 'TCATCH0006',
+#                'WAAGAS0002', 'NSAMDD0014', 'NTAGFU0021', 
+#                'NSANSS0001', 'SATSTP0005', 'QDASSD0015', 
+#                'NTAFIN0002', 'NSANAN0002', 'QDAEIU0010'] # smaller subset
 
+# sites_list = ['NSABBS0001','NSABHC0011','NSACOP0001',
+#              'NSAMDD0001','NSAMDD0011','NSAMDD0020',
+#              'NSAMDD0028','NSAMUL0003','NSANAN0001',
+#              'NSANAN0002','NSANSS0002','NSTSYB0003',] # bigger subset - NSW
+
+# sites_list = np.unique(['NSABBS0001',
+#  'NSABHC0011',
+#  'NSACOP0001',
+#  'NSAMDD0001',
+#  'NSAMDD0011',
+#  'NSAMDD0020',
+#  'NSAMDD0028',
+#  'NSAMUL0003',
+#  'NSANAN0001',
+#  'NSANAN0002',
+#  'NSANSS0002',
+#  'NSTSYB0003',
+#  'NSTSYB0005',
+#  'NSTSYB0006',
+#  'NSABHC0023',
+#  'NSAMDD0014',
+#  'NSANSS0001',
+#  'NSANAN0002'])
+
+
+# sites_list = np.unique(['NTADAC0001',
+#  'NTADMR0001',
+#  'NTAFIN0003',
+#  'NTAFIN0006',
+#  'NTAFIN0015',
+#  'NTAFIN0018',
+#  'NTAGFU0014',
+#  'NTAGFU0020',
+#  'NTAGFU0030',
+#  'NTAGFU0034',
+#  'NTASTU0004',
+#  'NTTDMR0003',
+#  'NTAGFU0021',
+#  'NTAFIN0002'])
+
+# sites_list = np.unique(['QDABBN0002',
+#  'QDABBS0002',
+#  'QDABBS0010',
+#  'QDACHC0003',
+#  'QDACYP0006',
+#  'QDACYP0018',
+#  'QDACYP0020',
+#  'QDACYP0022',
+#  'QDAEIU0005',
+#  'QDAGUP0006',
+#  'QDAGUP0009',
+#  'QDAGUP0019',
+#  'QDAGUP0021',
+#  'QDAMGD0002',
+#  'QDAMGD0023',
+#  'QDAMGD0024',
+#  'QDAMGD0025',
+#  'QDAMUL0002',
+#  'QDAMUL0003',
+#  'QDASEQ0004',
+#  'QDASSD0015', 
+#  'QDAEIU0010'])
+
+# sites_list = np.unique(['WAAAVW0006',
+#  'WAACAR0002',
+#  'WAACAR0004',
+#  'WAACOO0007',
+#  'WAACOO0016',
+#  'WAACOO0024',
+#  'WAACOO0026',
+#  'WAACOO0027',
+#  'WAACOO0029',
+#  'WAACOO0030',
+#  'WAAGAS0001',
+#  'WAAGES0001',
+#  'WAALSD0002',
+#  'WAANOK0006',
+#  'WAANUL0003',
+#  'WAAPIL0010',
+#  'WAAPIL0023',
+#  'WAAPIL0024',
+#  'WAAPIL0031',
+#  'WAAPIL0003',
+#  'WAAGAS0002'])
+
+# sites_list = np.unique(['SAAEYB0001',
+#  'SAAEYB0021',
+#  'SAAEYB0028',
+#  'SAAEYB0029',
+#  'SAAFLB0003',
+#  'SAAFLB0005',
+#  'SAAFLB0008',
+#  'SAAGAW0008',
+#  'SAAKAN0009',
+#  'SAASTP0023',
+#  'SAASTP0033',
+#  'SAASTP0034',
+#  'SASMDD0005',
+#  'SASMDD0009',
+#  'SASMDD0014',
+#  'SATFLB0003',
+#  'SATFLB0019',
+#  'SATFLB0020',
+#  'SATFLB0022',
+#  'SATFLB0023',
+#  'SATSTP0005'])
+
+
+#sites_list = np.unique(['TCATCH0004', 'TCATNM0001', 'TCATNM0003', 'TCATCH0006'])
+
+sites_list = ['NSTSYB0003']
 
 for site_location_name in sites_list:
     

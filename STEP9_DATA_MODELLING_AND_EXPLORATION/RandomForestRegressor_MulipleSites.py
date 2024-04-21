@@ -27,6 +27,7 @@ from skopt import BayesSearchCV
 from sklearn.model_selection import KFold
 from sklearn.model_selection import GroupKFold
 
+
 #%% Functions 
 
 def plotPredictions(actual, prediction, TARGET, msg = '', split = ''):
@@ -66,9 +67,120 @@ def antiOverFitterScorer(y_train_pred, y_train_act, y_val_pred, y_val_act):
 
 
 sites_list = ['WAAPIL0003', 'NSABHC0023', 'TCATCH0006',
-               'WAAGAS0002', 'NSAMDD0014', 'NTAGFU0021', 
-               'NSANSS0001', 'SATSTP0005', 'QDASSD0015', 
-               'NTAFIN0002', 'NSANAN0002', 'QDAEIU0010']
+                'WAAGAS0002', 'NSAMDD0014', 'NTAGFU0021', 
+                'NSANSS0001', 'SATSTP0005', 'QDASSD0015', 
+                'NTAFIN0002', 'NSANAN0002', 'QDAEIU0010'] # smalller subset 
+
+# sites_list = np.unique(['NSABBS0001',
+#   'NSABHC0011',
+#   'NSACOP0001',
+#   'NSAMDD0001',
+#   'NSAMDD0011',
+#   'NSAMDD0020',
+#   'NSAMDD0028',
+#   'NSAMUL0003',
+#   'NSANAN0001',
+#   'NSANAN0002',
+#   'NSANSS0002',
+#   'NSTSYB0003',
+#   'NSTSYB0005',
+#   'NSTSYB0006',
+#   'NSABHC0023',
+#   'NSAMDD0014',
+#   'NSANSS0001',
+#   'NSANAN0002'])# bigger subset - NSW
+
+
+# sites_list = np.unique(['NTADAC0001',
+#   'NTADMR0001',
+#   'NTAFIN0003',
+#   'NTAFIN0006',
+#   'NTAFIN0015',
+#   'NTAFIN0018',
+#   'NTAGFU0014',
+#   'NTAGFU0020',
+#   'NTAGFU0030',
+#   'NTAGFU0034',
+#   'NTASTU0004',
+#   'NTTDMR0003',
+#   'NTAGFU0021',
+#   'NTAFIN0002']) # NT
+
+
+sites_list = np.unique(['QDABBN0002',
+  'QDABBS0002',
+  'QDABBS0010',
+  'QDACHC0003',
+  'QDACYP0006',
+  'QDACYP0018',
+  'QDACYP0020',
+  'QDACYP0022',
+  'QDAEIU0005',
+  'QDAGUP0006',
+  'QDAGUP0009',
+  'QDAGUP0019',
+  'QDAGUP0021',
+  'QDAMGD0002',
+  'QDAMGD0023',
+  'QDAMGD0024',
+  'QDAMGD0025',
+  'QDAMUL0002',
+  'QDAMUL0003',
+  'QDASEQ0004',
+  'QDASSD0015', 
+  'QDAEIU0010']) # QD 
+
+
+
+# sites_list = np.unique(['WAAAVW0006',
+#   'WAACAR0002',
+#   'WAACAR0004',
+#   'WAACOO0007',
+#   'WAACOO0016',
+#   'WAACOO0024',
+#   'WAACOO0026',
+#   'WAACOO0027',
+#   'WAACOO0029',
+#   'WAACOO0030',
+#   'WAAGAS0001',
+#   'WAAGES0001',
+#   'WAALSD0002',
+#   'WAANOK0006',
+#   'WAANUL0003',
+#   'WAAPIL0010',
+#   'WAAPIL0023',
+#   'WAAPIL0024',
+#   'WAAPIL0031',
+#   'WAAPIL0003',
+#   'WAAGAS0002'])
+
+
+# sites_list = np.unique(['SAAEYB0001',
+#   'SAAEYB0021',
+#   'SAAEYB0028',
+#   'SAAEYB0029',
+#   'SAAFLB0003',
+#   'SAAFLB0005',
+#   'SAAFLB0008',
+#   'SAAGAW0008',
+#   'SAAKAN0009',
+#   'SAASTP0023',
+#   'SAASTP0033',
+#   'SAASTP0034',
+#   'SASMDD0005',
+#   'SASMDD0009',
+#   'SASMDD0014',
+#   'SATFLB0003',
+#   'SATFLB0019',
+#   'SATFLB0020',
+#   'SATFLB0022',
+#   'SATFLB0023',
+#   'SATSTP0005'])
+
+
+
+#sites_list = np.unique(['TCATCH0004', 'TCATNM0001', 'TCATNM0003', 'TCATCH0006'])
+
 datasets = {}
 
 for site_location_name in sites_list:
@@ -79,8 +191,8 @@ for site_location_name in sites_list:
 
 #%% Model the dataset
 
-# SEASONAL_FEATURES = ['photoperiod', 'photoperiod_gradient', 'year']
 SEASONAL_FEATURES = ['photoperiod', 'photoperiod_gradient']
+#SEASONAL_FEATURES = ['photoperiod', 'photoperiod_gradient']
 PRECIP_FEATURES = ['precip_30', 'precip_90', 'precip_180', 'precip_365', 'precip_730', 'precip_1095', 'precip_1460']
 TEMP_FEATURES = ['tmax_lag', 'tmax_7', 'tmax_14', 'tmax_30', 'tmin_lag', 'tmin_7', 'tmin_14', 'tmin_30']
 VPD_FEATURES = ['VPD_lag','VPD_7', 'VPD_14', 'VPD_30']
@@ -132,7 +244,7 @@ plt.show()
 
 #%% Run The model 
 
-main_scorer = 'r2'
+main_scorer = 'neg_mean_squared_error'
 # Possible scorers:
     #  neg_mean_absolute_percentage_error'
     #  mean_squared_log_error
@@ -141,77 +253,82 @@ main_scorer = 'r2'
     
 
 ## Test with Default RF 
-reg = RandomForestRegressor(random_state = random_state)
+reg = RandomForestRegressor(n_estimators = 100, random_state = random_state, n_jobs = 7)
 
 default_RF_CV = pd.DataFrame(cross_validate(reg, X = train[FEATURES],
                      y = train[TARGET], cv=cv_splits, 
-                     scoring=np.unique(['r2', main_scorer]).tolist(),
+                     scoring=np.unique(['neg_mean_squared_error', main_scorer]).tolist(),
                      return_train_score = True))
-print(f'Default\nTrain R2 {default_RF_CV["train_" + main_scorer].mean()}\nTest R2 {default_RF_CV["test_" + main_scorer].mean()}')
+print(f'Default\nTrain R2 {default_RF_CV["train_" + "neg_mean_squared_error"].mean()}\nTest R2 {default_RF_CV["test_" + "neg_mean_squared_error"].mean()}')
 
 
 
 #%%
 
-reg = RandomForestRegressor()
-# Perform optimisation based on given hyper params
-hyp_params = { 
-    'n_estimators': [100],
-    'max_depth': [10,20,30,40, None],
-    #'min_weight_fraction_leaf': np.linspace(0,0.5,5),
-    #'min_samples_split': [2, 10, 30],
-    'bootstrap': [True],
-    #'max_leaf_nodes': [10,20,30,100, None],
-    'max_features'     : ['sqrt', 'log2', None, 1.0],
-    'criterion': ['squared_error','friedman_mse', 'poisson', 'absolute_error'],
-    'random_state' : [random_state]
-}
+# reg = RandomForestRegressor()
+# # Perform optimisation based on given hyper params
+# hyp_params = { 
+#     'n_estimators': [100],
+#     'max_depth': [10,20,30,40],
+#     #'min_weight_fraction_leaf': np.linspace(0,0.5,5),
+#     #'min_samples_split': [2, 10, 30],
+#     'bootstrap': [True],
+#     #'max_leaf_nodes': [10,20,30,100, None],
+#     'max_samples': [0.4],
+#     'max_features'     : ['sqrt', 'log2', None, 1.0],
+#     'criterion': ['squared_error','friedman_mse', 'poisson', 'absolute_error'],
+#     'random_state' : [random_state]
+# }
 
-grid = GridSearchCV(estimator=reg,
-              param_grid = hyp_params,
-              cv = cv_splits, scoring = (main_scorer),
-              n_jobs = 7)
+# grid = GridSearchCV(estimator=reg,
+#               param_grid = hyp_params,
+#               cv = cv_splits, scoring = (main_scorer),
+#               n_jobs = 7)
 
-grid.fit(X = train[FEATURES], y = train[TARGET])
-reg = grid.best_estimator_
+# grid.fit(X = train[FEATURES], y = train[TARGET])
+# reg = grid.best_estimator_
 
 #{'bootstrap': True, 'criterion': 'poisson', 'max_depth': 30, 'max_features': 'sqrt', 
 #   'n_estimators': 100, 'random_state': 20240228}
 
-print(grid.best_params_)
+# print(grid.best_params_)
 
-Tuned_RF_CV = pd.DataFrame(cross_validate(RandomForestRegressor(**grid.best_params_), X = train[FEATURES],
-                      y = train[TARGET], cv=cv_splits, 
-                      scoring=np.unique(['r2', main_scorer]).tolist(),
-                      return_train_score = True))
+# Tuned_RF_CV = pd.DataFrame(cross_validate(RandomForestRegressor(**grid.best_params_), X = train[FEATURES],
+#                       y = train[TARGET], cv=cv_splits, 
+#                       scoring=np.unique(['r2', main_scorer]).tolist(),
+#                       return_train_score = True))
 
-print(f'Tuned\nTrain R2 {Tuned_RF_CV["train_" + main_scorer].mean()}\nTest R2 {Tuned_RF_CV["test_" + main_scorer].mean()}')
+# print(f'Tuned\nTrain R2 {Tuned_RF_CV["train_" + main_scorer].mean()}\nTest R2 {Tuned_RF_CV["test_" + main_scorer].mean()}')
 
 
 #%% Fit the Models
 
 # Default Model 
-reg = RandomForestRegressor(random_state = random_state)
-reg.fit(train[FEATURES], train[TARGET])
 
-NSANAN0002 = datasets['NSANAN0002'].set_index('time').dropna(subset = FEATURES)
-y_pred = reg.predict(NSANAN0002[FEATURES])
-TARGET_names = [ 'prediction_' + i for i in TARGET]
-df = pd.DataFrame(y_pred, columns = TARGET_names)
-df.index = NSANAN0002[FEATURES].index
-plotPredictions(NSANAN0002,df,TARGET, split = time_split)
+reg.fit(X = train[FEATURES], y = train[TARGET])
 
-mean_squared_error(NSANAN0002[NSANAN0002.index > time_split][TARGET], df[NSANAN0002.index > time_split])
+for site in sites_list:
+
+    site_data = datasets[site].set_index('time').dropna(subset = FEATURES)
+    y_pred = reg.predict(site_data[FEATURES])
+    TARGET_names = ['prediction_' + i for i in TARGET]
+    df = pd.DataFrame(y_pred, columns = TARGET_names)
+    df.index = site_data[FEATURES].index
+    train_score = mean_squared_error(site_data[site_data.index <= time_split][TARGET], df[site_data.index <= time_split])
+    test_score = mean_squared_error(site_data[site_data.index > time_split][TARGET], df[site_data.index > time_split])
+    plotPredictions(site_data, df, TARGET, split = time_split, msg = f'{site} RF . MSE Scores: train:{train_score:.2f}, test:{test_score:.2f}')
+    
+
 
 
 # Fine-Tuned Model
-reg = RandomForestRegressor(**grid.best_params_)
-reg.fit(train[FEATURES], train[TARGET])
-y_pred = reg.predict(site_merged[FEATURES])
-TARGET_names = [ 'prediction_' + i for i in TARGET]
-df = pd.DataFrame(y_pred, columns = TARGET_names)
-df.index = site_merged[FEATURES].index
-plotPredictions(site_merged,df,TARGET, split = time_split)
+# reg = RandomForestRegressor(**grid.best_params_)
+# reg.fit(train[FEATURES], train[TARGET])
+# y_pred = reg.predict(site_merged[FEATURES])
+# TARGET_names = [ 'prediction_' + i for i in TARGET]
+# df = pd.DataFrame(y_pred, columns = TARGET_names)
+# df.index = site_merged[FEATURES].index
+# plotPredictions(site_merged,df,TARGET, split = time_split)
 
 
 #%% Examine Importances 
@@ -221,7 +338,7 @@ plotPredictions(site_merged,df,TARGET, split = time_split)
 # https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-multicollinear-py
 # Comparion between plots code inspired by above links 
 
-reg = RandomForestRegressor(**grid.best_params_)
+#reg = RandomForestRegressor(**grid.best_params_)
 reg.fit(train[FEATURES], train[TARGET])
 
 fig, ax = plt.subplots(1,2)

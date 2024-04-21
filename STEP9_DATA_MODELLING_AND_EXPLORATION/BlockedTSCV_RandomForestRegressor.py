@@ -63,14 +63,14 @@ def antiOverFitterScorer(y_train_pred, y_train_act, y_val_pred, y_val_act):
 # NSANAN0002
 # QDAEIU0010
 
-site_location_name = 'WAAPIL0003'
+site_location_name = 'NTAFIN0002'
 site_merged = pd.read_csv(f'Input_DataSet_{site_location_name}.csv', parse_dates = ['time']).copy()
 site_merged = site_merged.set_index('time')
 
 #%% Model the dataset
 
-# SEASONAL_FEATURES = ['photoperiod', 'photoperiod_gradient', 'year']
-SEASONAL_FEATURES = ['photoperiod', 'photoperiod_gradient']
+SEASONAL_FEATURES = ['photoperiod', 'photoperiod_gradient', 'year']
+#SEASONAL_FEATURES = ['photoperiod', 'photoperiod_gradient']
 PRECIP_FEATURES = ['precip_30', 'precip_90', 'precip_180', 'precip_365', 'precip_730', 'precip_1095', 'precip_1460']
 TEMP_FEATURES = ['tmax_lag', 'tmax_7', 'tmax_14', 'tmax_30', 'tmin_lag', 'tmin_7', 'tmin_14', 'tmin_30']
 VPD_FEATURES = ['VPD_lag','VPD_7', 'VPD_14', 'VPD_30']
@@ -126,7 +126,7 @@ plt.show()
 
 #%% Run The model 
 
-main_scorer = 'r2'
+main_scorer = 'neg_mean_squared_error'
 # Possible scorers:
     #  neg_mean_absolute_percentage_error'
     #  mean_squared_log_error
@@ -141,9 +141,10 @@ reg = RandomForestRegressor(random_state = random_state)
 
 default_RF_CV = pd.DataFrame(cross_validate(reg, X = train[FEATURES],
                      y = train[TARGET], cv=cv_splits, 
-                     scoring=np.unique(['r2', main_scorer]).tolist(),
+                     scoring=np.unique(['neg_mean_squared_error', main_scorer]).tolist(),
                      return_train_score = True))
-print(f'Default\nTrain R2 {default_RF_CV["train_" + main_scorer].mean()}\nTest R2 {default_RF_CV["test_" + main_scorer].mean()}')
+print(site_location_name)
+print(f'Default\nTrain R2 {default_RF_CV["train_" + "neg_mean_squared_error"].mean()}\nTest R2 {default_RF_CV["test_" + "neg_mean_squared_error"].mean()}')
 
 
 
@@ -153,12 +154,13 @@ reg = RandomForestRegressor()
 # Perform optimisation based on given hyper params
 hyp_params = { 
     'n_estimators': [100],
-    'max_depth': [10,20,30,40, None],
+    'max_depth': [10,20,30,40],
     #'min_weight_fraction_leaf': np.linspace(0,0.5,5),
     #'min_samples_split': [2, 10, 30],
     'bootstrap': [True],
     #'max_leaf_nodes': [10,20,30,100, None],
     'max_features'     : ['sqrt', 'log2', None, 1.0],
+    'max_samples': [0.9],
     #'warm_start': [True, False],
     'criterion': ['squared_error','friedman_mse', 'poisson', 'absolute_error'],
     'random_state' : [random_state]
@@ -182,7 +184,7 @@ Tuned_RF_CV = pd.DataFrame(cross_validate(RandomForestRegressor(**grid.best_para
                      scoring=np.unique(['r2', main_scorer]).tolist(),
                      return_train_score = True))
 
-print(f'Tuned\nTrain R2 {Tuned_RF_CV["train_" + main_scorer].mean()}\nTest R2 {Tuned_RF_CV["test_" + main_scorer].mean()}')
+print(f'Tuned\nTrain R2 {Tuned_RF_CV["train_" + "neg_mean_squared_error"].mean()}\nTest R2 {Tuned_RF_CV["test_" + "neg_mean_squared_error"].mean()}')
 
 
 #%% Fit the Models
@@ -194,9 +196,10 @@ y_pred = reg.predict(site_merged[FEATURES])
 TARGET_names = [ 'prediction_' + i for i in TARGET]
 df = pd.DataFrame(y_pred, columns = TARGET_names)
 df.index = site_merged[FEATURES].index
-plotPredictions(site_merged,df,TARGET, split = time_split)
 
-mean_squared_error(NSANAN0002[TARGET], y_pred)
+train_score = mean_squared_error(train[TARGET], reg.predict(train[FEATURES]))
+test_score = mean_squared_error(test[TARGET], reg.predict(test[FEATURES]))
+plotPredictions(site_merged, df, TARGET, split = time_split, msg = f'RF Default. MSE Scores: train:{train_score:.2f}, test:{test_score:.2f}')
 
 # Fine-Tuned Model
 reg = RandomForestRegressor(**grid.best_params_)
@@ -205,9 +208,10 @@ y_pred = reg.predict(site_merged[FEATURES])
 TARGET_names = [ 'prediction_' + i for i in TARGET]
 df = pd.DataFrame(y_pred, columns = TARGET_names)
 df.index = site_merged[FEATURES].index
-plotPredictions(site_merged,df,TARGET, split = time_split)
 
-
+train_score = mean_squared_error(train[TARGET], reg.predict(train[FEATURES]))
+test_score = mean_squared_error(test[TARGET], reg.predict(test[FEATURES]))
+plotPredictions(site_merged, df, TARGET, split = time_split, msg = f'RF Tuned. MSE Scores: train:{train_score:.2f}, test:{test_score:.2f}')
 #%% Examine Importances 
 
 # Get importance 
