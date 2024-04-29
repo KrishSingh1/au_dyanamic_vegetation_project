@@ -412,14 +412,23 @@ class historical_burn_date_preprocess(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
         
         X = X.copy()
-        X = X[['ignition_d', 'Name']]
-        X = X[self.site_location_name == X['Name']]
+        
+        # Get a subset of the dataset that has the corresponding site_location_name
+        X = X[['ignition_d', 'extinguish', 'Name']]
+        X = X[X.Name == self.site_location_name]
+  
+        # Remove all records with 'None' as the ignititon_d
         X = X.iloc[[i is not None for i in  X['ignition_d']]]
+        
+        # Convert to date_time
         X['ignition_d'] = pd.to_datetime(X['ignition_d'])
+        X['extinguish'] = pd.to_datetime(X['extinguish'])
+        
+        # Sort by date 
         X = X.sort_values(by = 'ignition_d')
         X = X.reset_index(drop = True)
         
-        # Mention that the dataset is empty
+        # Mention that the dataset is empty if empty
         if(X.empty):
             print(f'No Fire Dates for {self.site_location_name} avaliable')
         
@@ -444,6 +453,7 @@ class historical_burn_date_attribute_adder(BaseEstimator, TransformerMixin):
             return X
         
         number_of_records = len(self.historical_fire_ds['ignition_d'])
+        
         record_idx = 0 # on the current fire record 
         X['days_since_fire'] = 0 
         for index, row in X.iterrows():
@@ -474,10 +484,12 @@ class historical_burn_date_index_attribute_adder(BaseEstimator, TransformerMixin
     
     def transform(self, X, y=None):
         # with the actual fire dates, we can
-        # for fire date (1), we can do a rough search with records within 3 months before and after the fire
+        # for fire date (1), we can do a rough search with records within 3 months before, and use the extinguish date for after the fire
+        #   if there are no extinguish date, do a rough rearch with records within 3 months after 
+        #       select first three data points after the fire (b)
         # select first three data points prior to the fire (a)
-        # select first three data points after the fire (b)
-        # get mean pv of (a) and (b) and take the difference 
+        # select the first three data points after the fire (b) if there are no extinguish dates 
+        # get mean pv of (a) and  the minimum of (b) and take the difference 
         
      X = X.copy()
      
@@ -493,8 +505,6 @@ class historical_burn_date_index_attribute_adder(BaseEstimator, TransformerMixin
 
         if self.verbose: print(v)
         prior_search = v['ignition_d'] - relativedelta(months = self.time_range)
-        after_search = v['ignition_d'] + relativedelta(months = self.time_range)
-        
         
         # Note: I am not including the date of the fire in the search
         ## Get df of prior
@@ -504,12 +514,22 @@ class historical_burn_date_index_attribute_adder(BaseEstimator, TransformerMixin
         a = a_df['pv_filter'].mean()
         if self.verbose: print(a)
         
-        ## Get df of after 
-        b_df = X.iloc[(X.index < after_search) & (X.index > v['ignition_d'])]
-        b_df = b_df.iloc[:3, :]
-        if self.verbose: print(b_df[['pv_filter','days_since_fire', 'fire_severity']])
-        b = b_df['pv_filter'].mean()
-        if self.verbose: print(b)
+        # Check if the extinguish value was record, if not, resort to the three data points after
+        if v['extinguish'] == None:
+            after_search = v['ignition_d'] + relativedelta(months = self.time_range)
+            ## Get df of after 
+            b_df = X.iloc[(X.index <= after_search) & (X.index > v['ignition_d'])]
+            b_df = b_df.iloc[:3, :]
+            if self.verbose: print(b_df[['pv_filter','days_since_fire', 'fire_severity']])
+            b = b_df['pv_filter'].min()
+            if self.verbose: print(b)
+            
+        else:
+            if self.verbose: print(f'Extinguish date found for {v}')
+            after_search = v['extinguish']
+            b_df = X.iloc[(X.index <= after_search) & (X.index > v['ignition_d'])]
+            if self.verbose: print(b_df[['pv_filter','days_since_fire', 'fire_severity']])
+            b = b_df['pv_filter'].min()
         
         fire_severity = a - b
         

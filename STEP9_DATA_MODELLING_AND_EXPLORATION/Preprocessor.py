@@ -45,10 +45,10 @@ from PreprocessData import * # import from custom transformers
 
 
 
-# sites_list = ['WAAPIL0003', 'NSABHC0023', 'TCATCH0006',
-#                'WAAGAS0002', 'NSAMDD0014', 'NTAGFU0021', 
-#                'NSANSS0001', 'SATSTP0005', 'QDASSD0015', 
-#                'NTAFIN0002', 'NSANAN0002', 'QDAEIU0010'] # smaller subset
+sites_list = ['WAAPIL0003', 'NSABHC0023', 'TCATCH0006',
+                'WAAGAS0002', 'NSAMDD0014', 'NTAGFU0021', 
+                'NSANSS0001', 'SATSTP0005', 'QDASSD0015', 
+                'NTAFIN0002', 'NSANAN0002', 'QDAEIU0010'] # smaller subset
 
 # sites_list = ['NSABBS0001','NSABHC0011','NSACOP0001',
 #              'NSAMDD0001','NSAMDD0011','NSAMDD0020',
@@ -56,39 +56,39 @@ from PreprocessData import * # import from custom transformers
 #              'NSANAN0002','NSANSS0002','NSTSYB0003',] # bigger subset - NSW
 
 # sites_list = np.unique(['NSABBS0001',
-#  'NSABHC0011',
-#  'NSACOP0001',
-#  'NSAMDD0001',
-#  'NSAMDD0011',
-#  'NSAMDD0020',
-#  'NSAMDD0028',
-#  'NSAMUL0003',
-#  'NSANAN0001',
-#  'NSANAN0002',
-#  'NSANSS0002',
-#  'NSTSYB0003',
-#  'NSTSYB0005',
-#  'NSTSYB0006',
-#  'NSABHC0023',
-#  'NSAMDD0014',
-#  'NSANSS0001',
-#  'NSANAN0002'])
+#   'NSABHC0011',
+#   'NSACOP0001',
+#   'NSAMDD0001',
+#   'NSAMDD0011',
+#   'NSAMDD0020',
+#   'NSAMDD0028',
+#   'NSAMUL0003',
+#   'NSANAN0001',
+#   'NSANAN0002',
+#   'NSANSS0002',
+#   'NSTSYB0003',
+#   'NSTSYB0005',
+#   'NSTSYB0006',
+#   'NSABHC0023',
+#   'NSAMDD0014',
+#   'NSANSS0001',
+#   'NSANAN0002'])
 
 
 # sites_list = np.unique(['NTADAC0001',
-#  'NTADMR0001',
-#  'NTAFIN0003',
-#  'NTAFIN0006',
-#  'NTAFIN0015',
-#  'NTAFIN0018',
-#  'NTAGFU0014',
-#  'NTAGFU0020',
-#  'NTAGFU0030',
-#  'NTAGFU0034',
-#  'NTASTU0004',
-#  'NTTDMR0003',
-#  'NTAGFU0021',
-#  'NTAFIN0002'])
+#   'NTADMR0001',
+#   'NTAFIN0003',
+#   'NTAFIN0006',
+#   'NTAFIN0015',
+#   'NTAFIN0018',
+#   'NTAGFU0014',
+#   'NTAGFU0020',
+#   'NTAGFU0030',
+#   'NTAGFU0034',
+#   'NTASTU0004',
+#   'NTTDMR0003',
+#   'NTAGFU0021',
+#   'NTAFIN0002'])
 
 # sites_list = np.unique(['QDABBN0002',
 #  'QDABBS0002',
@@ -157,10 +157,18 @@ from PreprocessData import * # import from custom transformers
 #  'SATFLB0023',
 #  'SATSTP0005'])
 
-
 #sites_list = np.unique(['TCATCH0004', 'TCATNM0001', 'TCATNM0003', 'TCATCH0006'])
+#sites_list = ['NSTSYB0003']
 
-sites_list = ['NSTSYB0003']
+#sites_list = ['QDACYP0010', 'QDASEQ0002', 'QDAEIU0009', 'QDAEIU0004', 
+# 'QDABBS0001', 'NTAGFU0007', 'WAAMUR0029', 'WAAMUR0031', 
+# 'WAAPIL0002', 'WAAGSD0001']
+
+#sites_list = ['WAACEK0002', 'NTADAC0001', 'QDAGUP0015',
+#       'VCAAUA0011', 'WAANOK0004']
+
+#sites_list = ['QDASSD0004', 'WAAPIL0031', 'SATFLB0018',
+#       'WAAMUR0028', 'QDASSD0001']
 
 for site_location_name in sites_list:
     
@@ -192,7 +200,7 @@ for site_location_name in sites_list:
         ('time_attributes_fc_diff_adder', time_attributes_fc_diff_adder(False)),
         ('daylength_attributes_adder', daylength_attributes_adder(latitude)),
         ('historical_burn_date_attribute_adder', historical_burn_date_attribute_adder(historical_fire_ds)),
-        ('historical_burn_date_index_attribute_adder', historical_burn_date_index_attribute_adder(verbose = True,
+        ('historical_burn_date_index_attribute_adder', historical_burn_date_index_attribute_adder(verbose = False,
                                                                                                   historical_fire_ds = historical_fire_ds,
                                                                                                   time_range = time_range))
         #('historical_burn_date_index_attribute_adder_lag', historical_burn_date_index_attribute_adder_lag(time_lag = time_lag,

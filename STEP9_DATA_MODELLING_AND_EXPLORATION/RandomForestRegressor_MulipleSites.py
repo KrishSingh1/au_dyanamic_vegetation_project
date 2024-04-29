@@ -69,7 +69,7 @@ def antiOverFitterScorer(y_train_pred, y_train_act, y_val_pred, y_val_act):
 sites_list = ['WAAPIL0003', 'NSABHC0023', 'TCATCH0006',
                 'WAAGAS0002', 'NSAMDD0014', 'NTAGFU0021', 
                 'NSANSS0001', 'SATSTP0005', 'QDASSD0015', 
-                'NTAFIN0002', 'NSANAN0002', 'QDAEIU0010'] # smalller subset 
+                  'NTAFIN0002', 'NSANAN0002', 'QDAEIU0010'] # smalller subset 
 
 # sites_list = np.unique(['NSABBS0001',
 #   'NSABHC0011',
@@ -107,28 +107,28 @@ sites_list = ['WAAPIL0003', 'NSABHC0023', 'TCATCH0006',
 #   'NTAFIN0002']) # NT
 
 
-sites_list = np.unique(['QDABBN0002',
-  'QDABBS0002',
-  'QDABBS0010',
-  'QDACHC0003',
-  'QDACYP0006',
-  'QDACYP0018',
-  'QDACYP0020',
-  'QDACYP0022',
-  'QDAEIU0005',
-  'QDAGUP0006',
-  'QDAGUP0009',
-  'QDAGUP0019',
-  'QDAGUP0021',
-  'QDAMGD0002',
-  'QDAMGD0023',
-  'QDAMGD0024',
-  'QDAMGD0025',
-  'QDAMUL0002',
-  'QDAMUL0003',
-  'QDASEQ0004',
-  'QDASSD0015', 
-  'QDAEIU0010']) # QD 
+# sites_list = np.unique(['QDABBN0002',
+#   'QDABBS0002',
+#   'QDABBS0010',
+#   'QDACHC0003',
+#   'QDACYP0006',
+#   'QDACYP0018',
+#   'QDACYP0020',
+#   'QDACYP0022',
+#   'QDAEIU0005',
+#   'QDAGUP0006',
+#   'QDAGUP0009',
+#   'QDAGUP0019',
+#   'QDAGUP0021',
+#   'QDAMGD0002',
+#   'QDAMGD0023',
+#   'QDAMGD0024',
+#   'QDAMGD0025',
+#   'QDAMUL0002',
+#   'QDAMUL0003',
+#   'QDASEQ0004',
+#   'QDASSD0015', 
+#   'QDAEIU0010']) # QD 
 
 
 
