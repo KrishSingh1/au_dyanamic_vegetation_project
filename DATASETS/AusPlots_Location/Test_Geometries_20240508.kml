@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document id="root_doc">
+<Folder><name>Test_Geometries_20240508</name>
+  <Placemark>
+	<name>NSABHC0015</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>141.05925,-31.83394 141.060306800513,-31.8339395035041 141.060306213813,-31.8330372989399 141.059249423581,-31.8330377954184 141.05925,-31.83394</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>NSABHC0018</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>142.053699822544,-32.2490869614044 142.054761223478,-32.2490781044976 142.054750796287,-32.2481761119669 142.053689405841,-32.2481849685664 142.053699822544,-32.2490869614044</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>NSABHC0019</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>141.549655748197,-32.5148583396124 141.550720392681,-32.5148536833914 141.550714892081,-32.51395161737 141.549650258229,-32.5139562734302 141.549655748197,-32.5148583396124</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>NSABHC0020</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>141.50068383002,-32.2648029645392 141.501745553439,-32.2647987516819 141.501740590041,-32.2638966427223 141.500678877123,-32.2639008554334 141.50068383002,-32.2648029645392</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>NSABHC0021</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>141.868274460315,-32.1200692708837 141.869334423112,-32.1200619975869 141.869325871629,-32.1191599374447 141.868265919255,-32.1191672104886 141.868274460315,-32.1200692708837</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>NSABHC0022</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>142.472471006975,-30.6660456083322 142.47351453332,-30.6660337775538 142.473500842784,-30.6651317078822 142.472457326126,-30.6651435382382 142.472471006975,-30.6660456083322</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>NSABHC0023</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>142.136551695914,-31.3439492589899 142.137602773006,-31.3439399451964 142.13759191627,-31.343037849336 142.136540849204,-31.3430471628012 142.136551695914,-31.3439492589899</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>NSABHC0024</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>142.148517236441,-31.346792883348 142.149568340756,-31.3467834707949 142.149557368618,-31.3458813791087 142.14850627433,-31.34589079133 142.148517236441,-31.346792883348</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>NSABHC0025</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>141.535447,-32.420531 141.536510537661,-32.4205264756817 141.536505198401,-32.4196243939965 141.535441671323,-32.4196289181583 141.535447,-32.420531</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>NSABHC0026</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>142.268111620943,-31.7780186408231 142.269167525791,-31.7780081213293 142.269155206427,-31.7771061304403 142.268099311823,-31.7771166495662 142.268111620943,-31.7780186408231</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+</Folder>
+</Document></kml>

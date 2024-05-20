@@ -66,10 +66,10 @@ def antiOverFitterScorer(y_train_pred, y_train_act, y_val_pred, y_val_act):
 
 
 
-sites_list = ['WAAPIL0003', 'NSABHC0023', 'TCATCH0006',
-                'WAAGAS0002', 'NSAMDD0014', 'NTAGFU0021', 
-                'NSANSS0001', 'SATSTP0005', 'QDASSD0015', 
-                  'NTAFIN0002', 'NSANAN0002', 'QDAEIU0010'] # smalller subset 
+# sites_list = ['WAAPIL0003', 'NSABHC0023', 'TCATCH0006',
+#                 'WAAGAS0002', 'NSAMDD0014', 'NTAGFU0021', 
+#                 'NSANSS0001', 'SATSTP0005', 'QDASSD0015', 
+#                 'NTAFIN0002', 'NSANAN0002', 'QDAEIU0010'] # smalller subset 
 
 # sites_list = np.unique(['NSABBS0001',
 #   'NSABHC0011',
@@ -155,7 +155,7 @@ sites_list = ['WAAPIL0003', 'NSABHC0023', 'TCATCH0006',
 #   'WAAGAS0002'])
 
 
-# sites_list = np.unique(['SAAEYB0001',
+# sites_list = np.unique([
 #   'SAAEYB0021',
 #   'SAAEYB0028',
 #   'SAAEYB0029',
@@ -176,10 +176,10 @@ sites_list = ['WAAPIL0003', 'NSABHC0023', 'TCATCH0006',
 #   'SATFLB0022',
 #   'SATFLB0023',
 #   'SATSTP0005'])
+# Remove SAAEYB0001 as it does not have Soil data
 
 
-
-#sites_list = np.unique(['TCATCH0004', 'TCATNM0001', 'TCATNM0003', 'TCATCH0006'])
+# sites_list = np.unique(['TCATCH0004', 'TCATNM0001', 'TCATNM0003', 'TCATCH0006'])
 
 datasets = {}
 
@@ -187,27 +187,49 @@ for site_location_name in sites_list:
     
     site_merged = pd.read_csv(f'Input_DataSet_{site_location_name}.csv', parse_dates = ['time']).copy()
     datasets[site_location_name] = site_merged
+    print(site_merged)
     
 
 #%% Model the dataset
 
 SEASONAL_FEATURES = ['photoperiod', 'photoperiod_gradient']
-#SEASONAL_FEATURES = ['photoperiod', 'photoperiod_gradient']
-PRECIP_FEATURES = ['precip_30', 'precip_90', 'precip_180', 'precip_365', 'precip_730', 'precip_1095', 'precip_1460']
-TEMP_FEATURES = ['tmax_lag', 'tmax_7', 'tmax_14', 'tmax_30', 'tmin_lag', 'tmin_7', 'tmin_14', 'tmin_30']
-VPD_FEATURES = ['VPD_lag','VPD_7', 'VPD_14', 'VPD_30']
+
+PRECIP_FEATURES = ['precip_30', 'precip_90', 'precip_180', 
+                   'precip_365', 'precip_730', 'precip_1095', 
+                   'precip_1460', 'MAP']
+
+TEMP_FEATURES = ['tmax_lag', 'tmax_7', 'tmax_14', 
+                 'tmax_30', 'tmin_lag', 'tmin_7', 
+                 'tmin_14', 'tmin_30', 'MAT']
+
+VPD_FEATURES = ['VPD_lag','VPD_7', 'VPD_14',
+                'VPD_30']
+
 LAG_FEATURES = ['pv_lag', 'npv_lag', 'bs_lag']
+
 LAGGED_CHANGE_FEATURES = ['pv_change', 'npv_change', 'bs_change']
+
 FIRE_FEATURES = ['days_since_fire', 'fire_severity']
 
+CO2_FEATURES = ['CO2']
 
-FEATURES =  SEASONAL_FEATURES + PRECIP_FEATURES + TEMP_FEATURES + VPD_FEATURES + FIRE_FEATURES# final features 
+VEGETATION_FEATURES = ['Bryophyte', 'Chenopod', 'Cycad', 'Epiphyte',
+                         'Fern', 'Forb', 'Fungus', 'Grass.tree', 'Heath.shrub', 
+                         'Hummock.grass', 'Rush', 'Sedge', 'Shrub', 'Shrub.Mallee', 
+                         'Tree.fern','Tree.Mallee', 'Tree.Palm', 'Tussock.grass', 'Vine']
+
+SOIL_FEATURES = ['CLY_000_005', 'CLY_005_015', 'CLY_015_030', 'CLY_030_060', 'CLY_060_100',
+                            'DER_000_999', 'NTO_000_005', 'NTO_005_015', 'NTO_015_030', 'NTO_030_060',
+                            'NTO_060_100', 'PTO_000_005', 'PTO_005_015', 'PTO_015_030', 'PTO_030_060',
+                            'PTO_060_100', 'SLT_000_005', 'SLT_005_015', 'SLT_030_060', 'SLT_060_100',
+                            'pHc_000_005', 'pHc_005_015', 'pHc_015_030', 'pHc_030_060', 'pHc_060_100'] 
+
+FEATURES =  SEASONAL_FEATURES + PRECIP_FEATURES + TEMP_FEATURES + VPD_FEATURES + FIRE_FEATURES + CO2_FEATURES + VEGETATION_FEATURES + SOIL_FEATURES# final features 
 TARGET = ['pv_filter', 'npv_filter', 'bs_filter']
 site_merged = pd.concat(datasets).dropna(subset = FEATURES) # drop na based on chosen features, needed for random forest 
 site_merged.sort_values('time', inplace = True)
 site_merged.set_index('time', inplace = True)
 scores = []
-
 #%% Create Train/test set 
 time_split = '2015-12-01' # This aprox splits the dataset from 80/20
 train = site_merged.iloc[site_merged.index <= time_split]
@@ -308,7 +330,7 @@ print(f'Default\nTrain R2 {default_RF_CV["train_" + "neg_mean_squared_error"].me
 reg.fit(X = train[FEATURES], y = train[TARGET])
 
 for site in sites_list:
-
+    print(site)
     site_data = datasets[site].set_index('time').dropna(subset = FEATURES)
     y_pred = reg.predict(site_data[FEATURES])
     TARGET_names = ['prediction_' + i for i in TARGET]

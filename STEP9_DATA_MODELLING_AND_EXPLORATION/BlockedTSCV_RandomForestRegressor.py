@@ -66,10 +66,12 @@ def antiOverFitterScorer(y_train_pred, y_train_act, y_val_pred, y_val_act):
 site_location_name = 'NTAFIN0002'
 site_merged = pd.read_csv(f'Input_DataSet_{site_location_name}.csv', parse_dates = ['time']).copy()
 site_merged = site_merged.set_index('time')
+#site_merged = site_merged.sample(frac = 1)# checking what happens if I randomised the samples i.e. remove time component 
+
 
 #%% Model the dataset
 
-SEASONAL_FEATURES = ['photoperiod', 'photoperiod_gradient', 'year']
+SEASONAL_FEATURES = ['photoperiod', 'photoperiod_gradient']
 #SEASONAL_FEATURES = ['photoperiod', 'photoperiod_gradient']
 PRECIP_FEATURES = ['precip_30', 'precip_90', 'precip_180', 'precip_365', 'precip_730', 'precip_1095', 'precip_1460']
 TEMP_FEATURES = ['tmax_lag', 'tmax_7', 'tmax_14', 'tmax_30', 'tmin_lag', 'tmin_7', 'tmin_14', 'tmin_30']

@@ -167,8 +167,10 @@ class preprocess_fc_time_series(BaseEstimator, TransformerMixin):
             variable_name = f + '_filter'
             X[variable_name] = savgol_filter(X[f], window_length = self.window_length, polyorder = self.polyorder)
             X.loc[X[variable_name] < 0, variable_name] = 0 # correct for any negative-valued fractions 
-        #print(X)
-
+        
+        # Note: I am removing records that go above 2023 because climate data only goes so far 
+        # Also prevents the inclusion of 2023 into the calculation of MAP, MAT when there is no data 
+        X = X[X.index < '01-01-2023']
         return X
     
 class preprocess_climate_time_series(BaseEstimator, TransformerMixin):
@@ -180,13 +182,10 @@ class preprocess_climate_time_series(BaseEstimator, TransformerMixin):
         X = X.copy()
         X = X.sort_values('time')
         X.set_index('time', inplace=True)
+        
         return X
 
-class climate_time_series_attributes_adder(BaseEstimator, TransformerMixin):
-    
-    def __init__(self, window, lag):
-        self.window = window 
-        self.lag = lag
+class mean_annual_variables_adder(BaseEstimator, TransformerMixin):
         
     def fit(self, X, y=None):
         return self 
@@ -194,24 +193,20 @@ class climate_time_series_attributes_adder(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
         
         X = X.copy()
-        climate_variable = X.columns[1] # assumption that the climate var name is the second variable name
-
-        ## Calculate yearly cv 
-        X_std = X.groupby('year').std()
-        X_mean = X.groupby('year').mean()
-        X_sum = X.groupby('year').sum()
+  
+        # calculate mean annual temperature 
+        mean_temperature = (X['tmin'] + X['tmax'])/2
+        MAT = mean_temperature.mean() # simply the mean temperature of all records 
+        print(MAT)
+        # calculate mean annual precip 
+        precip_yearly_total = X[['year','precip']].groupby('year').sum()
+        MAP = precip_yearly_total['precip'].mean()
+        # take aggregated sum and then take the mean of those sums
+        print(MAP)
         
-        X_cv = X_std[[climate_variable]]/X_mean[[climate_variable]]
-        X_cv = X_cv.rename(columns= {climate_variable: climate_variable + "_cv"})
-        X_cv[climate_variable + '_sum'] = X_sum[climate_variable]
-        X = X.merge(X_cv, how = 'left', left_on = 'year', right_index = True)
-        
-        
-        ## Add rolling time window  
-        ## Here, I took the rolling window, then I shifted it by the window size,
-        ## Note: the fact that they, the size of rolling window and lag number, the same is arbituary 
-        X[climate_variable + '_rolling'] = X[climate_variable].rolling(window = self.window).sum().shift(self.lag)
-        
+        # Do assignment 
+        X['MAT'] = MAT
+        X['MAP'] = MAP 
         return X
 
 
@@ -540,7 +535,7 @@ class historical_burn_date_index_attribute_adder(BaseEstimator, TransformerMixin
         else:
             df_selector = (X.index > v['ignition_d']) # there is no recorded fire date so go up to the very end of the dataset 
             
-        selected_df = X.iloc[df_selector].copy()
+        #selected_df = X.iloc[df_selector].copy()
         X.loc[df_selector,'fire_severity'] = fire_severity
         
      X['fire_severity'] = X['fire_severity'].replace(pd.NA, 0) # set all records prior to the first fire to 0
@@ -548,7 +543,11 @@ class historical_burn_date_index_attribute_adder(BaseEstimator, TransformerMixin
      return X
  
 
-class precip_scenarios_adder(BaseEstimator, TransformerMixin):
+class growth_forms_adder(BaseEstimator, TransformerMixin):
+    
+    def __init__(self, site_dom_veg, growth_forms_selector):
+        self.site_dom_veg = site_dom_veg # select only the site's plant growth forms 
+        self.growth_forms_selector = growth_forms_selector
     
     def fit(self, X, y=None):
         return self 
@@ -556,12 +555,34 @@ class precip_scenarios_adder(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
         
         X = X.copy()
-        X['precip_null'] = [0 for i in range(len(X))] # add a null precip scenario 
-        X['precip_constant'] = X['precip']
+        
+        # iterate through the list of growth forms to add into the dataset
+        for growth_form in self.growth_forms_selector:
+            X[growth_form] = self.site_dom_veg[growth_form].values[0]
         
         return X
 
+# Note: this is pretty much the same alg as 'growth forms adder '
+class SLGA_soil_atributes_adder(BaseEstimator, TransformerMixin):
     
- 
+    def __init__(self, site_SLGA, SLGA_selector):
+        self.site_SLGA = site_SLGA # select only the site's plant growth forms 
+        self.SLGA_selector = SLGA_selector
+    
+    def fit(self, X, y=None):
+        return self 
+    
+    def transform(self, X, y=None):
+        
+        X = X.copy()
+        
+        # iterate through the list of soil attributes to add into the dataset
+        for attribute in self.SLGA_selector:
+            X[attribute] = self.site_SLGA[attribute].values[0]
+        
+        return X
+        
+    
+
 
 # =============================================================================

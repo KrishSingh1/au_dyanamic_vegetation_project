@@ -58,6 +58,54 @@ kmz_data <- st_read("../STEP1_INFO_EXTRACTION_ADV/AusPlots_Locations/doc.kml", q
 one.point <- table(kmz_data$Name)[table(kmz_data$Name) < 4]
 single.points <- subset(kmz_data,(Name %in% names(one.point)))
 
+veg.info <- read.csv("../DATASETS/AusPlots_Extracted_Data/extracted_site_info_2-0-6.csv")
+single_corrected_polygons <- c()
+missing_single_point_sites <- c()
+colnames(veg.info) <- unlist(lapply(colnames(veg.info), FUN = function(x){str_split(x, '\\.')[[1]][3]}))
+
+for (site_name in single.points$Name) {
+  
+  site <- subset(veg.info, subset = (site_location_name == site_name))
+  if(nrow(site) == 0) {
+    site <- tryCatch({
+      get_ausplots(site_name)$site.info[1,]
+    }, error = function(cond){
+      site
+    })
+  }
+  
+  if(nrow(site) == 0){
+    missing_single_point_sites <- c(missing_single_point_sites, site_name)
+  } else{
+    siteEPSG <- as.numeric(paste0('283',site$pit_marker_mga_zones))
+    if(is.na(site$pit_marker_easting[1])) {
+      point <- st_sfc(st_point(c(site$longitude,site$latitude)), crs = "WGS84")
+      point <- st_transform(point, siteEPSG)
+      eastings <- st_coordinates(point)
+      site$pit_marker_easting <- eastings[,1]
+      site$pit_marker_northing <- eastings[,2]
+    }
+    
+    lower_bounds <- c(site$pit_marker_easting, site$pit_marker_northing)
+    upper_bounds <- lower_bounds + 100
+    
+    box <- st_as_sfc(st_bbox(st_sfc(st_point(lower_bounds),
+                                    st_point(upper_bounds),
+                                    crs = siteEPSG)))
+    box <- st_transform(box, crs = "WGS84")
+    single_corrected_polygons <- rbind(single_corrected_polygons, st_sf(data.frame(Name = site_name), geometry = box))
+  }
+}
+
+
+single.points <- subset(single.points, (Name %in% missing_single_point_sites)) # see all sites missing 
+
+# Check results 
+#st_write(single_corrected_polygons[,c("Name", "geometry")], '../DATASETS/AusPlots_Location/Test_Geometries_20240508.kml', append = FALSE)
+
+
+plot(st_geometry(single_corrected_polygons[3,]))
+
 ## Sites with 4 points 
 four.point <- table(kmz_data$Name)[table(kmz_data$Name) == 4]
 four.point.data <- subset(kmz_data, (Name %in% names(four.point)))
@@ -80,6 +128,7 @@ df.sites.coords <- df.sites.coords[-which((df.sites.coords$V1 == 'SASMDD0003') &
 df.sites.coords <- df.sites.coords[-which((df.sites.coords$V1 == 'WAACOO0008') & 
          (df.sites.coords$Y == -31.59637778)), ] 
 
+
 corner.points <- get_corner_points(df.sites.coords)
 corner.points.sf <- st_as_sf(corner.points, coords = c('X', 'Y', 'Z'),
                              crs =  st_crs(kmz_data))
@@ -95,12 +144,15 @@ colnames(grouped.points)[1] <- 'Name'
 
 # Combine Single points with polygons 
 grouped.points <- st_as_sf(grouped.points ,crs =  st_crs(kmz_data))
-combined <- rbind(single.points[,c("Name", "geometry")], grouped.points)
+combined <- rbind(single_corrected_polygons[,c("Name", "geometry")], grouped.points)
 row.names(combined) <- 1:nrow(combined) # reset row index
+combined <- st_zm(combined)
 
 # Check Validity of Resultant coords and fix self-intersecting polygons by calling concave_hull 
 combined[!st_is_valid(combined),] <- st_concave_hull(combined[!st_is_valid(combined),], ratio = 1)
-st_write(combined, '../DATASETS/AusPlots_Location/AusPlots_Geometries_20240415.kml', append = FALSE)
+st_write(combined, '../DATASETS/AusPlots_Location/AusPlots_Geometries_20240508.kml', append = FALSE)
+st_write(combined, '../DATASETS/AusPlots_Location/AusPlots_Geometries_20240508.shp', append = FALSE)
+
 
 # Create subset 
 site.subset <- read.csv('../DATASETS/Sites_Subset_20231010/ausplots_site_info/sites_subset.csv')

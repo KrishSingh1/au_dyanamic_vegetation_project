@@ -1,45 +1,84 @@
 library(ausplotsR)
-library(sp)
+library(sf)
 
-veg.info <- readRDS("../STEP2_VEG_EXTRACTION/site_veg.rds")
+veg.info <- read.csv("../DATASETS/AusPlots_Extracted_Data/extracted_site_info_2-0-6.csv")
+# Note: NSAAUA0001 is not avaliable at this stage
+# fix column names 
+colnames(veg.info) <- unlist(lapply(colnames(site), FUN = function(x){str_split(x, '\\.')[[1]][3]}))
 
-info <- veg.info$site.info[436,c("site_location_name","pit_marker_mga_zones","pit_marker_easting", 
-                                 "pit_marker_northing", "longitude", "latitude", "pit_marker_datum")]
-
-
-location <- SpatialPointsDataFrame(coords=info[,c("pit_marker_easting","pit_marker_northing")],
-                                   data=info)
-
-# crs.string <- paste0("+init=epsg:283",info$pit_marker_mga_zones)
-# crs.datum <- paste0("+datum=",info$pit_marker_datum)
-# config <- paste(crs.string, crs.datum)
-
-# proj4string(location) <- CRS(config)
-# project.string <- paste0("+proj=longlat +datum=", crs.datum)
-# spTransform(location,CRS("+proj=longlat +datum=WGS84"))
+site_location_name <- 'NSABHC0015'
+site <- subset(veg.info, subset = (site.info.site_location_name == site_location_name))
+if(nrow(site) == 0) {
+  site <- get_ausplots(site_location_name)$site.info
+  site <- site[1,]
+}
 
 
-proj4string(location) <- CRS("+init=epsg:28354 +datum=WGS84")
-d <- spTransform(location,CRS("+proj=longlat +datum=WGS84"))
-print(d)
+## if Pit marking easting are unknown 
 
-location.2 <- SpatialPointsDataFrame(coords=info[,c("pit_marker_easting","pit_marker_northing")],
-                                   data=info)
+if(is.na(site$pit_marker_easting)){
+  point <- st_sfc(st_point(c(site$longitude,site$latitude)), crs = "WGS84")
+  siteEPSG <- as.numeric(paste0('283',site$pit_marker_mga_zones))
+  point <- st_transform(point, siteEPSG)
+  eastings <- st_coordinates(point)
+  site$pit_marker_easting <- eastings[,1]
+  site$pit_marker_northing <- eastings[,2]
+}
 
-proj4string(location.2) <- CRS("+init=epsg:7854 +datum=WGS84")
-d.2 <- spTransform(location.2,CRS("+proj=longlat +datum=WGS84"))
-print(d.2)
+lower_bounds <- c(site$pit_marker_northing, site$pit_marker_easting)
+upper_bounds <- lower_bounds + 100
 
-# links:
-# https://gis.stackexchange.com/questions/231903/choosing-projected-coordinate-system-for-western-australia
-# chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.nceas.ucsb.edu/sites/default/files/2020-04/OverviewCoordinateReferenceSystems.pdf
+box <- st_as_sfc(st_bbox(st_sfc(st_point(lower_bounds),
+       st_point(upper_bounds),
+       crs = siteEPSG)))
 
-
-
-location.3 <- SpatialPointsDataFrame(coords=info[,c("latitude","longitude")],
-                                   data=info)
-proj4string(location.3) <- CRS("+init=epsg:28349 +datum=WGS84")
-d.3 <- spTransform(location,CRS("+proj=easting +datum=WGS84"))
+box <- st_transform(box, crs = "WGS84")
+st_coordinates(box)
 
 
+
+single_points_corrected <- data.frame(Name = 'NA', Description = 'NA')
+missing_single_point_sites <- c()
+polygons <- c()
+
+for (site_name in single.points$Name) {
+  
+  site <- subset(veg.info, subset = (site_location_name == site_name))
+  if(nrow(site) == 0) {
+    site <- tryCatch({
+      get_ausplots(site_name)$site.info[1,]
+    }, error = function(cond){
+      site
+    })
+  }
+  
+  if(nrow(site) == 0){
+    
+    missing_single_point_sites <- c(missing_single_point_sites, site_name)
+    
+  } else{
+    
+    siteEPSG <- as.numeric(paste0('283',site$pit_marker_mga_zones))
+    if(is.na(site$pit_marker_easting[1])) {
+      point <- st_sfc(st_point(c(site$longitude,site$latitude)), crs = "WGS84")
+      point <- st_transform(point, siteEPSG)
+      eastings <- st_coordinates(point)
+      site$pit_marker_easting <- eastings[,1]
+      site$pit_marker_northing <- eastings[,2]
+    }
+    
+    lower_bounds <- c(site$pit_marker_easting,site$pit_marker_northing)
+    upper_bounds <- lower_bounds + 100
+    
+    box <- st_as_sfc(st_bbox(st_sfc(st_point(lower_bounds),
+                                    st_point(upper_bounds),
+                                    crs = siteEPSG)))
+    box <- st_transform(box, crs = "WGS84")
+    polygons <- rbind(polygons, st_sf(data.frame(Name = site_name), geometry = box))
+  }
+}
+
+
+
+site <- subset(veg.info, subset = (site_location_name == single.points$Name[1]))
 

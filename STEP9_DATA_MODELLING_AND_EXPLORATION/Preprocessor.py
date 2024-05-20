@@ -45,15 +45,11 @@ from PreprocessData import * # import from custom transformers
 
 
 
-sites_list = ['WAAPIL0003', 'NSABHC0023', 'TCATCH0006',
-                'WAAGAS0002', 'NSAMDD0014', 'NTAGFU0021', 
-                'NSANSS0001', 'SATSTP0005', 'QDASSD0015', 
-                'NTAFIN0002', 'NSANAN0002', 'QDAEIU0010'] # smaller subset
+# sites_list = ['WAAPIL0003', 'NSABHC0023', 'TCATCH0006',
+#                 'WAAGAS0002', 'NSAMDD0014', 'NTAGFU0021', 
+#                 'NSANSS0001', 'SATSTP0005', 'QDASSD0015', 
+#                 'NTAFIN0002', 'NSANAN0002', 'QDAEIU0010'] # smaller subset
 
-# sites_list = ['NSABBS0001','NSABHC0011','NSACOP0001',
-#              'NSAMDD0001','NSAMDD0011','NSAMDD0020',
-#              'NSAMDD0028','NSAMUL0003','NSANAN0001',
-#              'NSANAN0002','NSANSS0002','NSTSYB0003',] # bigger subset - NSW
 
 # sites_list = np.unique(['NSABBS0001',
 #   'NSABHC0011',
@@ -91,73 +87,73 @@ sites_list = ['WAAPIL0003', 'NSABHC0023', 'TCATCH0006',
 #   'NTAFIN0002'])
 
 # sites_list = np.unique(['QDABBN0002',
-#  'QDABBS0002',
-#  'QDABBS0010',
-#  'QDACHC0003',
-#  'QDACYP0006',
-#  'QDACYP0018',
-#  'QDACYP0020',
-#  'QDACYP0022',
-#  'QDAEIU0005',
-#  'QDAGUP0006',
-#  'QDAGUP0009',
-#  'QDAGUP0019',
-#  'QDAGUP0021',
-#  'QDAMGD0002',
-#  'QDAMGD0023',
-#  'QDAMGD0024',
-#  'QDAMGD0025',
-#  'QDAMUL0002',
-#  'QDAMUL0003',
-#  'QDASEQ0004',
-#  'QDASSD0015', 
-#  'QDAEIU0010'])
+#   'QDABBS0002',
+#   'QDABBS0010',
+#   'QDACHC0003',
+#   'QDACYP0006',
+#   'QDACYP0018',
+#   'QDACYP0020',
+#   'QDACYP0022',
+#   'QDAEIU0005',
+#   'QDAGUP0006',
+#   'QDAGUP0009',
+#   'QDAGUP0019',
+#   'QDAGUP0021',
+#   'QDAMGD0002',
+#   'QDAMGD0023',
+#   'QDAMGD0024',
+#   'QDAMGD0025',
+#   'QDAMUL0002',
+#   'QDAMUL0003',
+#   'QDASEQ0004',
+#   'QDASSD0015', 
+#   'QDAEIU0010'])
 
 # sites_list = np.unique(['WAAAVW0006',
-#  'WAACAR0002',
-#  'WAACAR0004',
-#  'WAACOO0007',
-#  'WAACOO0016',
-#  'WAACOO0024',
-#  'WAACOO0026',
-#  'WAACOO0027',
-#  'WAACOO0029',
-#  'WAACOO0030',
-#  'WAAGAS0001',
-#  'WAAGES0001',
-#  'WAALSD0002',
-#  'WAANOK0006',
-#  'WAANUL0003',
-#  'WAAPIL0010',
-#  'WAAPIL0023',
-#  'WAAPIL0024',
-#  'WAAPIL0031',
-#  'WAAPIL0003',
-#  'WAAGAS0002'])
+#   'WAACAR0002',
+#   'WAACAR0004',
+#   'WAACOO0007',
+#   'WAACOO0016',
+#   'WAACOO0024',
+#   'WAACOO0026',
+#   'WAACOO0027',
+#   'WAACOO0029',
+#   'WAACOO0030',
+#   'WAAGAS0001',
+#   'WAAGES0001',
+#   'WAALSD0002',
+#   'WAANOK0006',
+#   'WAANUL0003',
+#   'WAAPIL0010',
+#   'WAAPIL0023',
+#   'WAAPIL0024',
+#   'WAAPIL0031',
+#   'WAAPIL0003',
+#   'WAAGAS0002'])
 
-# sites_list = np.unique(['SAAEYB0001',
-#  'SAAEYB0021',
-#  'SAAEYB0028',
-#  'SAAEYB0029',
-#  'SAAFLB0003',
-#  'SAAFLB0005',
-#  'SAAFLB0008',
-#  'SAAGAW0008',
-#  'SAAKAN0009',
-#  'SAASTP0023',
-#  'SAASTP0033',
-#  'SAASTP0034',
-#  'SASMDD0005',
-#  'SASMDD0009',
-#  'SASMDD0014',
-#  'SATFLB0003',
-#  'SATFLB0019',
-#  'SATFLB0020',
-#  'SATFLB0022',
-#  'SATFLB0023',
-#  'SATSTP0005'])
+sites_list = np.unique(['SAAEYB0001',
+  'SAAEYB0021',
+  'SAAEYB0028',
+  'SAAEYB0029',
+  'SAAFLB0003',
+  'SAAFLB0005',
+  'SAAFLB0008',
+  'SAAGAW0008',
+  'SAAKAN0009',
+  'SAASTP0023',
+  'SAASTP0033',
+  'SAASTP0034',
+  'SASMDD0005',
+  'SASMDD0009',
+  'SASMDD0014',
+  'SATFLB0003',
+  'SATFLB0019',
+  'SATFLB0020',
+  'SATFLB0022',
+  'SATFLB0023',
+  'SATSTP0005'])
 
-#sites_list = np.unique(['TCATCH0004', 'TCATNM0001', 'TCATNM0003', 'TCATCH0006'])
+# sites_list = np.unique(['TCATCH0004', 'TCATNM0001', 'TCATNM0003', 'TCATCH0006'])
 #sites_list = ['NSTSYB0003']
 
 #sites_list = ['QDACYP0010', 'QDASEQ0002', 'QDAEIU0009', 'QDAEIU0004', 
@@ -170,6 +166,36 @@ sites_list = ['WAAPIL0003', 'NSABHC0023', 'TCATCH0006',
 #sites_list = ['QDASSD0004', 'WAAPIL0031', 'SATFLB0018',
 #       'WAAMUR0028', 'QDASSD0001']
 
+# sites_list = ['NSANAN0002']
+
+
+bigger_subset = pd.read_csv('../DATASETS/Sites_Bigger_Subset_20240124/ausplots_bigger_subset.csv').copy()
+# sites_list = np.unique(list(bigger_subset.site_location_name.values) +  ['WAAPIL0003', 'NSABHC0023', 'TCATCH0006', 
+#                                                  'WAAGAS0002', 'NSAMDD0014', 'NTAGFU0021', 
+#                                                  'NSANSS0001', 'SATSTP0005', 'QDASSD0015', 
+#                                                  'NTAFIN0002', 'NSANAN0002', 'QDAEIU0010']) # smaller subset
+
+# Some Muti-site data 
+dom_veg = pd.read_csv('../DATASETS/AusPlots_Extracted_Data/growth_forms_classification_by_dom_species_2-0-6.csv') # vegetation cover data
+growth_forms_selector = ['Bryophyte', 'Chenopod', 'Cycad', 'Epiphyte',
+                         'Fern', 'Forb', 'Fungus', 'Grass.tree', 'Heath.shrub', 
+                         'Hummock.grass', 'Rush', 'Sedge', 'Shrub', 'Shrub.Mallee', 
+                         'Tree.fern','Tree.Mallee', 'Tree.Palm', 'Tussock.grass', 'Vine'] # The growth forms to include
+
+SLGA_attributes = pd.read_csv('../DATASETS/Soils_and_Landscape_Grid_of_Australia/Output/site_slga_data.csv', index_col = 0) # vegetation cover data
+SLGA_attributes_selector = ['CLY_000_005', 'CLY_005_015', 'CLY_015_030', 'CLY_030_060', 'CLY_060_100',
+                            'DER_000_999', 'NTO_000_005', 'NTO_005_015', 'NTO_015_030', 'NTO_030_060',
+                            'NTO_060_100', 'PTO_000_005', 'PTO_005_015', 'PTO_015_030', 'PTO_030_060',
+                            'PTO_060_100', 'SLT_000_005', 'SLT_005_015', 'SLT_030_060', 'SLT_060_100',
+                            'pHc_000_005', 'pHc_005_015', 'pHc_015_030', 'pHc_030_060', 'pHc_060_100'] # the soil attributes to include
+
+CO2_data = pd.read_csv('../DATASETS/CO2_Dataset/global_co2_ann_1700_2022.txt', sep = "\s\s", header = None, engine = 'python') # co2 data 
+CO2_data.rename(columns = {0: 'year', 1: 'CO2'}, inplace = True)
+historical_fire_ds = gpd.read_file('../DATASETS/AusPlots_Historical_BurnDates.geojson', parse_dates = ['igntn_d']) # Fire Dataset
+site_info = pd.read_csv('../DATASETS/site_info_2-0-6.csv', usecols = ['site_location_name','latitude']) # latitude information
+
+
+
 for site_location_name in sites_list:
     
     time_lag = 1
@@ -180,42 +206,47 @@ for site_location_name in sites_list:
     window_length_smooth = 15
     polyorder = 4 
     
-    historical_fire_ds = gpd.read_file('../DATASETS/AusPlots_Historical_BurnDates.geojson', parse_dates = ['igntn_d'])
+    # Preprocess fire dataset
     historical_fire_pipeline = Pipeline([
         ('historical_burn_date_preprocess', historical_burn_date_preprocess(site_location_name))
         ])
-    historical_fire_ds = historical_fire_pipeline.fit_transform(historical_fire_ds)
+    historical_fire_ds_site = historical_fire_pipeline.fit_transform(historical_fire_ds)
     
     # Get Latitude of Site to derive daylength 
-    site_info = pd.read_csv('../DATASETS/site_info_2-0-6.csv', usecols = ['site_location_name','latitude'])
-    site_info = site_info[site_info['site_location_name'] == site_location_name]
-    latitude = site_info.latitude[site_info.index[0]] # only need the first entry
+    site_specific_info = site_info[site_info['site_location_name'] == site_location_name]
+    latitude = site_specific_info.latitude[site_specific_info.index[0]] # only need the first entry
     
+    # Get Site-specific growth and soil information
+    site_dom_veg = dom_veg[dom_veg.site_location_name == site_location_name]
+    site_SLGA_attributes = SLGA_attributes[SLGA_attributes.index == site_location_name]
+    
+    # Get the FC time series of the site 
     site = pd.read_csv(f'../DATASETS/DEA_FC_PROCESSED/SPATIAL_AND_UE_FILTER/{site_location_name}.csv', parse_dates=['time'])
     
+    # Preprocess FC time series, add daylength and fire information
     time_fc_pipeline = Pipeline([
         ('preprocess_fc_time_series', preprocess_fc_time_series(window_length = window_length_smooth, polyorder = polyorder)),
         ('time_attributes_adder', time_attributes_adder()),
         ('time_attributes_fc_lag_adder', time_attributes_fc_lag_adder(time_lag)),
         ('time_attributes_fc_diff_adder', time_attributes_fc_diff_adder(False)),
         ('daylength_attributes_adder', daylength_attributes_adder(latitude)),
-        ('historical_burn_date_attribute_adder', historical_burn_date_attribute_adder(historical_fire_ds)),
+        ('historical_burn_date_attribute_adder', historical_burn_date_attribute_adder(historical_fire_ds_site)),
         ('historical_burn_date_index_attribute_adder', historical_burn_date_index_attribute_adder(verbose = False,
-                                                                                                  historical_fire_ds = historical_fire_ds,
-                                                                                                  time_range = time_range))
-        #('historical_burn_date_index_attribute_adder_lag', historical_burn_date_index_attribute_adder_lag(time_lag = time_lag,
-        #                                                                                            month_baseline = month_baseline, verbose = True))
+                                                                                                  historical_fire_ds = historical_fire_ds_site,
+                                                                                                  time_range = time_range)),
+        ('growth_forms_adder', growth_forms_adder(site_dom_veg, growth_forms_selector)),
+        ('SLGA_soil_atributes_adder', SLGA_soil_atributes_adder(site_SLGA_attributes, SLGA_attributes_selector))
      ])
     site_resampled = time_fc_pipeline.fit_transform(site)
     print('FC and fire data successfully preprocessed')
     
     
-    # The climate variables as named in my directory and the resampling method
+    # The climate variables as named in the AGCD and the resampling method
     climate_variables = pd.DataFrame({'climate_var': ['precip','tmax','tmin','vapourpres_h09','vapourpres_h15'],
                                      'resample_type': ['sum', 'mean','mean','mean','mean']})
     datasets = dict()
     
-    # Used to add climate attributes directly from climate data 
+    # Used to add climate attributes directly from AGCD 
     for index, row in climate_variables.iterrows():
     
         climate = pd.read_csv(f'../DATASETS/Climate_Gridded/{row["climate_var"]}/{site_location_name}_1980_2022.csv', parse_dates=['time'])
@@ -226,22 +257,27 @@ for site_location_name in sites_list:
         time_climate_pipeline = Pipeline([
             ('preprocess_climate_time_series', preprocess_climate_time_series()),
             ('climate_time_series_downsample', climate_time_series_downsample(start_time = site_resampled.index[0], resample_method = row['resample_type'])),
-            ('time_attributes_adder', time_attributes_adder()),
-            ('climate_time_series_attributes_adder', climate_time_series_attributes_adder(window = window_length, 
-                                                                                          lag = window_length))
+            ('time_attributes_adder', time_attributes_adder())
         ])
         climate_new = time_climate_pipeline.fit_transform(climate)
         site_resampled = site_resampled.merge(climate_new, how = 'left', left_index = True, right_index = True, validate = "one_to_one",
                                            suffixes = ('', '_DUPLICATE'))
         site_resampled = site_resampled.drop(columns =  site_resampled.filter(regex = '_DUPLICATE$').columns)
         
-    ## Derive VPD from preprocessed climate data 
+    # Derive Climate Variables from preprocessed AGCD time series 
     derive_climate_vars_pipeline = Pipeline([
-        ('calc_VPD', calc_VPD()),
+        ('mean_annual_variables_adder', mean_annual_variables_adder()),
+        ('calc_VPD', calc_VPD()), # Derive VPD from preprocessed climate data 
         ('pages_precip_variables_adder', pages_precip_variables_adder(site_location_name)),
         ('pages_VPD_variables_adder', pages_VPD_variables_adder(site_location_name)),
         ('pages_temp_variables_adder', pages_temp_variables_adder(site_location_name))
     ])
     site_resampled = derive_climate_vars_pipeline.fit_transform(site_resampled)
+    
+    # Add CO2 data
+    site_resampled['time'] = site_resampled.index
+    site_resampled = site_resampled.merge(CO2_data, how = 'left', on = 'year', suffixes = ('', '_DUPLICATE'))
+    site_resampled = site_resampled.drop(columns =  site_resampled.filter(regex = '_DUPLICATE$').columns)
+    
     site_merged = site_resampled.copy()
     site_merged.to_csv(f'Input_DataSet_{site_location_name}.csv')
