@@ -17,7 +17,7 @@ get_location_name <- function(site.unique) {
 
 # Main --------------------------------------------------------------------
 
-growth.form <- read.csv('../DATASETS/growth_forms_pc_2-0-6.csv')
+growth.form <- read.csv('../DATASETS/AusPlots_Extracted_Data/Final/growth_forms_pc_final_2-0-6.csv')
   
 # Get Site location names from unique_site_name
 growth.form$site_location_name <- unlist(lapply(growth.form$X, get_location_name))
@@ -64,7 +64,7 @@ calc.scaled.dominance <- function(dataset.row) {
 
 growth.form.agg$scaled_dom <- unlist(apply(growth.form.agg, MARGIN = 1, FUN = calc.scaled.dominance))
 
-write.csv(growth.form.agg,'../DATASETS/growth_forms_classification_by_dom_species_2-0-6.csv')
+write.csv(growth.form.agg,'../DATASETS/AusPlots_Extracted_Data/Final/growth_forms_classification_by_dom_species_final_2-0-6.csv')
 
 # Junk Script (Don't run) -------------------------------------------------
 

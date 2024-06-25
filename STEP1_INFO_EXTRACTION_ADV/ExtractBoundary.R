@@ -51,7 +51,7 @@ get_corner_points <- function(coordinates) {
 # MAIN --------------------------------------------------------------------
 
 
-kmz_data <- st_read("../STEP1_INFO_EXTRACTION_ADV/AusPlots_Locations/doc.kml", quiet = TRUE)
+kmz_data <- st_read("../DATASETS/AusPlots_Location/All_Plot_Points_May_2023_Shapefile/All_Plot_Points_May_2023_R_Readable.shp", quiet = TRUE, )
 # print(kmz_data)
 
 ## Sites with only one point

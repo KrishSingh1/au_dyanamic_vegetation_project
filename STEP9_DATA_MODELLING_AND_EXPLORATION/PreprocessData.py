@@ -494,7 +494,7 @@ class historical_burn_date_index_attribute_adder(BaseEstimator, TransformerMixin
      
      
      X['fire_severity'] = pd.NA
-     X = X.astype('Float64')
+     #X = X[].astype('Float64')
      
      for i, v in self.historical_fire_ds.iterrows():
 
@@ -503,17 +503,21 @@ class historical_burn_date_index_attribute_adder(BaseEstimator, TransformerMixin
         
         # Note: I am not including the date of the fire in the search
         ## Get df of prior
-        a_df = X.iloc[(X.index >= prior_search) & (X.index < v['ignition_d'])]
+        a_df = X[(X.index >= prior_search) & (X.index < v['ignition_d'])]
         a_df = a_df.iloc[-3:, :]
         if self.verbose: print(a_df[['pv_filter','days_since_fire', 'fire_severity']])
         a = a_df['pv_filter'].mean()
         if self.verbose: print(a)
         
         # Check if the extinguish value was record, if not, resort to the three data points after
-        if v['extinguish'] == None:
+        if pd.isnull(v['extinguish']) == True:
+            if self.verbose: print('Extinguish is Null')
             after_search = v['ignition_d'] + relativedelta(months = self.time_range)
+            if self.verbose: print(f'from {v["ignition_d"]} to {after_search}')
             ## Get df of after 
-            b_df = X.iloc[(X.index <= after_search) & (X.index > v['ignition_d'])]
+            
+            b_df = X[(X.index <= after_search) & (X.index > v['ignition_d'])]
+            if self.verbose: print(b_df)
             b_df = b_df.iloc[:3, :]
             if self.verbose: print(b_df[['pv_filter','days_since_fire', 'fire_severity']])
             b = b_df['pv_filter'].min()
@@ -522,11 +526,14 @@ class historical_burn_date_index_attribute_adder(BaseEstimator, TransformerMixin
         else:
             if self.verbose: print(f'Extinguish date found for {v}')
             after_search = v['extinguish']
-            b_df = X.iloc[(X.index <= after_search) & (X.index > v['ignition_d'])]
+            b_df = X[(X.index <= after_search) & (X.index > v['ignition_d'])]
+            
+            
             if self.verbose: print(b_df[['pv_filter','days_since_fire', 'fire_severity']])
             b = b_df['pv_filter'].min()
         
         fire_severity = a - b
+        print(f'{a} and {b}')
         
         if self.verbose: print(f"at {v['ignition_d']}:{fire_severity}")
         

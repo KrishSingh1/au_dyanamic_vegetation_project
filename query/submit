@@ -18,13 +18,14 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd -P)"
 
 # Note: ${DIR} is the directory containing this script.
 
+# AusPlots_Merged_Polygons_20240624.geojson
 OUT_DIR=/scratch/pt17/ks0104/test
-IN_FILE="${DIR}/sites_info_subquery_c.csv"
-PYTHON_SCRIPT="${DIR}/single_site_retrieval_230628.py"
+IN_FILE="${DIR}/AusPlots_Merged_Polygons_20240624.geojson"
+PYTHON_SCRIPT="${DIR}/site_retrieval_20240624.py"
 
-NPROCESS=48
-WALLTIME="02:00:00"
-MEMORY="192GB"
+NPROCESS=2
+WALLTIME="00:10:00"
+MEMORY="8GB"
 QUEUE=normal
 PROJECT=pt17
 EMAIL_OPT=abe
@@ -111,12 +112,14 @@ cat <<EOF > "${RUN_SCRIPT}"
 set -euo pipefail
 #module load dea openmpi
 python3 --version
-export PYTHONPATH="\${PYTHONPATH:-}:${HOME}/.local/lib/python3.6/site-packages"
+export PYTHONPATH="\${PYTHONPATH:-}:${HOME}/.digitalearthau/dea-env/20221025/local/lib/python3.8/site-packages/"
 export PATH="${PATH}:/home/590/ks0104/dea-notebooks/Tools"
 echo PYTHONPATH=\$PYTHONPATH
 echo PATH=\$PATH
 echo mpirun=`which mpirun`
 module load dea openmpi
+# /home/590/ks0104/.digitalearthau/dea-env/20221025/local/lib/python3.8/site-packages/
+#"\${PYTHONPATH:-}:${HOME}/.local/lib/python3.6/site-packages"
 
 #export PATH="${PATH}:/home/590/ks0104/dea-notebooks/Tools"
 #export PYTHONPATH=/home/590/ks0104/.local/lib/python3.10/site-packages

@@ -137,7 +137,7 @@ if debug == 0 or debug == 1 or debug == 2:
     ###### Run Query ######
     ## Define parameters for Query 
     #RI - record index
-    for RI in range(len(site_info)):  # (i.e, for each site in query dataset)
+    for RI in range(1):  # (i.e, for each site in query dataset)
 
       sites_results_df = pd.DataFrame(columns=columns)
 

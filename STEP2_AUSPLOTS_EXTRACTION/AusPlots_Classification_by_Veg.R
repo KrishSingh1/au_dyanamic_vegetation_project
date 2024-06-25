@@ -17,7 +17,7 @@ get_location_name <- function(site.unique) {
 
 # Main --------------------------------------------------------------------
 
-growth.form <- read.csv('../DATASETS/growth_forms_pc_2-0-6.csv')
+growth.form <- read.csv('../DATASETS/AusPlots_Extracted_Data/Final/growth_forms_pc_final_2-0-6.csv')
   
 # Get Site location names from unique_site_name
 growth.form$site_location_name <- unlist(lapply(growth.form$X, get_location_name))
@@ -34,7 +34,7 @@ colnames(growth.form.agg)[which(colnames(growth.form.agg) == 'Group.1')] <- 'sit
 # Sum Growth Forms by Classification --------------------------------------
 
 # Load classification scheme
-growth.form.classification <- read.csv("../DATASETS/Growth_Type_Classification.csv", header = F)
+growth.form.classification <- read.csv("../DATASETS/AusPlots_Extracted_Data/Growth_Type_Classification.csv", header = F)
 growth.form.classification <- na.omit(growth.form.classification)
 
 grass.names <- growth.form.classification$V1[growth.form.classification$V2 == 'Grass']
@@ -57,7 +57,8 @@ growth.form.agg$vegetation_type <- unlist(apply(growth.form.agg, MARGIN = 1, FUN
 
 
 version <- gsub('\\.', '-', packageVersion("ausplotsR"))
-write.csv(growth.form.agg,paste0('../DATASETS/','AusPlots_Sites_Classified_', version, '.csv'))
+file.pathd <- paste0('../DATASETS/AusPlots_Extracted_Data/Final','AusPlots_Sites_Classified_', version, '.csv')
+write.csv(growth.form.agg,file.pathd)
 
 
 # Junk Script (Don't run) -------------------------------------------------

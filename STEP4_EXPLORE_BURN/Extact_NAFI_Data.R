@@ -1,0 +1,60 @@
+### Extract Historical Bushfires ###
+# Krish Singh
+# 20240606
+
+
+# Library -----------------------------------------------------------------
+
+library(sf)
+library(ggplot2)
+library(foreach)
+library(doParallel)
+library(bench)
+
+# Functions ---------------------------------------------------------------
+
+
+
+# Main --------------------------------------------------------------------
+
+# Use parralelisation to speed up dataset queries 
+num_cores <- 6 # adjust according to available CPU cores of your computer (I did n/2 - 1, where n is number of my CPU cores)
+cl <- makeCluster(num_cores)
+registerDoParallel(cl)
+
+hist.shp <- st_read("../DATASETS/NAFI_Data/250m pixel 2000-2023_Long Term Time Since Burnt_Shapefile/TSLB_2000_23_gda94.shp") # get polygons from historical bushfires
+kmz_data <- st_read("../DATASETS/AusPlots_Location/AusPlots_Geometries_20240415.kml", quiet = TRUE) # get polygons from ausplots sites 
+
+hist.shp <- st_transform(hist.shp, st_crs(kmz_data))
+hist.shp <- hist.shp[-126888, ]# remove record 126888 as it was not considered to be a valid geometry: see 'Extra'
+
+num_chunks <- 200 # Number of chunks, to further speed up process 
+
+hist_chunks <- split(hist.shp, 1:num_chunks)
+
+timing_result <- system.time({
+  result_list <- foreach(chunk = hist_chunks, .combine = rbind, .packages = c("sf")) %dopar% {
+    result_chunk <- st_join(x = kmz_data, y = chunk, left = FALSE) # have each worker query based on a chunk of the historical bushfire dataset
+    return(result_chunk)
+  }
+})
+
+stopCluster(cl)
+View(result_list) # view dataset, note some records do not have an ignition/extinguished dates 
+
+# Output dataset
+st_write(result_list,'../DATASETS/AusPlots_Historical_BurnDates.csv', append = FALSE) # csv file
+st_write(result_list,'../DATASETS/AusPlots_Historical_BurnDates.kml', append = FALSE) # kml file
+st_write(result_list,'../DATASETS/AusPlots_Historical_BurnDates.geojson', append = FALSE) # geojson file
+
+
+# Extra -------------------------------------------------------------------
+
+hist.shp <- st_read("../DATASETS/Historical_Bushfire_Boundaries/Historical_Bushfire_Boundaries.dbf") # get polygons from historical bushfires
+print(st_is_valid(hist.shp[126888, ]))
+# FALSE -> not valid 
+
+plot(hist.shp[126888, ])
+# plot shape 
+
+

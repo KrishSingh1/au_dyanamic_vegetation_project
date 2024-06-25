@@ -1,0 +1,42 @@
+Group_Code,vegetation_type,counts
+Cool Temperate,Bryophyte,1
+Cool Temperate,Forb,6
+Cool Temperate,Heath.shrub,4
+Cool Temperate,Rush,4
+Cool Temperate,Sedge,2
+Cool Temperate,Shrub,3
+Cool Temperate,Tree.Palm,10
+Cool Temperate,Tussock.grass,15
+Desert,Chenopod,61
+Desert,Forb,39
+Desert,Heath.shrub,2
+Desert,Hummock.grass,39
+Desert,Sedge,1
+Desert,Shrub,85
+Desert,Shrub.Mallee,1
+Desert,Tree.Mallee,16
+Desert,Tree.Palm,56
+Desert,Tussock.grass,101
+Mediterranean,Chenopod,2
+Mediterranean,Forb,7
+Mediterranean,Heath.shrub,5
+Mediterranean,Sedge,1
+Mediterranean,Shrub,45
+Mediterranean,Shrub.Mallee,1
+Mediterranean,Tree.Mallee,10
+Mediterranean,Tree.Palm,18
+Mediterranean,Tussock.grass,4
+Savanna,Chenopod,1
+Savanna,Hummock.grass,15
+Savanna,Sedge,1
+Savanna,Shrub,11
+Savanna,Tree.Mallee,1
+Savanna,Tree.Palm,29
+Savanna,Tussock.grass,66
+Tropical,Sedge,3
+Tropical,Shrub,5
+Tropical,Tree.Palm,22
+Tropical,Tussock.grass,31
+Warm Temperate,Shrub,3
+Warm Temperate,Tree.Palm,10
+Warm Temperate,Tussock.grass,1

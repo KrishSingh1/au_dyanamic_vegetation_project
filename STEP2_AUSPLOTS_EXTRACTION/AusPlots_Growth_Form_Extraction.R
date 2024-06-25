@@ -11,14 +11,13 @@ library(ausplotsR)
 
 # Main --------------------------------------------------------------------
 
-veg_info <- readRDS("../DATASETS/site_veg_2-0-6.rds")
+veg_info <- readRDS("../DATASETS/AusPlots_Extracted_Data/Final/site_veg_Final2-0-6.rds")
 version <- gsub('\\.', '-', packageVersion("ausplotsR"))
 
 growth.forms <- growth_form_table(veg_info$veg.PI, m_kind = "percent_cover",
-                                  cover_type = "PFC", species_name = "SN")
+                                  cover_type = "PFC", species_name = "SN", cumulative = F)
 
-write.csv(growth.forms, paste0('../DATASETS/','growth_forms_pc_', version, '.csv'))
-
+write.csv(growth.forms, paste0('../DATASETS/AusPlots_Extracted_Data/Final/','growth_forms_pc_final_', version, '.csv'))
 
 # Junk Code (don't run) ---------------------------------------------------
 

@@ -27,14 +27,16 @@ get_location_name <- function(site.unique) {
 # Main --------------------------------------------------------------------
 
 # Load AusPlots data 
-insitu.fractional.cover <- read.csv('../DATASETS/AusPlots_FC_Iter_2_0_6.csv')
+insitu.fractional.cover <- read.csv('../DATASETS/AusPlots_Extracted_Data/AusPlots_FC_Iter_2_0_6.csv')
 insitu.fractional.cover$other[is.na(insitu.fractional.cover$other)] <- 0 # set NA to 0 for 'other'
 insitu.fractional.cover <- subset(insitu.fractional.cover, (other <= 10)) # remove observations with 'other' at 10% or less
 insitu.fractional.cover[insitu.fractional.cover$site_unique == 'TCATCH0010-58826',]$bare = 0
 
 # Load Preprocessed DEA Data
 dea.fc.sites.nearest <- read.csv("../STEP4_EXPORE_DATA/dea_fc_sites_nearest_new_aggregation.csv")
-
+#dea.fc.sites.nearest['site_location_name'] <- unlist(lapply(dea.fc.sites.nearest[['site_unique']], 
+#                                                            FUN = function(x) {unlist(strsplit(x, '-'))[1]})) 
+#dea.fc.sites.nearest <- subset(dea.fc.sites.nearest, site_location_name %in% reasonable_sites)
 # Merge the data 
 dea.fc.sites.plotting <- merge(dea.fc.sites.nearest, insitu.fractional.cover, by = 'site_unique')
 dea.fc.sites.plotting <- subset(dea.fc.sites.plotting, subset = (npixels >= 100 & npixels <= 121))

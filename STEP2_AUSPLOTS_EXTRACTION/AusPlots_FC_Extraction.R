@@ -76,11 +76,11 @@ get_individual_fcs <- function(site.names){
 # Main --------------------------------------------------------------------
 
 
-sites <- read.csv("../DATASETS/sites_info_query.csv")
-site.names <- sites$site_location_name
+sites <- read.csv("../DATASETS/AusPlots_Extracted_Data/Final/extracted_Final_site_info_2-0-6.csv")
+site.names <- unique(sites$site.info.site_location_name)
 fcs <- get_individual_fcs(site.names)
 
-write.csv(fcs,'../DATASETS/AusPlots_FC_Iter_2_0_6.csv')
+write.csv(fcs,'../DATASETS/AusPlots_Extracted_Data/Final/AusPlots_FC_Iter_2_0_6.csv')
 
 # Test --------------------------------------------------------------------
 
