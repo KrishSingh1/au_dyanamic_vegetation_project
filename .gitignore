@@ -45,3 +45,9 @@ DATASETS/AusPlots_Extracted_Data/growth_forms_classification_by_dom_species_2-0-
 DATASETS/AusPlots_Extracted_Data/growth_forms_pc_2-0-6.csv
 DATASETS/AusPlots_Extracted_Data/Growth_Type_Classification.csv
 DATASETS/AusPlots_Extracted_Data/site_veg_2-0-6.rds
+AusPlots Visualisation/VectoriseTest.cpg
+AusPlots Visualisation/VectoriseTest.dbf
+AusPlots Visualisation/VectoriseTest.prj
+AusPlots Visualisation/VectoriseTest.shp
+AusPlots Visualisation/VectoriseTest.shx
+STEP1_INFO_EXTRACTION_ADV/Write_Word_Doc.R
