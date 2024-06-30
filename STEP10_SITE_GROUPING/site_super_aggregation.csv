@@ -1,0 +1,29 @@
+,Group_Code,vegetation_type,super_group,counts,comments,super_code
+0,Desert,Chenopod,Desert Chenopod,61,,1.0
+1,Desert,Forb,Desert Forb,39,,2.0
+2,Desert,Heath.shrub,Desert Shrub,2,Shrub,4.0
+3,Desert,Hummock.grass,Desert Hummock.grass,39,,3.0
+4,Desert,Sedge,Desert Forb,1,Forb,2.0
+5,Desert,Shrub,Desert Shrub,85,,4.0
+6,Desert,Shrub.Mallee,Desert Tree.Palm,1,Tree.Palm,5.0
+7,Desert,Tree.Mallee,Desert Tree.Palm,16,Tree,5.0
+8,Desert,Tree.Palm,Desert Tree.Palm,56,,5.0
+9,Desert,Tussock.grass,Desert Tussock.grass,101,,6.0
+10,Temp/Med,Bryophyte,Temp/Med Tussock.grass,1,Tussock.grass,9.0
+11,Temp/Med,Chenopod,Desert Chenopod,2,Combine with desert chenopod,1.0
+12,Temp/Med,Forb,Temp/Med Tussock.grass,13,Tussock.grass,9.0
+13,Temp/Med,Heath.shrub,Temp/Med Shrub,9,Shrub,7.0
+14,Temp/Med,Rush,Temp/Med Tussock.grass,4,Tussock.grass,9.0
+15,Temp/Med,Sedge,Temp/Med Tussock.grass,3,Tussock.grass,9.0
+16,Temp/Med,Shrub,Temp/Med Shrub,51,,7.0
+17,Temp/Med,Shrub.Mallee,Temp/Med Tree.Palm,1,Tree.Palm,8.0
+18,Temp/Med,Tree.Mallee,Temp/Med Tree.Palm,10,Tree.Palm,8.0
+19,Temp/Med,Tree.Palm,Temp/Med Tree.Palm,38,,8.0
+20,Temp/Med,Tussock.grass,Temp/Med Tussock.grass,20,,9.0
+21,Tropical/Savanna,Chenopod,Desert Chenopod,1,Combine with desert chenopod,1.0
+22,Tropical/Savanna,Hummock.grass,Desert Hummock.grass,15,Combine with desert hummock grass,3.0
+23,Tropical/Savanna,Sedge,Tropical/Savanna Tussock.grass,4,Tussock.grass,11.0
+24,Tropical/Savanna,Shrub,Desert Shrub,16,Combine with desert shrub,4.0
+25,Tropical/Savanna,Tree.Mallee,Tropical/Savanna Tree.Palm,1,Tree.Palm,10.0
+26,Tropical/Savanna,Tree.Palm,Tropical/Savanna Tree.Palm,51,,10.0
+27,Tropical/Savanna,Tussock.grass,Tropical/Savanna Tussock.grass,97,,11.0

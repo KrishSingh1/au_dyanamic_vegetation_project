@@ -1,7 +1,7 @@
-$sourcePath = 'C:\Users\krish\Desktop\DYNAMIC MODEL VEGETATION PROJECT\DataExtraction\BACKUP_DATA\test - subqueryb&c'
-$destinationPath = 'C:\Users\krish\Desktop\DYNAMIC MODEL VEGETATION PROJECT\DataExtraction\BACKUP_DATA\csv_files'
+$sourcePath = 'C:\Users\krish\Desktop\DYNAMIC MODEL VEGETATION PROJECT\au_dyanamic_vegetation_project\DATASETS\DEA_FC_PROCESSED\test_c_Copy'
+$destinationPath = 'C:\Users\krish\Desktop\DYNAMIC MODEL VEGETATION PROJECT\au_dyanamic_vegetation_project\DATASETS\DEA_FC_PROCESSED\RawData\NewBatch'
 
-$filesToMove = Get-ChildItem -Path $sourcePath -Recurse -File -Filter "*.csv" | Where-Object { $_.Name -ne 'sites_info_subquery_b.csv' } | Where-Object { $_.Name -ne 'sites_info_subquery_c.csv' }
+$filesToMove = Get-ChildItem -Path $sourcePath -Recurse -File -Filter "*.csv" | Where-Object { $_.Name -ne 'AusPlots_Merged_Completed_c.csv' } | Where-Object { $_.Name -ne 'sites_info_subquery_c.csv' }
 
 foreach ($file in $filesToMove) {
     Move-Item -Path $file.FullName -Destination $destinationPath

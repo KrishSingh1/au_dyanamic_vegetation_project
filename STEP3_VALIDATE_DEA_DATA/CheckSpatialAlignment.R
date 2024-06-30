@@ -34,13 +34,13 @@ get_corner_points <- function(site_coords) {
 
 # Main --------------------------------------------------------------------
 
-files <- list.files('../STEP3_VALIDATE_DEA_DATA/New_Batch/', pattern = "\\.csv$", full.names = FALSE)
+files <- list.files('../DATASETS/DEA_FC_PROCESSED/RawDataCurrent/NewBatchCurrent', pattern = "\\.csv$", full.names = FALSE)
 file.names <- tools::file_path_sans_ext(files)
 
 grouped <- c()
 for(i in files) {
 
-  site_dea_fc <- read.csv(paste0('../STEP3_VALIDATE_DEA_DATA/New_Batch/', i))
+  site_dea_fc <- read.csv(paste0('../DATASETS/DEA_FC_PROCESSED/RawDataCurrent/NewBatchCurrent/', i))
   
   coordinates <- unique(site_dea_fc[,c('x','y')])
   four_corners <- get_corner_points(unique(site_dea_fc[,c('x','y')]))
@@ -57,19 +57,15 @@ for(i in files) {
 }
 
 
-st_write(grouped, "../STEP3_VALIDATE_DEA_DATA/New_Batch/DEA_Returned_Boundaries_New.shp")
+st_write(grouped, "../STEP3_VALIDATE_DEA_DATA/New_Batch_Shapefile/DEA_Returned_Boundaries_New.shp")
 
 
 # For pointed datasets:
 
-
-files <- list.files('../STEP3_VALIDATE_DEA_DATA/New_Batch/', pattern = "\\.csv$", full.names = FALSE)
-file.names <- tools::file_path_sans_ext(files)
-
 grouped_point <- c()
 for(i in files) {
   
-  site_dea_fc <- read.csv(paste0('../STEP3_VALIDATE_DEA_DATA/New_Batch//', i), stringsAsFactors = FALSE)
+  site_dea_fc <- read.csv(paste0('../DATASETS/DEA_FC_PROCESSED/RawDataCurrent/NewBatchCurrent/', i))
   
   coordinates <- unique(site_dea_fc[,c('x','y')])
   coordinates['x'] <- as.numeric(coordinates$x)
@@ -81,8 +77,6 @@ for(i in files) {
 }
 
 
-st_write(grouped_point, "../STEP3_VALIDATE_DEA_DATA/New_Batch/DEA_Returned_Point_New.shp")
-
-
+st_write(grouped_point, "../STEP3_VALIDATE_DEA_DATA/New_Batch_Shapefile/DEA_Returned_Point_New.shp")
 
 

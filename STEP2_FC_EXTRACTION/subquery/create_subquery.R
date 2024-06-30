@@ -1,15 +1,12 @@
-directory <- "/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtraction/BACKUP_DATA/csv_files/"
+directory <- "/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/DATASETS/DEA_FC_PROCESSED/New_Batch/"
 files <- list.files(directory, pattern = "\\.csv$", full.names = FALSE)
 fileNames <- tools::file_path_sans_ext(files)
 length(unique(fileNames))
 
-query <- read.csv('sites_info_query.csv')
+query <- read.csv('/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/DATASETS/AusPlots_Location/AusPlots_Polygons_20240619/Merged_Polygons/AusPlots_Merged_Completed.csv')
 
 difference <- setdiff(query$site_location_name, fileNames)
 
 subquery <- query[query$site_location_name %in% difference,]
-subquery <- subquery[, c('site_location_name', 
-                         'pit_marker_easting',
-                         'pit_marker_northing',
-                         'pit_marker_mga_zones')]
-write.csv(subquery,'sites_info_subquery_c.csv')
+
+write.csv(subquery,'AusPlots_Merged_Completed_d.csv')

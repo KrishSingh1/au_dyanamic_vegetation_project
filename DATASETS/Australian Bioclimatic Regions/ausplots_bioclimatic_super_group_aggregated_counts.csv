@@ -1,0 +1,29 @@
+﻿Group_Code,vegetation_type,counts,comments
+Desert,Chenopod,61,
+Desert,Forb,39,
+Desert,Heath.shrub,2,Shrub
+Desert,Hummock.grass,39,
+Desert,Sedge,1,Forb
+Desert,Shrub,85,
+Desert,Shrub.Mallee,1,Tree.Palm
+Desert,Tree.Mallee,16,Tree
+Desert,Tree.Palm,56,
+Desert,Tussock.grass,101,
+Temp/Med,Bryophyte,1,Tussock.grass
+Temp/Med,Chenopod,2,Combine with desert chenopod
+Temp/Med,Forb,13,Tussock.grass
+Temp/Med,Heath.shrub,9,Shrub
+Temp/Med,Rush,4,Tussock.grass
+Temp/Med,Sedge,3,Tussock.grass
+Temp/Med,Shrub,51,
+Temp/Med,Shrub.Mallee,1,Tree.Palm
+Temp/Med,Tree.Mallee,10,Tree.Palm
+Temp/Med,Tree.Palm,38,
+Temp/Med,Tussock.grass,20,Tussock.grass
+Tropical/Savanna,Chenopod,1,Combine with desert chenopod
+Tropical/Savanna,Hummock.grass,15,Combine with desert hummock grass
+Tropical/Savanna,Sedge,4,Tussock.grass
+Tropical/Savanna,Shrub,16,Combine with desert shrub
+Tropical/Savanna,Tree.Mallee,1,Tree.Palm
+Tropical/Savanna,Tree.Palm,51,
+Tropical/Savanna,Tussock.grass,97,

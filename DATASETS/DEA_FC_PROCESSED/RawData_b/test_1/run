@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+#PBS -l ncpus=10
+#PBS -l walltime=01:00:00
+#PBS -l mem=40GB
+#PBS -q normal
+#PBS -P pt17
+#PBS -m abe
+#PBS -M 20162506@student.westernsydney.edu.au
+#PBS -j oe
+#PBS -l wd
+#PBS -W umask=0022
+#PBS -S /bin/bash
+#PBS -l storage=gdata/pt17+scratch/pt17+scratch/hw83+gdata/v10+gdata/jw04
+#PBS -l jobfs=40GB
+#PBS -o /scratch/pt17/ks0104/test/job.log
+#PBS -N job
+#PBS -p 512
+set -euo pipefail
+#module load dea openmpi
+python3 --version
+export PYTHONPATH="${PYTHONPATH:-}:/home/590/ks0104/.local/lib/python3.8/site-packages"
+export PATH="/home/590/ks0104/.local/bin:/home/590/ks0104/bin:/opt/pbs/default/bin:/opt/nci/bin:/opt/bin:/opt/Modules/v4.3.0/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/opt/pbs/default/bin:/home/590/ks0104/dea-notebooks/Tools"
+#echo PYTHONPATH=$PYTHONPATH
+echo PATH=$PATH
+echo mpirun=
+module load dea openmpi
+
+#export PATH="/home/590/ks0104/.local/bin:/home/590/ks0104/bin:/opt/pbs/default/bin:/opt/nci/bin:/opt/bin:/opt/Modules/v4.3.0/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/opt/pbs/default/bin:/home/590/ks0104/dea-notebooks/Tools"
+#export PYTHONPATH=/home/590/ks0104/.local/lib/python3.10/site-packages
+mpirun -np "10" python3 "/home/590/ks0104/au_dyanamic_vegetation_project/query/single_site_retrieval_230628.py" "/scratch/pt17/ks0104/test/runs" "out"
