@@ -88,7 +88,7 @@ grass_cover <- grass_cover %>%
   left_join(site_info_df)
 
 # Subset to features that are mainly of interest, include more if desired 
-cols_of_interest <- c('site_unique', 'Andropogoneae', 'Chloridoideae',
+cols_of_interest <- c('site_unique', 'site_location_name', 'Andropogoneae', 'Chloridoideae',
                       'non_applicable/no_tribe', 'latitude', 'longitude')
 
 grass_cover <- grass_cover[,cols_of_interest]
