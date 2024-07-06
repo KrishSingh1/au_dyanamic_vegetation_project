@@ -409,11 +409,11 @@ class historical_burn_date_preprocess(BaseEstimator, TransformerMixin):
         X = X.copy()
         
         # Get a subset of the dataset that has the corresponding site_location_name
-        X = X[['ignition_d', 'extinguish', 'Name']]
-        X = X[X.Name == self.site_location_name]
+        X = X[['ignition_d', 'extinguish', 'site_location_name']]
+        X = X[X.site_location_name == self.site_location_name]
   
         # Remove all records with 'None' as the ignititon_d
-        X = X.iloc[[i is not None for i in  X['ignition_d']]]
+        X = X.iloc[[pd.isnull(i) is False for i in  X['ignition_d']]]
         
         # Convert to date_time
         X['ignition_d'] = pd.to_datetime(X['ignition_d'])

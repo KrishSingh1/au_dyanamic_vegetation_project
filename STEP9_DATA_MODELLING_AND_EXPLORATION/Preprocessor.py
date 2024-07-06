@@ -9,17 +9,11 @@ Created on Wed Mar 20 15:19:33 2024
 
 import numpy as np
 import pandas as pd
-import geopandas as gpd
-import matplotlib.pyplot as plt
-import os
-from sklearn.model_selection import TimeSeriesSplit
 import sys
 sys.path.append('/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/STEP9_DATA_MODELLING_AND_EXPLORATION')
 sys.path.append('/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/DATASETS')
-import xgboost as xgb
-from sklearn.metrics import mean_squared_error
+#import xgboost as xgb
 from sklearn.pipeline import Pipeline
-
 
 from PreprocessData import * # import from custom transformers 
 import logging
@@ -31,156 +25,14 @@ filename =  'C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic
 #%% Main 
 #  %% Preprocess and create train/test'
 
-
-# WAAPIL0003
-# NSABHC0023 [issue with fire history]
-# TCATCH0006 [Issue with fire history]
-# WAAGAS0002 [Issue with fire history]
-# NSAMDD0014 [Issue with fire history]
-# NTAGFU0021 [Issue with fire history]
-# NSANSS0001 [Issue with fire history]
-# SATSTP0005 [Issue with fie history]
-# QDASSD0015 [Issue  with fire history]
-# NTAFIN0002 []
-# NSANAN0002
-# QDAEIU0010
-
-#site_location_name = 'NSAMDD0002' # no fire, seasonal
-#site_location_name = 'NSANAN0002' # fire, seasonal, big drop
-
-
-
-# sites_list = ['WAAPIL0003', 'NSABHC0023', 'TCATCH0006',
-#                 'WAAGAS0002', 'NSAMDD0014', 'NTAGFU0021', 
-#                 'NSANSS0001', 'SATSTP0005', 'QDASSD0015', 
-#                 'NTAFIN0002', 'NSANAN0002', 'QDAEIU0010'] # smaller subset
-
-
-sites_list = np.unique(['NSABBS0001',
-  'NSABHC0011',
-  'NSACOP0001',
-  'NSAMDD0001',
-  'NSAMDD0011',
-  'NSAMDD0020',
-  'NSAMDD0028',
-  'NSAMUL0003',
-  'NSANAN0001',
-  'NSANAN0002',
-  'NSANSS0002',
-  'NSTSYB0003',
-  'NSTSYB0005',
-  'NSTSYB0006',
-  'NSABHC0023',
-  'NSAMDD0014',
-  'NSANSS0001',
-  'NSANAN0002'])
-
-
-# sites_list = np.unique(['NTADAC0001',
-#   'NTADMR0001',
-#   'NTAFIN0003',
-#   'NTAFIN0006',
-#   'NTAFIN0015',
-#   'NTAFIN0018',
-#   'NTAGFU0014',
-#   'NTAGFU0020',
-#   'NTAGFU0030',
-#   'NTAGFU0034',
-#   'NTASTU0004',
-#   'NTTDMR0003',
-#   'NTAGFU0021',
-#   'NTAFIN0002'])
-
-# sites_list = np.unique(['QDABBN0002',
-#   'QDABBS0002',
-#   'QDABBS0010',
-#   'QDACHC0003',
-#   'QDACYP0006',
-#   'QDACYP0018',
-#   'QDACYP0020',
-#   'QDACYP0022',
-#   'QDAEIU0005',
-#   'QDAGUP0006',
-#   'QDAGUP0009',
-#   'QDAGUP0019',
-#   'QDAGUP0021',
-#   'QDAMGD0002',
-#   'QDAMGD0023',
-#   'QDAMGD0024',
-#   'QDAMGD0025',
-#   'QDAMUL0002',
-#   'QDAMUL0003',
-#   'QDASEQ0004',
-#   'QDASSD0015', 
-#   'QDAEIU0010'])
-
-# sites_list = np.unique(['WAAAVW0006',
-#   'WAACAR0002',
-#   'WAACAR0004',
-#   'WAACOO0007',
-#   'WAACOO0016',
-#   'WAACOO0024',
-#   'WAACOO0026',
-#   'WAACOO0027',
-#   'WAACOO0029',
-#   'WAACOO0030',
-#   'WAAGAS0001',
-#   'WAAGES0001',
-#   'WAALSD0002',
-#   'WAANOK0006',
-#   'WAANUL0003',
-#   'WAAPIL0010',
-#   'WAAPIL0023',
-#   'WAAPIL0024',
-#   'WAAPIL0031',
-#   'WAAPIL0003',
-#   'WAAGAS0002'])
-
-# sites_list = np.unique(['SAAEYB0001',
-#   'SAAEYB0021',
-#   'SAAEYB0028',
-#   'SAAEYB0029',
-#   'SAAFLB0003',
-#   'SAAFLB0005',
-#   'SAAFLB0008',
-#   'SAAGAW0008',
-#   'SAAKAN0009',
-#   'SAASTP0023',
-#   'SAASTP0033',
-#   'SAASTP0034',
-#   'SASMDD0005',
-#   'SASMDD0009',
-#   'SASMDD0014',
-#   'SATFLB0003',
-#   'SATFLB0019',
-#   'SATFLB0020',
-#   'SATFLB0022',
-#   'SATFLB0023',
-#   'SATSTP0005'])
-
-# sites_list = np.unique(['TCATCH0004', 'TCATNM0001', 'TCATNM0003', 'TCATCH0006'])
-#sites_list = ['NSTSYB0003']
-
-#sites_list = ['QDACYP0010', 'QDASEQ0002', 'QDAEIU0009', 'QDAEIU0004', 
-# 'QDABBS0001', 'NTAGFU0007', 'WAAMUR0029', 'WAAMUR0031', 
-# 'WAAPIL0002', 'WAAGSD0001']
-
-#sites_list = ['WAACEK0002', 'NTADAC0001', 'QDAGUP0015',
-#       'VCAAUA0011', 'WAANOK0004']
-
-#sites_list = ['QDASSD0004', 'WAAPIL0031', 'SATFLB0018',
-#       'WAAMUR0028', 'QDASSD0001']
-
-# sites_list = ['NSTSYB0005']
-
 smaller_subset = pd.read_csv('../DATASETS/Sites_Subset_20231010/ausplots_site_info/sites_subset.csv').copy()
 bigger_subset = pd.read_csv('../DATASETS/Sites_Bigger_Subset_20240124/ausplots_bigger_subset.csv').copy()
 
 sites_list = np.unique(list(np.unique(bigger_subset.site_location_name.values)) +
-                        list(np.unique(smaller_subset.site_location_name.values))) # smaller subset
+                       list(np.unique(smaller_subset.site_location_name.values))) # smaller subset
 
 # Some Muti-site data 
-dom_veg = pd.read_csv('../DATASETS/AusPlots_Extracted_Data/AusPlots_Sites_Classified_2-0-6.csv') # vegetation cover data
+dom_veg = pd.read_csv('../DATASETS/AusPlots_Extracted_Data/Final/AusPlots_Sites_Classified_2-0-6.csv') # vegetation cover data
 growth_forms_selector = ['grass', 'shrub', 'tree'] # The growth forms to include
 
 SLGA_attributes = pd.read_csv('../DATASETS/Soils_and_Landscape_Grid_of_Australia/Output/SGLA_PCA_3.csv', index_col = 0) # vegetation cover data
@@ -188,9 +40,11 @@ SLGA_attributes_selector = ['SLGA_1', 'SLGA_2',	'SLGA_3', 'DER_000_999'] # the s
 
 CO2_data = pd.read_csv('../DATASETS/CO2_Dataset/global_co2_ann_1700_2022.txt', sep = "\s\s", header = None, engine = 'python') # co2 data 
 CO2_data.rename(columns = {0: 'year', 1: 'CO2'}, inplace = True)
-historical_fire_ds = gpd.read_file('../DATASETS/AusPlots_Historical_BurnDates.geojson', parse_dates = ['igntn_d']) # Fire Dataset
-site_info = pd.read_csv('../DATASETS/AusPlots_Extracted_Data/extracted_site_info_2-0-6.csv', usecols = ['site.info.site_location_name','site.info.latitude']) # latitude information
 
+
+historical_fire_ds = pd.read_csv('../DATASETS/AusPlotsBurnData/Combined_Data/AusPlots_Combined_Fire_Dataset.csv', parse_dates = ['ignition_d']) # Fire Dataset
+site_info =  pd.read_csv('C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/DATASETS/AusPlots_Extracted_Data/Final/extracted_Final_site_info_2-0-6.csv',
+                             index_col = 0).copy() 
 
 ## Trees
 tree_sites = dom_veg[dom_veg['vegetation_type'] == 'tree' ]['site_location_name']
@@ -219,21 +73,18 @@ Tussock_Grasses = ['QDACYP0010', 'QDASEQ0002', 'QDAEIU0009', 'QDAEIU0004', 'QDAB
  'WAACEK0002', 'NTADAC0001', 'QDAGUP0015', 'VCAAUA0011', 'WAANOK0004']
 Hummock_Grasses = ['NTAGFU0007', 'WAAMUR0029', 'WAAMUR0031', 'WAAPIL0002', 'WAAGSD0001',
  'QDASSD0004', 'WAAPIL0031', 'SATFLB0018', 'WAAMUR0028', 'QDASSD0001']
+
 # Decide which set to use 
-sites_list = Hummock_Grasses
+sites_list = tree_sites
 
-
-
-all_sites_2023 = pd.read_csv('C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/DATASETS/AusPlots_Extracted_Data/extracted_site_info_2-0-6.csv',
-                             index_col = 0).copy() 
-all_sites_2023_names = np.unique(all_sites_2023['site.info.site_location_name'])
+all_sites_2024_names = np.unique(site_info['site.info.site_location_name'])
 
 
 
 # QDADEU0002 ---> no veg information
 # QDASEQ0001 --> no DEA FC
 Error_list = ['QDADEU0002', 'QDASEQ0001']
-sites_list = all_sites_2023_names
+sites_list = tree_sites
 
 
 # This is for keeping a log of any missing data in the sites we are preprocessing 
@@ -249,13 +100,21 @@ site_log.head()
 # These will form combinations between 1,2,3,4 if multiple errors exsist eg.
 #   123 -> missing or non-recorded fire, veg, SLGA data 
 
+#%% Which list of sites to use 
+
+sites_list = all_sites_2024_names
+
+#%% Begin Preprocessing
+
+max_counter = len(sites_list)
+counter = 1
 print(f'The Data Awaiting Preprocessing: {sites_list}')
-preprocess_data = False
+preprocess_data = True
 for site_location_name in sites_list:
     
     skip_preprocess = False 
     
-    print(f'Processing Data for {site_location_name}')
+    print(f'Processing Data for {site_location_name}, {counter}/{max_counter}')
     
     time_lag = 1
     window_length = 5
@@ -365,7 +224,8 @@ for site_location_name in sites_list:
         # site_merged.to_csv(f'C:/Users/krish/Desktop/Grassses_DEA_FC/Tussock_Grasses/{site_location_name}.csv')
         site_merged.to_csv(f'C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/DATASETS/DEA_FC_PROCESSED/MODELLED_PREPROCESSED/Input_DataSet_{site_location_name}.csv')
         
-        print(f'Data for {site_location_name} Exported')
+        print(f'Data for {site_location_name} Exported  {counter}/{max_counter}')
+        counter += 1
     
 site_log.to_csv('C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/DATASETS/DEA_FC_PROCESSED/MODELLED_PREPROCESSED/Log/Site_Preprocessing_Log_1.csv')
 #sys.stdout = stdout_obj

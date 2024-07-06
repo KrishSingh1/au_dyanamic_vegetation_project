@@ -57,7 +57,7 @@ growth.form.agg$vegetation_type <- unlist(apply(growth.form.agg, MARGIN = 1, FUN
 
 
 version <- gsub('\\.', '-', packageVersion("ausplotsR"))
-file.pathd <- paste0('../DATASETS/AusPlots_Extracted_Data/Final','AusPlots_Sites_Classified_', version, '.csv')
+file.pathd <- paste0('../DATASETS/AusPlots_Extracted_Data/Final/','AusPlots_Sites_Classified_', version, '.csv')
 write.csv(growth.form.agg,file.pathd)
 
 

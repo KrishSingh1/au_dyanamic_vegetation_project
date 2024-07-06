@@ -382,12 +382,12 @@ for site in sites_list:
     site_data = datasets[site].set_index('time').dropna(subset = FEATURES)
     
     train_site = site_data.iloc[training_set[site].index]
-    train_site['pv_filter'].plot(figsize = (15,5), ax = ax[0], title = site)
-    train_site['precip_90'].plot(figsize = (15,5), ax = ax[0])
+    #train_site['pv_filter'].plot(figsize = (15,5), ax = ax[0], title = site)
+    #train_site['precip_90'].plot(figsize = (15,5), ax = ax[0])
     
     test_site = site_data.iloc[test_set[site].index]
-    test_site['pv_filter'].plot(figsize = (15,5), ax = ax[1])
-    test_site['precip_90'].plot(figsize = (15,5), ax = ax[1])
+    #test_site['pv_filter'].plot(figsize = (15,5), ax = ax[1])
+    #test_site['precip_90'].plot(figsize = (15,5), ax = ax[1])
     
     print(f'{test_site.index.min()}')
     

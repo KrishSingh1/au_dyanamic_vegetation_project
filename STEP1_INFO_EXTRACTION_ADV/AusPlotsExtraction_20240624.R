@@ -199,18 +199,6 @@ merged_ausplots_polygons <- rbind(site_info_essential_calc_to_merge, adjust_cols
 
 # Add on the mgas again
 
-#n = 10
-#chunks <- cut(1:nrow(merged_ausplots_polygons), breaks = n, labels = F)
-#geolist <- split(merged_ausplots_polygons, chunks)
-
-#counter = 1
-#for (i in geolist){
-#  fileName <- paste0("AusPlots_Merged_Polygons_", counter, ".geojson")
-#  st_write(i, paste0("../DATASETS/AusPlots_Location/AusPlots_Polygons_20240619/Merged_Polygons/AusPlots_Merged_Polygons_Split/",fileName))
-#  counter = counter + 1
-#}
-
-
 # Export Polygons as merged 
 
 st_write(merged_ausplots_polygons, "../DATASETS/AusPlots_Location/AusPlots_Polygons_20240619/Merged_Polygons/AusPlots_Merged_Polygons_20240624.geojson")
@@ -224,3 +212,13 @@ site_completed <- read.csv('../DATASETS/AusPlots_Extracted_Data/Final/completed_
 site_sw_points_completed <- subset(site_sw_points, subset = (site.info.site_location_name %in% site_completed$site_location_name))
 colnames(site_sw_points_completed) <- c('site_location_name', 'longitude', 'latitude')
 write.csv(site_sw_points_completed, '../DATASETS/AusPlots_Location/site_sw_points_completed.csv')
+
+
+# Use Corner Points from Published AusPlots site  -------------------------
+
+
+
+
+
+
+

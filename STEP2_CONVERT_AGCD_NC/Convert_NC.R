@@ -129,5 +129,25 @@ for (site.name in fileNames) {
 }
 
 
+# For the Left Over Sites:
+
+
+file.list.dir <- read.csv("../DATASETS/AusPlots_Location/New_AusPlots_Locations_SW_Points.csv")
+fileNames <- file.list.dir$site_location_name
+directory <- "C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/DATASETS/ausplots_agcd_b/"
+climate.variables <- c('precip', 'tmax', 'tmin', 'vapourpres_h09', 'vapourpres_h15') # climate variables of interest 
+for (site.name in fileNames) {
+  
+  file.output.name <- paste0(site.name, '_1980_2022.csv') # get name of file
+  
+  for(variable in climate.variables){ # for each climate variable, export the associated site data
+    data.export.precip <- get_nc_data(site.focus = site.name, directory = directory, variable_name = variable) # get data
+    colnames(data.export.precip)[colnames(data.export.precip) == 'variable_name'] <- variable # rename variable column
+    write.csv(data.export.precip, paste0("../DATASETS/Climate_Gridded/", variable, "/", file.output.name))  # write to csv
+    print(paste0("Exported ",variable," data for ",site.name)) 
+  }
+}
+
+
 
 
