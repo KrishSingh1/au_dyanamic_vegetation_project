@@ -6,6 +6,7 @@
 
 # Libraries ---------------------------------------------------------------
 library(ausplotsR)
+library(dplyr)
 
 # Functions ---------------------------------------------------------------
 
@@ -78,6 +79,19 @@ rownames(grass_cover) <- grass_cover$Group.1
 # Transpose the cover data back to the original configuration
 grass_cover <- as.data.frame(t(grass_cover[,-which(colnames(grass_cover) == 'Group.1')]))
 
+# Add extra information, such as lat-lon coords, and other potentially useful information
+# Use table joins with site information
+
+site_info_df <- site_info$site.info 
+grass_cover$site_unique <- rownames(grass_cover)
+grass_cover <- grass_cover %>% 
+  left_join(site_info_df)
+
+# Subset to features that are mainly of interest, include more if desired 
+cols_of_interest <- c('site_unique', 'Andropogoneae', 'Chloridoideae',
+                      'non_applicable/no_tribe', 'latitude', 'longitude')
+
+grass_cover <- grass_cover[,cols_of_interest]
 
 # Output Results ----------------------------------------------------------
 
