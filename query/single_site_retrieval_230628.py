@@ -21,7 +21,7 @@ def write_to_log(msg):
     if debug == 1: # on non pbs environment 
         print(f'{msg}')
 
-    elif debug == 2: # on pbs environment
+    elif debug == 0 or debug == 2: # on pbs environment
         print(f"[node {rank}] {msg}")
     
 
@@ -38,6 +38,7 @@ if debug == 0 or debug == 1 or debug == 2:
 
     # DEA Tools 
     sys.path.insert(1, '/home/590/ks0104/dea-notebooks/Tools') # uncomment if using the sandbox server 
+    
     import datacube
     from dea_tools.datahandling import wofs_fuser
     from datacube.utils import masking
@@ -79,19 +80,17 @@ if debug == 0 or debug == 1 or debug == 2:
 
     ###### Create Query #######
     ## Load in query file (sites coords of interest)
-    site_info = pd.read_csv("sites_info_subquery_c.csv") # get df for sites info, I changed it from sites_info_query to subquery 
-    site_info = site_info.drop(columns = "Unnamed: 0").copy() 
+    site_info = pd.read_csv("AusPlots_Merged_Completed_b.csv") # get df for sites info, I changed it from sites_info_query to subquery 
 
 
     ###### Set up spatiotemporal extents:
     
-    resolution = (-10,10) # the spatial resolution # 10m by 10m. Note: this is higher than what is offered by the dataset
+    resolution = (-30,30) # the spatial resolution # 30m by 30m. 
     
     # Set the start and end date 
     start_date = datetime.date(1987, 9, 1)
-    end_date = datetime.date(2023, 3, 20) # the lower bound of the end date increment 
+    end_date = datetime.date(2023, 1, 20) # the lower bound of the end date increment 
     ## e.g. (2023,3,20) will enquiry all data up to (2023,4,20)
-    # Note: keep query at ("1987-09-01","2023-04-20")!
     
     # Set up spatial coverage
     extent = 100 # defines the extent of the coordinates 
@@ -99,9 +98,9 @@ if debug == 0 or debug == 1 or debug == 2:
     
     #Apply debug mode (1/1): reducing the spatiotemporal extent
     if debug == 1 or debug == 2:
-        end_date = datetime.date(2000, 4, 1)
-        extent = 10 # reduce extent
-        extent_2 = 0 
+        end_date = datetime.date(1990, 4, 1)
+        extent = 100 # reduce extent
+        extent_2 = 20 
     
     
     ###### Get time increments ##### 
@@ -137,15 +136,21 @@ if debug == 0 or debug == 1 or debug == 2:
     ###### Run Query ######
     ## Define parameters for Query 
     #RI - record index
-    for RI in range(1):  # (i.e, for each site in query dataset)
+    for RI in range(len(site_info)):  # (i.e, for each site in query dataset)
+    #for RI in range(1):
 
       sites_results_df = pd.DataFrame(columns=columns)
 
-      y1, y2 = site_info["pit_marker_northing"][RI] - extent_2/2, site_info["pit_marker_northing"][RI] + extent + extent_2/2 # coords/northing
-      x1, x2 = site_info["pit_marker_easting"][RI] - extent_2/2, site_info["pit_marker_easting"][RI] + extent + extent_2/2# coords/easting 
+      #y1, y2 = round(site_info["SW_northing"][RI] - extent_2/2), round(site_info["SW_northing"][RI] + extent + extent_2/2) # coords/northing
+      #x1, x2 = round(site_info["SW_easting"][RI] - extent_2/2), round(site_info["SW_easting"][RI] + extent + extent_2/2) # coords/easting 
+      
+      buffer = 0.0015
+      y1, y2 = round(site_info["latitude"][RI] - buffer/2, 4), round(site_info["latitude"][RI] + buffer, 4)  # coords/northing
+      x1, x2 = round(site_info["longitude"][RI] - buffer/2,4), round(site_info["longitude"][RI] + buffer, 4) # coords/easting 
 
-      mga_zone = site_info['pit_marker_mga_zones'][RI]
-      output_crs = f'EPSG:283{mga_zone}' # get output_crs based on the zone 
+
+      mga_zone = site_info['mga'][RI]
+      #crs = f'EPSG:283{mga_zone}' # get output_crs based on the zone 
 
       for time in times_query:
 
@@ -154,13 +159,14 @@ if debug == 0 or debug == 1 or debug == 2:
             'y': (y1, y2),
             'x': (x1, x2),
             'time': time,
-            'crs': output_crs
+            #'crs': crs
         }
 
         write_to_log(f"Start Query ({site_info['site_location_name'][RI]}, Index = {RI})\n{query},  Extent = {extent}, Extent_2 = {extent_2}") # write_to_log query
 
         # Retrieve Data and preprocess 
         # Load DEA Fractional Cover data from the datacube
+        output_crs = 'EPSG:3577'  # Use the default CRS output
         dc = datacube.Datacube(app='DEA_Fractional_Cover') # Call for dataset tools 
         fc = dc.load(product='ga_ls_fc_3',
                    measurements=['bs', 'pv', 'npv', 'ue'],
@@ -170,6 +176,8 @@ if debug == 0 or debug == 1 or debug == 2:
                    **query)
 
         fc = masking.mask_invalid_data(fc) # turn invalid data into NAN 
+        
+        write_to_log(f"Start Query Water ({site_info['site_location_name'][RI]}, Index = {RI})\n{query},  Extent = {extent}, Extent_2 = {extent_2}") # write_to_log query
 
         if fc: # check if the query was found, (i.e., the retrieved data is not null)
             try:

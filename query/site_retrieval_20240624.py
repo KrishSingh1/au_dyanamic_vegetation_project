@@ -8,6 +8,12 @@
 # 0. Input directory name.
 # 1. Output directory name.
 
+from mpi4py import MPI
+comm = MPI.COMM_WORLD
+rank = comm.rank + 1
+
+print(f'rank = {rank}')
+
 ###### Specify debug mode #######
 debug = 2
 # 0 represents debug mode 'off' for pbs environment - where it is intended to run on 
@@ -24,7 +30,6 @@ def write_to_log(msg):
     elif debug == 2: # on pbs environment
         print(f"[node {rank}] {msg}")
     
-
 if debug == 0 or debug == 1 or debug == 2:
     
     
@@ -49,21 +54,21 @@ if debug == 0 or debug == 1 or debug == 2:
     if debug == 0 or debug == 2: # run this code when debug is 'off' or 'on-2' (pbs environment)
       
       # load mpi and insert DEA tools from my directory   
-      from mpi4py import MPI
+      # from mpi4py import MPI
+      
       #sys.path.insert(1, '/home/590/ks0104/dea-notebooks/Tools')
     
-      comm = MPI.COMM_WORLD 
+       
       input_path = sys.argv[1]  
       output_path = sys.argv[2] 
 
       # Run directories are numbered 1..N but rank is 0..N-1
-      rank = comm.Get_rank() + 1 
 
       write_to_log(f"MPI rank={rank}") 
       write_to_log(f"input_path='{input_path}'")  
       write_to_log(f"output_path={output_path}") 
     
-      os.chdir(os.path.join(input_path, f"run{rank}")) 
+      os.chdir(input_path) 
 
       if not os.path.isdir(output_path): # create directory if doesn't exist
         os.makedirs(output_path)
@@ -83,7 +88,7 @@ if debug == 0 or debug == 1 or debug == 2:
 
     ###### Create Query #######
     ## Load in query file (sites coords of interest)
-    site_info = gpd.read_file('AusPlots_Merged_Polygons_20240624.geojson')
+    site_info = gpd.read_file(f'AusPlots_Merged_Polygons_{rank}.geojson')
 
     ###### Set up spatiotemporal extents:
     
@@ -146,6 +151,7 @@ if debug == 0 or debug == 1 or debug == 2:
         query = {
             "geopolygon": geom,
             'time': time,
+            'output_crs' : output_crs
         }
 
         write_to_log(f"Start Query ({site_info['site_location_name'][RI]}, Index = {RI})\n{query}") # write_to_log query
