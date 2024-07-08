@@ -93,12 +93,20 @@ cols_of_interest <- c('site_unique', 'site_location_name', 'Andropogoneae', 'Chl
 
 grass_cover <- grass_cover[,cols_of_interest]
 
+
+# Aggregate By site_location_name
+grass_tribes_agg <- aggregate(grass_cover[,c('Andropogoneae', 'Chloridoideae')],
+                              by = list(grass_cover$site_location_name), FUN = mean)
+colnames(grass_tribes_agg)[1] <- 'site_location_name'
+grass_tribes_agg <- grass_tribes_agg %>%
+  right_join(unique(grass_cover[,c('site_location_name', 'latitude', 'longitude')]))
+
 # Output Results ----------------------------------------------------------
 
 
 write.csv(test, 'Output/ausplots_species_cover_tribe_labelled.csv')
 write.csv(grass_cover, 'Output/ausplots_grass_cover_by_tribe.csv')
-
+write.csv(grass_tribes_agg, 'Output/ausplots_grass_cover_by_tribe_agg.csv')
 
 # TESTING -----------------------------------------------------------------
 # library(ausplotsR)

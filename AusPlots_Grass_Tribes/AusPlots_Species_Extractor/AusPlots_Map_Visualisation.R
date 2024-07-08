@@ -6,6 +6,7 @@
 # Libraries  --------------------------------------------------------------
 library(dplyr)
 library(leaflet)
+library(BAMMtools)
 
 
 # Functions ---------------------------------------------------------------
@@ -26,7 +27,7 @@ plot_aus_map <- function(df, variable){
                                     "latitude: ", latitude)
     )  %>%
     addLegend("bottomright", pal = col.var, values = ~var,
-              title = variable, opacity = 1)
+              title = paste0(variable, ' (%, hits/1010)'), opacity = 1)
   
   
   return(aus.map.var)
@@ -42,15 +43,19 @@ grass_tribes <- read.csv('Output/ausplots_grass_cover_by_tribe.csv')
 grass_tribes_agg <- aggregate(grass_tribes[,c('Andropogoneae', 'Chloridoideae')],
                               by = list(grass_tribes$site_location_name), FUN = mean)
 colnames(grass_tribes_agg)[1] <- 'site_location_name'
+
+
+
+
 grass_tribes_agg <- grass_tribes_agg %>%
   left_join(grass_tribes[,c('site_location_name', 'latitude', 'longitude')])
 
 
 # Plot Andropogoneae
-plot_aus_map(grass_tribes_agg, colnames(grass_tribes_agg)[2])
+plot_aus_map(grass_tribes_agg[which(grass_tribes_agg$Andropogoneae > 0),], colnames(grass_tribes_agg)[2])
 
 # Plot Chloridoideae
-plot_aus_map(grass_tribes_agg, colnames(grass_tribes_agg)[3])
+plot_aus_map(grass_tribes_agg[which(grass_tribes_agg$Chloridoideae > 0),], colnames(grass_tribes_agg)[3])
 
 
 
