@@ -16,7 +16,6 @@ sys.path.append('/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanam
 from sklearn.pipeline import Pipeline
 
 from PreprocessData import * # import from custom transformers 
-import logging
 
 filename =  'C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/DATASETS/DEA_FC_PROCESSED/MODELLED_PREPROCESSED/Log/Logs.txt'
 #stdout_obj = sys.stdout
@@ -25,13 +24,8 @@ filename =  'C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic
 #%% Main 
 #  %% Preprocess and create train/test'
 
-smaller_subset = pd.read_csv('../DATASETS/Sites_Subset_20231010/ausplots_site_info/sites_subset.csv').copy()
-bigger_subset = pd.read_csv('../DATASETS/Sites_Bigger_Subset_20240124/ausplots_bigger_subset.csv').copy()
 
-sites_list = np.unique(list(np.unique(bigger_subset.site_location_name.values)) +
-                       list(np.unique(smaller_subset.site_location_name.values))) # smaller subset
-
-# Some Muti-site data 
+#%% Read in datasets 
 dom_veg = pd.read_csv('../DATASETS/AusPlots_Extracted_Data/Final/AusPlots_Sites_Classified_2-0-6.csv') # vegetation cover data
 growth_forms_selector = ['grass', 'shrub', 'tree'] # The growth forms to include
 
@@ -45,6 +39,19 @@ CO2_data.rename(columns = {0: 'year', 1: 'CO2'}, inplace = True)
 historical_fire_ds = pd.read_csv('../DATASETS/AusPlotsBurnData/Combined_Data/AusPlots_Combined_Fire_Dataset.csv', parse_dates = ['ignition_d']) # Fire Dataset
 site_info =  pd.read_csv('C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/DATASETS/AusPlots_Extracted_Data/Final/extracted_Final_site_info_2-0-6.csv',
                              index_col = 0).copy() 
+
+
+
+
+#%% Define a list of sites to preprocess 
+
+smaller_subset = pd.read_csv('../DATASETS/Sites_Subset_20231010/ausplots_site_info/sites_subset.csv').copy()
+bigger_subset = pd.read_csv('../DATASETS/Sites_Bigger_Subset_20240124/ausplots_bigger_subset.csv').copy()
+
+smaller_list = np.unique(list(np.unique(smaller_subset.site_location_name.values)))
+
+combined_list = np.unique(list(np.unique(bigger_subset.site_location_name.values)) +
+                       list(np.unique(smaller_subset.site_location_name.values))) # smaller subset
 
 ## Trees
 tree_sites = dom_veg[dom_veg['vegetation_type'] == 'tree' ]['site_location_name']
@@ -79,13 +86,10 @@ sites_list = tree_sites
 
 all_sites_2024_names = np.unique(site_info['site.info.site_location_name'])
 
-
-
 # QDADEU0002 ---> no veg information
 # QDASEQ0001 --> no DEA FC
 Error_list = ['QDADEU0002', 'QDASEQ0001']
 sites_list = tree_sites
-
 
 # This is for keeping a log of any missing data in the sites we are preprocessing 
 column_names = ['Error']
@@ -102,7 +106,7 @@ site_log.head()
 
 #%% Which list of sites to use 
 
-sites_list = all_sites_2024_names
+sites_list = tree_sites_focus
 
 #%% Begin Preprocessing
 
@@ -159,73 +163,62 @@ for site_location_name in sites_list:
         skip_preprocess = True 
         print('Error 4')
 
-    if skip_preprocess == True:
+    if skip_preprocess == True | preprocess_data == False:
+        print(f'Data for {site_location_name} SKIPPED  {counter}/{max_counter}')
+        counter += 1
         continue # skip this loop iteration 
          
-    if preprocess_data == True:
     # Preprocess FC time series, add daylength and fire information
-        time_fc_pipeline = Pipeline([
-            ('preprocess_fc_time_series', preprocess_fc_time_series(window_length = window_length_smooth, polyorder = polyorder)),
-            ('time_attributes_adder', time_attributes_adder()),
-            ('time_attributes_fc_lag_adder', time_attributes_fc_lag_adder(time_lag)),
-            ('time_attributes_fc_diff_adder', time_attributes_fc_diff_adder(False)),
-            ('daylength_attributes_adder', daylength_attributes_adder(latitude)),
-            ('historical_burn_date_attribute_adder', historical_burn_date_attribute_adder(historical_fire_ds_site)),
-            ('historical_burn_date_index_attribute_adder', historical_burn_date_index_attribute_adder(verbose = False,
-                                                                                                      historical_fire_ds = historical_fire_ds_site,
-                                                                                                      time_range = time_range)),
-            ('growth_forms_adder', growth_forms_adder(site_dom_veg, growth_forms_selector)),
-            ('SLGA_soil_atributes_adder', SLGA_soil_atributes_adder(site_SLGA_attributes, SLGA_attributes_selector))
+    time_fc_pipeline = Pipeline([
+        ('preprocess_fc_time_series', preprocess_fc_time_series(window_length = window_length_smooth, polyorder = polyorder)),
+        ('time_attributes_adder', time_attributes_adder()),
+        ('time_attributes_fc_lag_adder', time_attributes_fc_lag_adder(time_lag)),
+        ('time_attributes_fc_diff_adder', time_attributes_fc_diff_adder(False)),
+        ('daylength_attributes_adder', daylength_attributes_adder(latitude)),
+        ('historical_burn_date_attribute_adder', historical_burn_date_attribute_adder(historical_fire_ds_site)),
+        ('historical_burn_date_index_attribute_adder', historical_burn_date_index_attribute_adder(verbose = False,
+                                                                                                  historical_fire_ds = historical_fire_ds_site,
+                                                                                                  time_range = time_range)),
+        ('growth_forms_adder', growth_forms_adder(site_dom_veg, growth_forms_selector)),
+        ('SLGA_soil_atributes_adder', SLGA_soil_atributes_adder(site_SLGA_attributes, SLGA_attributes_selector))
          ])
-        site_resampled = time_fc_pipeline.fit_transform(site)
-        print('FC and fire data successfully preprocessed')
-        
-        
-        # The climate variables as named in the AGCD and the resampling method
-        climate_variables = pd.DataFrame({'climate_var': ['precip','tmax','tmin','vapourpres_h09','vapourpres_h15'],
-                                         'resample_type': ['sum', 'mean','mean','mean','mean']})
-        datasets = dict()
-        
-        # Used to add climate attributes directly from AGCD 
-        for index, row in climate_variables.iterrows():
-        
-            climate = pd.read_csv(f'../DATASETS/Climate_Gridded/{row["climate_var"]}/{site_location_name}_1980_2022.csv', parse_dates=['time'])
-            print(climate)
-            
-            datasets[row['climate_var']] = climate
-            
-            time_climate_pipeline = Pipeline([
-                ('preprocess_climate_time_series', preprocess_climate_time_series()),
-                ('climate_time_series_downsample', climate_time_series_downsample(start_time = site_resampled.index[0], resample_method = row['resample_type'])),
-                ('time_attributes_adder', time_attributes_adder())
-            ])
-            climate_new = time_climate_pipeline.fit_transform(climate)
-            site_resampled = site_resampled.merge(climate_new, how = 'left', left_index = True, right_index = True, validate = "one_to_one",
-                                               suffixes = ('', '_DUPLICATE'))
-            site_resampled = site_resampled.drop(columns =  site_resampled.filter(regex = '_DUPLICATE$').columns)
-            
-        # Derive Climate Variables from preprocessed AGCD time series 
-        derive_climate_vars_pipeline = Pipeline([
-            ('mean_annual_variables_adder', mean_annual_variables_adder()),
-            ('calc_VPD', calc_VPD()), # Derive VPD from preprocessed climate data 
-            ('pages_precip_variables_adder', pages_precip_variables_adder(site_location_name)),
-            ('pages_VPD_variables_adder', pages_VPD_variables_adder(site_location_name)),
-            ('pages_temp_variables_adder', pages_temp_variables_adder(site_location_name))
+    site_resampled = time_fc_pipeline.fit_transform(site)
+    
+    print('FC and fire data successfully preprocessed')
+    # Used to add climate attributes directly from AGCD 
+    precip = pd.read_csv(f'../DATASETS/Climate_Gridded/precip/{site_location_name}_1980_2022.csv', parse_dates=['time'], usecols = ['time', 'precip'])
+    tmin = pd.read_csv(f'../DATASETS/Climate_Gridded/tmin/{site_location_name}_1980_2022.csv', parse_dates=['time'],  usecols = ['time', 'tmin'])
+    tmax = pd.read_csv(f'../DATASETS/Climate_Gridded/tmax/{site_location_name}_1980_2022.csv', parse_dates=['time'],  usecols = ['time', 'tmax'])
+    vapourpres_h09 = pd.read_csv(f'../DATASETS/Climate_Gridded/vapourpres_h09/{site_location_name}_1980_2022.csv', parse_dates=['time'],  usecols = ['time', 'vapourpres_h09'])
+    vapourpres_h15 = pd.read_csv(f'../DATASETS/Climate_Gridded/vapourpres_h15/{site_location_name}_1980_2022.csv', parse_dates=['time'], usecols = ['time', 'vapourpres_h15'])
+    
+    # Now merge everying as climate data 
+    # Note: the proceeding indented line continues from the previous one as indicated by '.\'
+    climate_data = tmin.merge(tmax, left_on = 'time', right_on = 'time').merge(vapourpres_h09, left_on = 'time', right_on = 'time').\
+        merge(vapourpres_h15, left_on = 'time', right_on = 'time').merge(precip, left_on = 'time', right_on = 'time').sort_values('time')
+    climate_data = climate_data.sort_values('time')
+    
+    # Derive Climate Variables from preprocessed AGCD time series 
+    derive_climate_vars_pipeline = Pipeline([
+            ('mean_annual_variables_adder', mean_annual_variables_adder(climate_data)),
+            ('pages_precip_variables_adder', pages_precip_variables_adder(climate_data)),
+            ('pages_VPD_variables_adder', pages_VPD_variables_adder(climate_data)),
+            ('pages_temp_variables_adder', pages_temp_variables_adder(climate_data))
         ])
-        site_resampled = derive_climate_vars_pipeline.fit_transform(site_resampled)
+    site_resampled = derive_climate_vars_pipeline.fit_transform(site_resampled)
         
-        # Add CO2 data
-        site_resampled['time'] = site_resampled.index
-        site_resampled = site_resampled.merge(CO2_data, how = 'left', on = 'year', suffixes = ('', '_DUPLICATE'))
-        site_resampled = site_resampled.drop(columns =  site_resampled.filter(regex = '_DUPLICATE$').columns)
+    # Add CO2 data
+    site_resampled['time'] = site_resampled.index
+    site_resampled = site_resampled.merge(CO2_data, how = 'left', on = 'year', suffixes = ('', '_DUPLICATE'))
+    site_resampled = site_resampled.drop(columns =  site_resampled.filter(regex = '_DUPLICATE$').columns)
+    
+    site_merged = site_resampled.copy()
+    # site_merged.to_csv(f'Input_DataSet_{site_location_name}.csv')
+    # site_merged.to_csv(f'C:/Users/krish/Desktop/Grassses_DEA_FC/Tussock_Grasses/{site_location_name}.csv')
+    site_merged.to_csv(f'C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/DATASETS/DEA_FC_PROCESSED/MODELLED_PREPROCESSED/Input_DataSet_{site_location_name}.csv')
         
-        site_merged = site_resampled.copy()
-        # site_merged.to_csv(f'Input_DataSet_{site_location_name}.csv')
-        # site_merged.to_csv(f'C:/Users/krish/Desktop/Grassses_DEA_FC/Tussock_Grasses/{site_location_name}.csv')
-        site_merged.to_csv(f'C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/DATASETS/DEA_FC_PROCESSED/MODELLED_PREPROCESSED/Input_DataSet_{site_location_name}.csv')
-        
-        print(f'Data for {site_location_name} Exported  {counter}/{max_counter}')
-        counter += 1
+    print(f'Data for {site_location_name} Exported  {counter}/{max_counter}')
+    counter += 1
     
 site_log.to_csv('C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/DATASETS/DEA_FC_PROCESSED/MODELLED_PREPROCESSED/Log/Site_Preprocessing_Log_1.csv')
 #sys.stdout = stdout_obj

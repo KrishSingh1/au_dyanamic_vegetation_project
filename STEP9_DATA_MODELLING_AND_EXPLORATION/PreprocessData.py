@@ -37,6 +37,7 @@ class time_attributes_adder(BaseEstimator, TransformerMixin):
       
         return X
     
+    
 class time_attributes_fc_lag_adder(BaseEstimator, TransformerMixin):
     
     def __init__(self, time_lag):
@@ -52,8 +53,9 @@ class time_attributes_fc_lag_adder(BaseEstimator, TransformerMixin):
         X['pv_lag'] = X["pv_filter"].shift(self.time_lag)
         X['npv_lag'] = X["npv_filter"].shift(self.time_lag)
         X['bs_lag'] = X["bs_filter"].shift(self.time_lag)
-        print(X)
+        #print(X)
         return X
+    
     
 class time_attributes_fc_diff_adder(BaseEstimator, TransformerMixin):
     
@@ -78,43 +80,23 @@ class time_attributes_fc_diff_adder(BaseEstimator, TransformerMixin):
             X['pv_change'] = X["pv"].diff().rolling(window = self.window_size).mean()
             X['npv_change'] = X["npv"].diff().rolling(window = self.window_size).mean()
             X['bs_change'] = X["bs"].diff().rolling(window = self.window_size).mean()
-        print(X)
+        #print(X)
           
         return X
-    
 
-## Used to calculate VPD 
-# Based on documentation from 'bigleaf' R package
-class calc_VPD(BaseEstimator, TransformerMixin):
+    
+class preprocess_climate_time_series(BaseEstimator, TransformerMixin):
         
     def fit(self, X, y=None):
         return self 
     
     def transform(self, X, y=None):
         X = X.copy()
+        X = X.sort_values('time')
+        X.set_index('time', inplace=True)
         
-        a, b, c = 611.2, 17.62, 243.12
-        
-        Esat_9am = a*np.exp(
-            (b * X['tmin'])/
-            (c + X['tmin'])
-            )/1000
-        
-        Esat_3pm = a*np.exp(
-            (b * X['tmax'])/
-            (c + X['tmax'])
-            )/1000
-        
-        VPD_9am = Esat_9am - X['vapourpres_h09']/10 # convert to kPa
-        VPD_3pm = Esat_3pm - X['vapourpres_h15']/10 # convert to kPa
-        VPD = np.maximum(0, (VPD_9am + VPD_3pm)/2) # enforce constraint that VPD >= 0 
-        X['VPD'] = VPD
-        
-        return X 
-        
-        
-    
-    
+        return X
+
 # Translated from R code by R package 'geosphere', 
 # Who used the following paper to calc photoperiod:
     #Forsythe, William C., Edward J. Rykiel Jr., Randal S. Stahl, Hsin-i Wu and Robert M. Schoolfield, 1995. A model comparison for daylength as a function of latitude and day of the year. Ecological Modeling 80:87-95.
@@ -139,8 +121,21 @@ class daylength_attributes_adder(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
         
         X = X.copy()
-        X['photoperiod'] =  list(map(calc_photoperiod, X['dayofyear'] , [self.latitude]*len(X)))
-        X['photoperiod_gradient'] = X['photoperiod'].diff()
+        
+        # Here we calculate photoperiod and the gradient (current - past)
+        dayofyear = [i for i in range(1, 366)]
+        photoperiod_list = list(map(calc_photoperiod, dayofyear, [self.latitude]*len(dayofyear)))
+        photoperiod_df = pd.DataFrame(photoperiod_list, index = dayofyear,columns = ['photoperiod'])
+        photoperiod_df['dayofyear'] = dayofyear # so it can match with dataset 'X'
+        photoperiod_df['photoperiod_gradient'] = photoperiod_df['photoperiod'].diff()
+
+        # Note: photoperiod is cyclic in nature, which diff does not account for, 
+        #   manually calc gradient at day 1 by photoperiod(t = 365) - photoperiod(t = 1) 
+        photoperiod_df.at[1, 'photoperiod_gradient'] = photoperiod_df.at[1, 'photoperiod'] - photoperiod_df.at[365, 'photoperiod'] 
+        
+        # Merge the calc'd photoperiods with the dataset 
+        X['time'] = X.index
+        X = X.merge(photoperiod_df, left_on = 'dayofyear', right_on = 'dayofyear').set_index('time')
         return X
 
 
@@ -157,9 +152,12 @@ class preprocess_fc_time_series(BaseEstimator, TransformerMixin):
         
         X = X.copy()
         X = X.sort_values(by = 'time')
+        X['time'] = pd.to_datetime(X['time'].dt.strftime('%Y-%m-%d')) # change format to year-month-day because hour of day is not very relevant for this program
         X.set_index('time', inplace=True)
-        X = X.resample('16D').mean() # resample into a regular time interval of 16
-        X = X.interpolate(method = 'linear') # interpolate missing data 
+        
+        # Update: 10-07-2024, no more resampling + interpolation 
+        #X = X.resample('16D').mean() # resample into a regular time interval of 16
+        #X = X.interpolate(method = 'linear') # interpolate missing data 
         
         # Now apply Savitzky–Golay filter on the fractions, (ideally) smoothing out the noise 
         fractions = ['pv', 'npv', 'bs']
@@ -173,70 +171,44 @@ class preprocess_fc_time_series(BaseEstimator, TransformerMixin):
         X = X[X.index < '01-01-2023']
         return X
     
-class preprocess_climate_time_series(BaseEstimator, TransformerMixin):
-        
-    def fit(self, X, y=None):
-        return self 
-    
-    def transform(self, X, y=None):
-        X = X.copy()
-        X = X.sort_values('time')
-        X.set_index('time', inplace=True)
-        
-        return X
 
 class mean_annual_variables_adder(BaseEstimator, TransformerMixin):
+    
+    def __init__(self, climate_data):
+        self.climate_data = climate_data.copy() 
         
     def fit(self, X, y=None):
         return self 
     
     def transform(self, X, y=None):
         
-        X = X.copy()
-  
+        self.climate_data.set_index('time', inplace = True)
         # calculate mean annual temperature 
-        mean_temperature = (X['tmin'] + X['tmax'])/2
-        MAT = mean_temperature.mean() # simply the mean temperature of all records 
-        print(MAT)
-        # calculate mean annual precip 
-        precip_yearly_total = X[['year','precip']].groupby('year').sum()
-        MAP = precip_yearly_total['precip'].mean()
-        # take aggregated sum and then take the mean of those sums
-        print(MAP)
+        # take mean per year > calculate mean for all those years 
+        mean_temperature = (self.climate_data['tmin'] + self.climate_data['tmax'])/2
+        mean_temperature_yearly_mean = mean_temperature.groupby(self.climate_data.index.year).mean()
+        #print(mean_temperature_yearly_mean)
+        MAT = mean_temperature_yearly_mean.mean()
         
+        # calculate mean annual precip 
+        # take sum per year > calculate mean for all those years 
+        precip_yearly_total = self.climate_data['precip'].groupby(self.climate_data.index.year).sum()
+        #print(precip_yearly_total)
+        MAP = precip_yearly_total.mean()
+        print(f'MAT: {MAT}, MAP: {MAP}')
+    
         # Do assignment 
+        X = X.copy()
         X['MAT'] = MAT
         X['MAP'] = MAP 
         return X
 
 
-class climate_time_series_downsample(BaseEstimator, TransformerMixin):
-    
-    def __init__(self, start_time, resample_method):
-        self.start_time = start_time 
-        self.resample_method = resample_method.lower()
-        
-    def fit(self, X, y=None):
-        return self 
-    
-    def transform(self, X, y=None):
-        X = X.copy()
-        X = X[X.index >= self.start_time]
-        
-        if self.resample_method == 'sum':
-            X = X.resample('16D').sum()
-        elif self.resample_method == 'mean':
-            X = X.resample('16D').mean()
-        else:
-            print(f'Warning: Resample method {self.resample_method}')
-        
-        return X
-    
-    
 def pages_variables_constructor(X, climate_var, ts_all, variable_columns, aggregate_type = 'sum'):
     
     X = X.copy()
     X = X.reindex(axis = 1, labels = X.columns.tolist() + variable_columns).copy()
+    #print(X)
     
     for input_date in range(len(X)):
         # Get associated index in daily climate_var data 
@@ -276,18 +248,15 @@ def pages_variables_constructor(X, climate_var, ts_all, variable_columns, aggreg
     
 class pages_precip_variables_adder(BaseEstimator, TransformerMixin):
     
-    def __init__(self, site_location_name):
-        self.site_location_name = site_location_name
+    def __init__(self, climate_data):
+        self.climate_data = climate_data.copy()
     
     def fit(self, X, y=None):
         return self
     
     def transform(self, X, y=None):
         X = X.copy()
-        precip = pd.read_csv(f'../DATASETS/Climate_Gridded/precip/{self.site_location_name}_1980_2022.csv', parse_dates = ['time'], usecols = ['precip','time']).copy()
-        precip = precip.sort_values('time')
-        precip_col_names = ['precip_30', 'precip_90', 'precip_180', 'precip_365', 'precip_730', 'precip_1095', 'precip_1460'] # set columns of precip
-        
+    
         # Specify time ranges: 
         ts_1 = [1, 30]
         ts_2 = [31, 90]
@@ -298,32 +267,24 @@ class pages_precip_variables_adder(BaseEstimator, TransformerMixin):
         ts_7 = [1096, 1460]
         ts_all = [ts_1, ts_2, ts_3, ts_4, ts_5, ts_6, ts_7]
         
-        X = pages_variables_constructor(X, precip, ts_all, precip_col_names)
+        # Add precp cols 
+        precip_col_names = ['precip_30', 'precip_90', 'precip_180', 'precip_365', 'precip_730', 'precip_1095', 'precip_1460'] # set columns of precip
+        X = pages_variables_constructor(X, self.climate_data[['time', 'precip']], ts_all, precip_col_names)
         
         return X
 
 
 class pages_VPD_variables_adder(BaseEstimator, TransformerMixin):
     
-    def __init__(self, site_location_name):
-        self.site_location_name = site_location_name
+    def __init__(self, climate_data):
+        self.climate_data = climate_data.copy()
+
     
     def fit(self, X, y=None):
         return self
     
     def transform(self, X, y=None):
         X = X.copy()
-        
-        file_name = f'{self.site_location_name}_1980_2022.csv'
-        tmin = pd.read_csv(f'../DATASETS/Climate_Gridded/tmin/{file_name}', usecols = ['tmin', 'time'], parse_dates = ['time']).copy()
-        tmax = pd.read_csv(f'../DATASETS/Climate_Gridded/tmax/{file_name}', usecols = ['tmax', 'time'], parse_dates = ['time']).copy()
-        vapourpres_h09 = pd.read_csv(f'../DATASETS/Climate_Gridded/vapourpres_h09/{file_name}', usecols = ['vapourpres_h09', 'time'], parse_dates = ['time']).copy()
-        vapourpres_h09['vapourpres_h09'] = vapourpres_h09['vapourpres_h09']/10 # divide by 10 to get kPa
-        vapourpres_h15 = pd.read_csv(f'../DATASETS/Climate_Gridded/vapourpres_h15/{file_name}', usecols = ['vapourpres_h15', 'time'], parse_dates = ['time']).copy()
-        vapourpres_h15['vapourpres_h15'] = vapourpres_h15['vapourpres_h15']/10 # divide by 10 to get kPa
-        climate_data = tmin.copy().merge(tmax, left_on = 'time', right_on = 'time').merge(vapourpres_h09, left_on = 'time', right_on = 'time').\
-            merge(vapourpres_h15, left_on = 'time', right_on = 'time')
-        climate_data = climate_data.sort_values('time')
         
         # Calculate VPD
         # The coefficients
@@ -332,19 +293,19 @@ class pages_VPD_variables_adder(BaseEstimator, TransformerMixin):
         c = 243.12
         
         Esat_9am = a*np.exp(
-            (b * climate_data['tmin'])/
-            (c + climate_data['tmin'])
+            (b * self.climate_data['tmin'])/
+            (c + self.climate_data['tmin'])
         )/1000
-        VPD_9am = Esat_9am - climate_data['vapourpres_h09']
+        VPD_9am = Esat_9am - self.climate_data['vapourpres_h09']/10 # Divide by 10 to get kPA units
         
         Esat_3pm = a*np.exp(
-            (b * climate_data['tmax'])/
-            (c + climate_data['tmax'])
+            (b * self.climate_data['tmax'])/
+            (c + self.climate_data['tmax'])
         )/1000
-        VPD_3pm = Esat_3pm - climate_data['vapourpres_h15']
+        VPD_3pm = Esat_3pm - self.climate_data['vapourpres_h15']/10 # Divide by 10 to get kPA units
         
-        climate_data['VPD'] = (VPD_9am + VPD_3pm)/2
-        VPD = climate_data[['time', 'VPD']]
+        self.climate_data['VPD'] = (VPD_9am + VPD_3pm)/2
+        VPD = self.climate_data[['time', 'VPD']]
         VPD_col_names = ['VPD_lag','VPD_7', 'VPD_14', 'VPD_30']
         
         # Specify time ranges: 
@@ -357,42 +318,33 @@ class pages_VPD_variables_adder(BaseEstimator, TransformerMixin):
         
         return X
     
+    
 class pages_temp_variables_adder(BaseEstimator, TransformerMixin):
-    def __init__(self, site_location_name):
-        self.site_location_name = site_location_name
+    
+    def __init__(self, climate_data):
+        self.climate_data = climate_data.copy()
         
     def fit(self, X, y=None):
         return self
         
     def transform(self, X, y=None):
-            X = X.copy()
+        X = X.copy()
             
-            file_name = f'{self.site_location_name}_1980_2022.csv' # now include new data
+        # Specify time ranges: 
+        ts_lag = [1,1] # t-1
+        ts_1 = [2, 7]
+        ts_2 = [8, 14]
+        ts_3 = [15, 30]
+        ts_all = [ts_lag, ts_1, ts_2, ts_3]
             
-            # Get temperature  data 
-            tmin = pd.read_csv(f'../DATASETS/Climate_Gridded/tmin/{file_name}', usecols = ['tmin', 'time'], parse_dates = ['time']).copy()
-            tmax = pd.read_csv(f'../DATASETS/Climate_Gridded/tmax/{file_name}', usecols = ['tmax', 'time'], parse_dates = ['time']).copy()
-
-    
-            climate_data = tmin.copy().merge(tmax, left_on = 'time', right_on = 'time')
-            climate_data = climate_data.sort_values('time')
- 
-            temp_col_names = ['tmax_lag','tmax_7', 'tmax_14', 'tmax_30']
+        # Construct Page's variables
+        temp_col_names = ['tmax_lag','tmax_7', 'tmax_14', 'tmax_30']
+        X = pages_variables_constructor(X, self.climate_data[['time','tmax']], ts_all, temp_col_names) # for tmax
             
-            # Specify time ranges: 
-            ts_lag = [1,1] # t-1
-            ts_1 = [2, 7]
-            ts_2 = [8, 14]
-            ts_3 = [15, 30]
-            ts_all = [ts_lag, ts_1, ts_2, ts_3]
-            
-            # Construct Page's variables
-            X = pages_variables_constructor(X, tmax, ts_all, temp_col_names) # for tmax
-            
-            temp_col_names = ['tmin_lag','tmin_7', 'tmin_14', 'tmin_30']
-            X = pages_variables_constructor(X, climate_data[['time','tmin']], ts_all, temp_col_names) # for tmean
+        temp_col_names = ['tmin_lag','tmin_7', 'tmin_14', 'tmin_30']
+        X = pages_variables_constructor(X, self.climate_data[['time','tmin']], ts_all, temp_col_names) # for tmin
                     
-            return X
+        return X
         
 
 class historical_burn_date_preprocess(BaseEstimator, TransformerMixin):
@@ -433,7 +385,7 @@ class historical_burn_date_preprocess(BaseEstimator, TransformerMixin):
 class historical_burn_date_attribute_adder(BaseEstimator, TransformerMixin):
     
     def __init__(self, historical_fire_ds, verbose = False):
-        self.historical_fire_ds = historical_fire_ds
+        self.historical_fire_ds = historical_fire_ds.copy()
         self.verbose = verbose
         
     def fit(self, X, y=None):
@@ -470,7 +422,7 @@ class historical_burn_date_index_attribute_adder(BaseEstimator, TransformerMixin
     
     def __init__(self, historical_fire_ds, verbose = False, time_range = 3):
         self.verbose = verbose
-        self.historical_fire_ds = historical_fire_ds
+        self.historical_fire_ds = historical_fire_ds.copy()
         
         self.time_range = time_range
  
@@ -533,7 +485,7 @@ class historical_burn_date_index_attribute_adder(BaseEstimator, TransformerMixin
             b = b_df['pv_filter'].min()
         
         fire_severity = a - b
-        print(f'{a} and {b}')
+        #print(f'{a} and {b}')
         
         if self.verbose: print(f"at {v['ignition_d']}:{fire_severity}")
         
@@ -553,7 +505,7 @@ class historical_burn_date_index_attribute_adder(BaseEstimator, TransformerMixin
 class growth_forms_adder(BaseEstimator, TransformerMixin):
     
     def __init__(self, site_dom_veg, growth_forms_selector):
-        self.site_dom_veg = site_dom_veg # select only the site's plant growth forms 
+        self.site_dom_veg = site_dom_veg.copy() # select only the site's plant growth forms 
         self.growth_forms_selector = growth_forms_selector
     
     def fit(self, X, y=None):
@@ -573,7 +525,7 @@ class growth_forms_adder(BaseEstimator, TransformerMixin):
 class SLGA_soil_atributes_adder(BaseEstimator, TransformerMixin):
     
     def __init__(self, site_SLGA, SLGA_selector):
-        self.site_SLGA = site_SLGA # select only the site's plant growth forms 
+        self.site_SLGA = site_SLGA.copy() # select only the site's plant growth forms 
         self.SLGA_selector = SLGA_selector
     
     def fit(self, X, y=None):
@@ -593,3 +545,70 @@ class SLGA_soil_atributes_adder(BaseEstimator, TransformerMixin):
 
 
 # =============================================================================
+
+# Some depreciated Classes 
+
+
+# No Need to downsample if we are no longer resampling! (10-07-2024)
+# =============================================================================
+# class climate_time_series_downsample(BaseEstimator, TransformerMixin):
+#     
+#     def __init__(self, start_time, resample_method, resample_date_list):
+#         self.start_time = start_time 
+#         self.resample_method = resample_method.lower()
+#         self.resample_date_list = resample_date_list
+#         
+#     def fit(self, X, y=None):
+#         return self 
+#     
+#     def transform(self, X, y=None):
+#         X = X.copy()
+#         X = X[X.index >= self.start_time]
+#         
+#         if self.resample_method == 'sum':
+#             X = X.resample('16D').sum()
+#         elif self.resample_method == 'mean':
+#             X = X.resample('16D').mean()
+#         else:
+#             print(f'Warning: Resample method {self.resample_method}')
+#         
+#         return X
+# =============================================================================
+    
+
+# Not really needed anymore (10-07-2024)
+# =============================================================================
+# 
+# ## Used to calculate VPD 
+# # Based on documentation from 'bigleaf' R package
+# class calc_VPD(BaseEstimator, TransformerMixin):
+#         
+#     def fit(self, X, y=None):
+#         return self 
+#     
+#     def transform(self, X, y=None):
+#         X = X.copy()
+#         
+#         a, b, c = 611.2, 17.62, 243.12
+#         
+#         Esat_9am = a*np.exp(
+#             (b * X['tmin'])/
+#             (c + X['tmin'])
+#             )/1000
+#         
+#         Esat_3pm = a*np.exp(
+#             (b * X['tmax'])/
+#             (c + X['tmax'])
+#             )/1000
+#         
+#         VPD_9am = Esat_9am - X['vapourpres_h09']/10 # convert to kPa
+#         VPD_3pm = Esat_3pm - X['vapourpres_h15']/10 # convert to kPa
+#         VPD = np.maximum(0, (VPD_9am + VPD_3pm)/2) # enforce constraint that VPD >= 0 
+#         X['VPD'] = VPD
+#         
+#         return X 
+#  
+# =============================================================================
+    
+
+

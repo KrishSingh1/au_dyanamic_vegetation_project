@@ -207,6 +207,12 @@ grass_sites = ['NSABHC0023', 'NSAMDD0001', 'NSAMDD0014', 'NTADAC0001',
        'WAAAVW0006', 'WAACOO0030', 'WAAGAS0002', 'WAANOK0006',
        'WAAPIL0003', 'WAAPIL0024', 'WAAPIL0031']
 
+
+smaller_subset = pd.read_csv('../DATASETS/Sites_Subset_20231010/ausplots_site_info/sites_subset.csv').copy()
+bigger_subset = pd.read_csv('../DATASETS/Sites_Bigger_Subset_20240124/ausplots_bigger_subset.csv').copy()
+
+smaller_list = np.unique(list(np.unique(smaller_subset.site_location_name.values)))
+
 sites_list = tree_sites
 
 #%% Model the dataset
@@ -308,7 +314,7 @@ if after_2015_test:
 
 period = 161 # approx. 20% 
 for i, site_location_name in enumerate(sites_list):
-    site_merged = pd.read_csv(f'Input_DataSet_{site_location_name}.csv', parse_dates = ['time']).copy().dropna(subset = FEATURES) # read and drop na
+    site_merged = pd.read_csv(f'../DATASETS/DEA_FC_PROCESSED/MODELLED_PREPROCESSED/Input_DataSet_{site_location_name}.csv', parse_dates = ['time']).copy().dropna(subset = FEATURES) # read and drop na
     site_merged.sort_values('time', inplace = True)
     site_merged.reset_index(inplace = True)
 
@@ -372,12 +378,12 @@ print(mean_squared_error(reg.predict(training_merged[FEATURES]), training_merged
 print(mean_squared_error(reg.predict(test_merged[FEATURES]), test_merged[TARGET]))
 print(mean_squared_error(reg.predict(test_merged[FEATURES]), test_merged[TARGET], multioutput = 'raw_values'))
 
-historical_fire_ds = gpd.read_file('../DATASETS/AusPlots_Historical_BurnDates.geojson', parse_dates = ['igntn_d']) # for fire dates
+historical_fire_ds = pd.read_csv('../DATASETS/AusPlotsBurnData/Combined_Data/AusPlots_Combined_Fire_Dataset.csv', parse_dates = ['ignition_d']) # Fire Dataset
 
 reg.fit(X = training_merged[FEATURES], y = training_merged[TARGET])
 
 for site in sites_list:
-    fig, ax = plt.subplots(2)
+    #fig, ax = plt.subplots(2)
 
     site_data = datasets[site].set_index('time').dropna(subset = FEATURES)
     
