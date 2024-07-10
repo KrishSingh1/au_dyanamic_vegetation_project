@@ -19,15 +19,13 @@ get_preprocessed_dea_fc <- function(query,
                                     directory = 'C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtraction/BACKUP_DATA/csv_files',
                                     site.corners.data){
   dea.fc <- tryCatch({
-    temp <- fread(paste0(directory, "/", query, ".csv")) # use data.table for faster processing
-    temp <- trim_to_nearest_coord(site.corners.data, temp, query) # trim spatially
-    test.dea.trimed <- trim_to_nearest_coord(site.corners.data = site.corners.data.cleaned,
-                                             dea.fc.i = temp,
+    temp_read <- fread(paste0(directory, "/", query, ".csv")) # use data.table for faster processing
+    test.dea.trimed <- trim_to_nearest_coord(site.corners.data = site.corners.data,
+                                             dea.fc.i = temp_read,
                                              query = query, buffer = 20)
+    write.csv(test.dea.trimed, paste0('../DATASETS/DEA_FC_PROCESSED/SPATIAL/', query, '.csv')) # Save Separately for debugging purposes
     
-    
-    temp <- subset(temp, subset = (ue <= 25.5)) # filter based on unmixing error (25.5)
-    write.csv(temp, paste0('../DATASETS/DEA_FC_PROCESSED/SPATIAL/', query, '.csv')) # Save Separately for debugging purposes
+    temp <- subset(test.dea.trimed, subset = (ue <= 25.5)) # filter based on unmixing error (25.5)
     temp <- aggregate(temp[,-1], 
                           by = list(temp$time), FUN = mean, na.rm = T) # aggregate
     colnames(temp)[1] = 'time'
@@ -68,7 +66,7 @@ trim_to_nearest_coord <- function(site.corners.data, dea.fc.i, query, buffer = 3
     
     trimmed <- trimmed %>%
       sf_to_df(fill = T)
-    trimmed <- trimmed[, c('time', 'pv', 'npv', 'bs', 'x', 'y', 'spatial_ref')]
+    trimmed <- trimmed[, c('time', 'pv', 'npv', 'bs', 'ue', 'x', 'y', 'spatial_ref')]
     
   return(trimmed)
 }
