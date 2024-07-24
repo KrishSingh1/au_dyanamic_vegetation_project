@@ -129,7 +129,7 @@ class daylength_attributes_adder(BaseEstimator, TransformerMixin):
         photoperiod_df['dayofyear'] = dayofyear # so it can match with dataset 'X'
         photoperiod_df['photoperiod_gradient'] = photoperiod_df['photoperiod'].diff()
 
-        # Note: photoperiod is cyclic in nature, which diff does not account for, 
+        # Note: photoperiod is cyclic in nature, which .diff does not account for, 
         #   manually calc gradient at day 1 by photoperiod(t = 365) - photoperiod(t = 1) 
         photoperiod_df.at[1, 'photoperiod_gradient'] = photoperiod_df.at[1, 'photoperiod'] - photoperiod_df.at[365, 'photoperiod'] 
         
@@ -182,7 +182,6 @@ class mean_annual_variables_adder(BaseEstimator, TransformerMixin):
     
     def transform(self, X, y=None):
         
-        self.climate_data.set_index('time', inplace = True)
         # calculate mean annual temperature 
         # take mean per year > calculate mean for all those years 
         mean_temperature = (self.climate_data['tmin'] + self.climate_data['tmax'])/2
@@ -204,52 +203,127 @@ class mean_annual_variables_adder(BaseEstimator, TransformerMixin):
         return X
 
 
-def pages_variables_constructor(X, climate_var, ts_all, variable_columns, aggregate_type = 'sum'):
+# =============================================================================
+# def pages_variables_constructor(X, climate_var, ts_all, variable_columns, aggregate_type = 'sum'):
+#     
+#     X = X.copy()
+#     X = X.reindex(axis = 1, labels = X.columns.tolist() + variable_columns).copy()
+#     #print(X)
+#     
+#     for input_date in range(len(X)):
+#         # Get associated index in daily climate_var data 
+#         climate_var_index = climate_var.index[climate_var.time == X.index[input_date]]
+#         climate_var_vars = [] 
+#     
+#         if climate_var_index.empty: # when there are no longer a match (meaning that the FC data overextends the climate_var), break
+#             break
+#     
+#         for ts in ts_all:
+#     
+#             upper = (climate_var_index - ts[1])[0]
+#             lower = (climate_var_index - ts[0] + 1)[0]
+#     
+#             if upper >= 0: # check if the upperbounds goes above allowable index 
+#     
+#                 temp = climate_var.iloc[upper:lower] # grab the range 
+#                 
+#                 
+#                 if aggregate_type == 'sum':
+#                     temp_agg = temp[temp.select_dtypes(include = ["float64"]).columns.tolist()[0]].sum() # calc sum
+#                 elif aggregate_type == 'mean':
+#                     temp_agg = temp[temp.select_dtypes(include = ["float64"]).columns.tolist()[0]].mean()
+#                 
+#                 # A check for the first time point 
+#                 if input_date == 0:
+#                     print(ts)
+#                     print(temp)
+#                     print(len(temp))
+#                     print(temp_agg)
+#                 
+#                 #print(temp)
+#                 #print(temp_sum)
+#             else: # if not in allowable index, set to na 
+#                 temp_agg = pd.NA
+#             #print(temp_sum)
+#             climate_var_vars.append(temp_agg)
+#             
+#             # append climate_var column wise for a particular row 
+#         for i in range(len(variable_columns)):
+#             X.loc[X.index[input_date], variable_columns[i]]= climate_var_vars[i]
+#             
+#     return X
+# 
+# =============================================================================
+
+# A very fast alternative:
+def pages_variables_constructor(X, climate_var, ts_all, variable_columns, print_check = False):
     
-    X = X.copy()
-    X = X.reindex(axis = 1, labels = X.columns.tolist() + variable_columns).copy()
-    #print(X)
+    climate_lag_sums_results = []    
+    climate_var_numpy = climate_var[climate_var.columns[0]].values # convert to numpy to speed up index operations
+    start_climate_index = np.where(climate_var.index == climate_var.index[0])[0][0]
+    climate_var['Index'] = list(range(len(climate_var.index)))
     
-    for input_date in range(len(X)):
+    X_indices = X[['pv']].merge(climate_var['Index'], left_index = True, right_index = True)['Index'].values
+    
+    #print(f'Index range {X_indices[0]}:{X_indices[-1]}')
+    for climate_var_index in X_indices:
         # Get associated index in daily climate_var data 
-        climate_var_index = climate_var.index[climate_var.time == X.index[input_date]]
+        #print(climate_var_index)
+        
         climate_var_vars = [] 
     
-        if climate_var_index.empty: # when there are no longer a match (meaning that the FC data overextends the climate_var), break
-            break
-    
         for ts in ts_all:
-    
-            upper = (climate_var_index - ts[1])[0]
-            lower = (climate_var_index - ts[0] + 1)[0]
-    
-            if upper >= 0: # check if the upperbounds goes above allowable index 
-    
-                #print(ts)
-                temp = climate_var.iloc[upper:lower] # grab the range 
+            
+            # Means the upper end the interval; more in the past 
+            upper_index = climate_var_index - ts[1] 
+            lower_index = climate_var_index - ts[0] + 1
+            
+            if upper_index >= start_climate_index: # check if we have a timeline goes above the avaliable climate data
                 
-                if aggregate_type == 'sum':
-                    temp_agg = temp[temp.select_dtypes(include = ["float64"]).columns.tolist()[0]].sum() # calc sum
-                elif aggregate_type == 'mean':
-                    temp_agg = temp[temp.select_dtypes(include = ["float64"]).columns.tolist()[0]].mean()
+                #print(f'{upper_index}:{lower_index}')
+                temp = climate_var_numpy[upper_index:lower_index] # grab range via numpy array because its faster than pandas iloc, loc methods 
+                temp_agg = np.sum(temp) # calc sum
+  
+                
+                # A check for the start, middle, and end time points for validation
+
+                if (print_check == True) & (climate_var_index == X_indices[0] or 
+                                            climate_var_index == X_indices[len(X_indices)//2] or
+                                            climate_var_index == X_indices[-1]):
+                    
+                    # Remap the range taken into their respective dates for validation
+                    test_range = climate_var.index[upper_index:lower_index]
+                    print('Passed:')
+                    print(f'From t({ts[0]}) to t({ts[1]})')
+                    print(f'From Index({lower_index}) to Index({upper_index})')
+                    print(f'From t({test_range[0]}) to t({test_range[-1]})')
+                    print(test_range)
+                    print(temp)
+                    print(len(temp))
+                    print(temp_agg)
+                
                 #print(temp)
                 #print(temp_sum)
             else: # if not in allowable index, set to na 
-                temp_agg = pd.NA
+                temp_agg = np.nan
             #print(temp_sum)
             climate_var_vars.append(temp_agg)
             
             # append climate_var column wise for a particular row 
-        for i in range(len(variable_columns)):
-            X.loc[X.index[input_date], variable_columns[i]]= climate_var_vars[i]
-            
-    return X
+        climate_lag_sums_results.append(climate_var_vars)
     
+    climate_lag_sums_results = np.array(climate_lag_sums_results)
+    for i in range(len(variable_columns)):
+        X[variable_columns[i]] = climate_lag_sums_results[:,i]
+             
+    return X
+
     
 class pages_precip_variables_adder(BaseEstimator, TransformerMixin):
     
-    def __init__(self, climate_data):
+    def __init__(self, climate_data, print_check):
         self.climate_data = climate_data.copy()
+        self.print_check = print_check
     
     def fit(self, X, y=None):
         return self
@@ -269,16 +343,16 @@ class pages_precip_variables_adder(BaseEstimator, TransformerMixin):
         
         # Add precp cols 
         precip_col_names = ['precip_30', 'precip_90', 'precip_180', 'precip_365', 'precip_730', 'precip_1095', 'precip_1460'] # set columns of precip
-        X = pages_variables_constructor(X, self.climate_data[['time', 'precip']], ts_all, precip_col_names)
+        X = pages_variables_constructor(X, self.climate_data[['precip']], ts_all, precip_col_names, self.print_check)
         
         return X
 
 
 class pages_VPD_variables_adder(BaseEstimator, TransformerMixin):
     
-    def __init__(self, climate_data):
+    def __init__(self, climate_data, print_check):
         self.climate_data = climate_data.copy()
-
+        self.print_check = print_check
     
     def fit(self, X, y=None):
         return self
@@ -305,7 +379,7 @@ class pages_VPD_variables_adder(BaseEstimator, TransformerMixin):
         VPD_3pm = Esat_3pm - self.climate_data['vapourpres_h15']/10 # Divide by 10 to get kPA units
         
         self.climate_data['VPD'] = (VPD_9am + VPD_3pm)/2
-        VPD = self.climate_data[['time', 'VPD']]
+        VPD = self.climate_data[['VPD']]
         VPD_col_names = ['VPD_lag','VPD_7', 'VPD_14', 'VPD_30']
         
         # Specify time ranges: 
@@ -314,15 +388,16 @@ class pages_VPD_variables_adder(BaseEstimator, TransformerMixin):
         ts_2 = [8, 14]
         ts_3 = [15, 30]
         ts_all = [ts_lag, ts_1, ts_2, ts_3]
-        X = pages_variables_constructor(X, VPD, ts_all, VPD_col_names)
+        X = pages_variables_constructor(X, VPD, ts_all, VPD_col_names, self.print_check)
         
         return X
     
     
 class pages_temp_variables_adder(BaseEstimator, TransformerMixin):
     
-    def __init__(self, climate_data):
+    def __init__(self, climate_data, print_check):
         self.climate_data = climate_data.copy()
+        self.print_check = print_check
         
     def fit(self, X, y=None):
         return self
@@ -339,10 +414,10 @@ class pages_temp_variables_adder(BaseEstimator, TransformerMixin):
             
         # Construct Page's variables
         temp_col_names = ['tmax_lag','tmax_7', 'tmax_14', 'tmax_30']
-        X = pages_variables_constructor(X, self.climate_data[['time','tmax']], ts_all, temp_col_names) # for tmax
+        X = pages_variables_constructor(X, self.climate_data[['tmax']], ts_all, temp_col_names, self.print_check) # for tmax
             
         temp_col_names = ['tmin_lag','tmin_7', 'tmin_14', 'tmin_30']
-        X = pages_variables_constructor(X, self.climate_data[['time','tmin']], ts_all, temp_col_names) # for tmin
+        X = pages_variables_constructor(X, self.climate_data[['tmin']], ts_all, temp_col_names, self.print_check) # for tmin
                     
         return X
         

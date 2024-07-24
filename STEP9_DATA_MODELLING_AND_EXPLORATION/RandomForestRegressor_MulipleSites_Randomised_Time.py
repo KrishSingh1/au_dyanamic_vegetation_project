@@ -12,6 +12,11 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.model_selection import cross_validate
 import graphviz 
+import os 
+
+# To Create a Report from: 
+from docx import Document
+from docx.shared import Inches
 
 import sys
 sys.path.append('/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/STEP9_DATA_MODELLING_AND_EXPLORATION')
@@ -28,10 +33,12 @@ from skopt import BayesSearchCV
 from sklearn.model_selection import KFold
 from sklearn.model_selection import GroupKFold
 
+import alibi
+from alibi.explainers import ALE, plot_ale
 
 #%% Functions 
 
-def plotPredictions(actual, prediction, TARGET, msg = '', split = '', fire_split = ''):
+def plotPredictions(actual, prediction, TARGET, directory_plot_output, msg = '', split = '', fire_split = ''):
     fig, ax = plt.subplots(nrows = 3, figsize = (15,10))
     fig.suptitle(msg, fontsize=30)
     for i,v in enumerate(TARGET):
@@ -45,425 +52,334 @@ def plotPredictions(actual, prediction, TARGET, msg = '', split = '', fire_split
         if fire_split:
             for f in fire_split:
                 ax[i].axvline(f, color='red', ls='--')
-        
-
+                
+    plt.savefig(fname = directory_plot_output)
+    plt.close()
 #%% Main 
 
-# WAAPIL0003
-# NSABHC0023 [issue with fire history]
-# TCATCH0006 [Issue with fire history]
-# WAAGAS0002 [Issue with fire history]
-# NSAMDD0014 [Issue with fire history]
-# NTAGFU0021 [Issue with fire history]
-# NSANSS0001 [Issue with fire history]
-# SATSTP0005 [Issue with fie history]
-# QDASSD0015 [Issue  with fire history]
-# NTAFIN0002 []
-# NSANAN0002
-# QDAEIU0010
-
-# sites_list = ['WAAPIL0003', 'NSABHC0023', 'TCATCH0006',
-#                 'WAAGAS0002', 'NSAMDD0014', 'NTAGFU0021', 
-#                 'NSANSS0001', 'SATSTP0005', 'QDASSD0015', 
-#                 'NTAFIN0002', 'NSANAN0002', 'QDAEIU0010'] # smalller subset 
-
-# sites_list = np.unique(['NSABBS0001',
-#   'NSABHC0011',
-#   'NSACOP0001',
-#   'NSAMDD0001',
-#   'NSAMDD0011',
-#   'NSAMDD0020',
-#   'NSAMDD0028',
-#   'NSAMUL0003',
-#   'NSANAN0001',
-#   'NSANAN0002',
-#   'NSANSS0002',
-#   'NSTSYB0003',
-#   'NSTSYB0005',
-#   'NSTSYB0006',
-#   'NSABHC0023',
-#   'NSAMDD0014',
-#   'NSANSS0001',
-#   'NSANAN0002'])# bigger subset - NSW
-
-# sites_list = np.unique(['NTADAC0001',
-#   'NTADMR0001',
-#   'NTAFIN0003',
-#   'NTAFIN0006',
-#   'NTAFIN0015',
-#   'NTAFIN0018',
-#   'NTAGFU0014',
-#   'NTAGFU0020',
-#   'NTAGFU0030',
-#   'NTAGFU0034',
-#   'NTASTU0004',
-#   'NTTDMR0003',
-#   'NTAGFU0021',
-#   'NTAFIN0002']) # NT
-
-sites_list = np.unique(['QDABBN0002',
-  'QDABBS0002',
-  'QDABBS0010',
-  'QDACHC0003',
-  'QDACYP0006',
-  'QDACYP0018',
-  'QDACYP0020',
-  'QDACYP0022',
-  'QDAEIU0005',
-  'QDAGUP0006',
-  'QDAGUP0009',
-  'QDAGUP0019',
-  'QDAGUP0021',
-  'QDAMGD0002',
-  'QDAMGD0023',
-  'QDAMGD0024',
-  'QDAMGD0025',
-  'QDAMUL0002',
-  'QDAMUL0003',
-  'QDASEQ0004',
-  'QDASSD0015', 
-  'QDAEIU0010']) # QD 
-
-# sites_list = np.unique(['WAAAVW0006',
-#   'WAACAR0002',
-#   'WAACAR0004',
-#   'WAACOO0007',
-#   'WAACOO0016',
-#   'WAACOO0024',
-#   'WAACOO0026',
-#   'WAACOO0027',
-#   'WAACOO0029',
-#   'WAACOO0030',
-#   'WAAGAS0001',
-#   'WAAGES0001',
-#   'WAALSD0002',
-#   'WAANOK0006',
-#   'WAANUL0003',
-#   'WAAPIL0010',
-#   'WAAPIL0023',
-#   'WAAPIL0024',
-#   'WAAPIL0031',
-#   'WAAPIL0003',
-#   'WAAGAS0002'])
+super_group_list = ['Desert Chenopod', 'Desert Forb', 'Desert Hummock.grass',
+       'Desert Shrub', 'Desert Tree.Palm', 'Desert Tussock.grass',
+       'Temp/Med Shrub', 'Temp/Med Tree.Palm', 'Temp/Med Tussock.grass',
+       'Tropical/Savanna Tree.Palm', 'Tropical/Savanna Tussock.grass']
 
 
-# sites_list = np.unique(['SAAEYB0021',
-#   'SAAEYB0028',
-#   'SAAEYB0029',
-#   'SAAFLB0003',
-#   'SAAFLB0005',
-#   'SAAFLB0008',
-#   'SAAGAW0008',
-#   'SAAKAN0009',
-#   'SAASTP0023',
-#   'SAASTP0033',
-#   'SAASTP0034',
-#   'SASMDD0005',
-#   'SASMDD0009',
-#   'SASMDD0014',
-#   'SATFLB0003',
-#   'SATFLB0019',
-#   'SATFLB0020',
-#   'SATFLB0022',
-#   'SATFLB0023',
-#   'SATSTP0005'])
-# Remove SAAEYB0001 as it does not have Soil data
-
-# sites_list = np.unique(['TCATCH0004', 'TCATNM0001', 'TCATNM0003', 'TCATCH0006'])
-
-# Development (after 2015 set)
-after_2015_sites = ['WAAPIL0003', 'NSABHC0023', 'TCATCH0006',
-                 'WAAGAS0002', 'NSAMDD0014', 'NTAGFU0021', 
-                 'NSANSS0001', 'SATSTP0005', 'QDASSD0015', 
-                 'NTAFIN0002', 'NSANAN0002', 'QDAEIU0010'] # smalller subset 
-
-
-tree_sites = ['NSABBS0001', 'NSACOP0001', 'NSAMDD0011', 'NSAMDD0020',
-       'NSAMUL0003', 'NSANAN0001', 'NSANAN0002', 'NSANSS0001',
-       'NSANSS0002', 'NSTSYB0003', 'NSTSYB0006', 'NTAFIN0003',
-       'NTAFIN0015', 'NTAGFU0030', 'NTAGFU0034', 'QDABBN0002',
-       'QDACHC0003', 'QDACYP0020', 'QDAGUP0006', 'QDAMGD0025',
-       'QDAMUL0002', 'QDAMUL0003', 'QDASEQ0004', 'SAAFLB0008',
-       'SATFLB0003', 'SATFLB0020', 'SATFLB0022', 'TCATCH0004',
-       'WAACAR0002', 'WAAGAS0001', 'WAAPIL0023']
-
-shrub_sites = ['NSABHC0011', 'NSAMDD0028', 'NSTSYB0005', 'NTAFIN0018',
-       'QDABBS0010', 'QDACYP0018', 'QDAGUP0021', 'SAAEYB0021',
-       'SAAEYB0028', 'SAAFLB0005', 'SAAGAW0008', 'SAAKAN0009',
-       'SAASTP0023', 'SAASTP0033', 'SAASTP0034', 'SASMDD0009',
-       'SASMDD0014', 'SATFLB0023', 'WAACAR0004', 'WAACOO0007',
-       'WAACOO0016', 'WAACOO0024', 'WAACOO0026', 'WAACOO0027',
-       'WAACOO0029', 'WAAGES0001', 'WAALSD0002', 'WAANUL0003',
-       'WAAPIL0010']
-
-grass_sites = ['NSABHC0023', 'NSAMDD0001', 'NSAMDD0014', 'NTADAC0001',
-       'NTADMR0001', 'NTAFIN0002', 'NTAFIN0006', 'NTAGFU0014',
-       'NTAGFU0020', 'NTAGFU0021', 'NTASTU0004', 'NTTDMR0003',
-       'QDABBS0002', 'QDACYP0006', 'QDACYP0022', 'QDAEIU0005',
-       'QDAEIU0010', 'QDAGUP0009', 'QDAGUP0019', 'QDAMGD0002',
-       'QDAMGD0023', 'QDAMGD0024', 'QDASSD0015', 'SAAEYB0029',
-       'SAAFLB0003', 'SASMDD0005', 'SATFLB0019', 'SATSTP0005',
-       'TCATCH0006', 'TCATNM0001', 'TCATNM0003', 'VCAAUA0012',
-       'WAAAVW0006', 'WAACOO0030', 'WAAGAS0002', 'WAANOK0006',
-       'WAAPIL0003', 'WAAPIL0024', 'WAAPIL0031']
-
-
-smaller_subset = pd.read_csv('../DATASETS/Sites_Subset_20231010/ausplots_site_info/sites_subset.csv').copy()
-bigger_subset = pd.read_csv('../DATASETS/Sites_Bigger_Subset_20240124/ausplots_bigger_subset.csv').copy()
-
-smaller_list = np.unique(list(np.unique(smaller_subset.site_location_name.values)))
-
-sites_list = tree_sites
-
-#%% Model the dataset
-
-SEASONAL_FEATURES = ['photoperiod', 'photoperiod_gradient']
-
-PRECIP_FEATURES = ['precip_30', 'precip_90', 'precip_180', 
-                   'precip_365', 'precip_730', 'precip_1095', 
-                   'precip_1460', 'MAP']
-
-TEMP_FEATURES = ['tmax_lag', 'tmax_7', 'tmax_14', 
-                 'tmax_30', 'tmin_lag', 'tmin_7', 
-                 'tmin_14', 'tmin_30', 'MAT']
-
-VPD_FEATURES = ['VPD_lag','VPD_7', 'VPD_14',
-                'VPD_30']
-
-LAG_FEATURES = ['pv_lag', 'npv_lag', 'bs_lag']
-
-LAGGED_CHANGE_FEATURES = ['pv_change', 'npv_change', 'bs_change']
-
-FIRE_FEATURES = ['days_since_fire', 'fire_severity']
-
-CO2_FEATURES = ['CO2']
-
-VEGETATION_FEATURES = ['grass', 'shrub', 'tree']
-
-SOIL_FEATURES = ['SLGA_1','SLGA_2','SLGA_3', 'DER_000_999'] # the soil attributes to include
-
-FEATURES =  SEASONAL_FEATURES + PRECIP_FEATURES + TEMP_FEATURES + VPD_FEATURES + FIRE_FEATURES + CO2_FEATURES + VEGETATION_FEATURES + SOIL_FEATURES # final features 
-TARGET = ['pv_filter', 'npv_filter', 'bs_filter']
-scores = []
-
-
-#%% Create Train/test set 
-
-
-# Training and test set 
-datasets =  {} # entire set - for final evaluation 
-training_set = {} # training set 
-test_set = {} # test set 
-
-# 7 years is roughly 20% of the dataset (of n rows)
-# i.e. 161 data points 
-# A solution is take a random number of the lower bounds (l), such that l >= 0 and l < n - 161
-# The upper bounds (u) is simply u = l + 161 
-
-# Iterate through the site list 
-
-
-random.seed(20240514)
-
-choices = [0, 161, 322, 483, 644] # approx 20% splits 
-number_of_choices = len(sites_list)/len(choices)
-
-after_2015_test = False
-after_2015_list = list(set(sites_list).intersection(after_2015_sites)) # the sites where I want to predict 2015-2022
-
-duplicator = [round(np.floor(number_of_choices)) for i in range(len(choices))]
-print(duplicator)
-# If there are specific sites I want as having 2015 >, I need to force some order 
-if after_2015_test:
-    if duplicator[-1] < len(after_2015_list):
-        duplicator[-1] = len(after_2015_list)
-    #number_of_choices_adj = (len(sites_list) - len(after_2015_list))/(len(choices) - 1)
-    #for i in range(len(choices) - 1):
-     #   duplicator[i] = round(np.floor(number_of_choices_adj))
-
-print(duplicator)
-already_chosen = []
-print(number_of_choices)
-while sum(duplicator) != len(sites_list): # if there is an uneven split, keep adding 1 more until it sums to the avaliable number of datasets 
-    chosen_index = random.randrange(0,len(duplicator),1)
-    if chosen_index not in already_chosen:
-        duplicator[chosen_index] += 1
-        already_chosen.append(chosen_index)
-    #number_of_choices = len(sites_list)/sum(duplicator)
-
-print(duplicator)
-
-choice_adj = []
-for index ,i in enumerate(choices):
-    for j in range(duplicator[index]):
-        choice_adj.append(i)
+for s in ['Temp/Med Shrub', 'Temp/Med Tree.Palm', 'Temp/Med Tussock.grass',
+'Tropical/Savanna Tree.Palm', 'Tropical/Savanna Tussock.grass']:
+    print(s)
+    
+    selected_super_group = s
+    super_groups_classified = pd.read_csv('C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/DATASETS/AusPlots_Extracted_Data/Final/sites_super_classified.csv')
+    selected_super_group_list = super_groups_classified.loc[super_groups_classified['super_group'] == selected_super_group]['site_location_name']
+    
+    sites_list = selected_super_group_list
+    
+    
+    #%% Model the dataset
+    
+    SEASONAL_FEATURES = ['photoperiod', 'photoperiod_gradient']
+    
+    PRECIP_FEATURES = ['precip_30', 'precip_90', 'precip_180', 
+                       'precip_365', 'precip_730', 'precip_1095', 
+                       'precip_1460', 'MAP']
+    
+    TEMP_FEATURES = ['tmax_lag', 'tmax_7', 'tmax_14', 
+                     'tmax_30', 'tmin_lag', 'tmin_7', 
+                     'tmin_14', 'tmin_30', 'MAT']
+    
+    VPD_FEATURES = ['VPD_lag','VPD_7', 'VPD_14',
+                    'VPD_30']
+    
+    LAG_FEATURES = ['pv_lag', 'npv_lag', 'bs_lag']
+    
+    LAGGED_CHANGE_FEATURES = ['pv_change', 'npv_change', 'bs_change']
+    
+    FIRE_FEATURES = ['days_since_fire', 'fire_severity']
+    
+    CO2_FEATURES = ['CO2']
+    
+    VEGETATION_FEATURES = ['grass', 'shrub', 'tree']
+    
+    SOIL_FEATURES = ['SLGA_1','SLGA_2','SLGA_3', 'DER_000_999'] # the soil attributes to include
+    
+    FEATURES =  SEASONAL_FEATURES + PRECIP_FEATURES + TEMP_FEATURES + VPD_FEATURES + FIRE_FEATURES + CO2_FEATURES + VEGETATION_FEATURES + SOIL_FEATURES # final features 
+    TARGET = ['pv_filter', 'npv_filter', 'bs_filter']
+    scores = []
+    
+    
+    #%% Create Train/test set 
+    
+    
+    # Training and test set 
+    datasets =  {} # entire set - for final evaluation 
+    training_set = {} # training set 
+    test_set = {} # test set 
+    
+    # Iterate through the site list 
+    
+    # Set up a random seed, based on the date it was set YYYYMMDD
+    random.seed(20240514)
+    number_of_blocks = 10
+    choices = [b for b in range(number_of_blocks)]
+    number_of_choices = len(sites_list)/len(choices)
+    duplicator = [round(np.floor(number_of_choices)) for i in range(len(choices))]
+    
+    already_chosen = []
+    while sum(duplicator) != len(sites_list): # if there is an uneven split, keep adding 1 more until it sums to the avaliable number of datasets 
+        chosen_index = random.randrange(0,len(duplicator),1)
+        if chosen_index not in already_chosen:
+            duplicator[chosen_index] += 1
+            already_chosen.append(chosen_index)
         
-print(choice_adj)
-random.shuffle(choice_adj)
-print(choice_adj)
-
-if after_2015_test:
-    after_2015_indices = [np.where(sites_list == i)[0][0] for i in after_2015_list]
-    for i in range(len(after_2015_list)):
-        if choice_adj[after_2015_indices[i]] != choices[-1]:
-            print(choice_adj) # swap with an element that is 644 and NOT an index of one the after 2015 sites
-            index_choices = set(np.where(np.array(choice_adj)== 644)[0]).difference(after_2015_indices)
-            swap_index = random.choice(list(index_choices))
-            choice_adj[after_2015_indices[i]], choice_adj[swap_index] =  choice_adj[swap_index], choice_adj[after_2015_indices[i]]
-
-
-period = 161 # approx. 20% 
-for i, site_location_name in enumerate(sites_list):
-    site_merged = pd.read_csv(f'../DATASETS/DEA_FC_PROCESSED/MODELLED_PREPROCESSED/Input_DataSet_{site_location_name}.csv', parse_dates = ['time']).copy().dropna(subset = FEATURES) # read and drop na
-    site_merged.sort_values('time', inplace = True)
-    site_merged.reset_index(inplace = True)
-
+    random.shuffle(duplicator) # In cases where there is an uneven split, randomise which block gets the extra choice 
+    print(duplicator)
     
-    lower_bound = choice_adj[i]
-    if lower_bound == choices[-1]: # if its the last 20%, simply take all time points from there up to the most recent time point
-        upper_bound = len(site_merged) -1
-    else:
-        upper_bound = lower_bound + period 
+    choice_adj = []
+    for index ,i in enumerate(choices):
+        for j in range(duplicator[index]):
+            choice_adj.append(i)
+            
+    random.shuffle(choice_adj)
+    print(choice_adj)
+    
+    # Now Construct the training and test dataset 
+    to_print_as_word = []
+    for i, site_location_name in enumerate(sites_list):
+        site_merged = pd.read_csv(f'../DATASETS/DEA_FC_PROCESSED/MODELLED_PREPROCESSED/Input_DataSet_{site_location_name}.csv',
+                                  parse_dates = ['time']).copy().dropna(subset = FEATURES) # read and drop na
+        site_merged.sort_values('time', inplace = True)
+        site_merged.reset_index(inplace = True)
         
-    print(f'{site_location_name} : {(site_merged.time[lower_bound], site_merged.time[upper_bound])}')
+        period = len(site_merged)//number_of_blocks # get size of time period (as expressed by the number of data points)
+        lower_bound = choice_adj[i] * period
+        if lower_bound == choices[-1] * period: # if its the last block%, simply take all time points from there up to the most recent time point
+            upper_bound = len(site_merged) -1
+        else:
+            upper_bound = lower_bound + period 
     
-    #print((lower_bound, upper_bound))
-    # get test set 
-    test = site_merged[(site_merged.index >= lower_bound) & (site_merged.index <= upper_bound)]
-    # get train set (note the selection condition is logically opposite to selection condition of the test set )
-    train = site_merged[(site_merged.index < lower_bound) | (site_merged.index > upper_bound)]
-    
-    datasets[site_location_name] = site_merged
-    training_set[site_location_name] = train
-    test_set[site_location_name] = test
-    
-training_merged = pd.concat(training_set).dropna(subset = FEATURES) # drop na based on chosen features, needed for random forest 
-training_merged.sort_values('time', inplace = True)
-training_merged.set_index('time', inplace = True)
-
-test_merged = pd.concat(test_set).dropna(subset = FEATURES)
-test_merged.sort_values('time', inplace = True)
-test_merged.set_index('time', inplace = True)
-
-
-#%% Run The model 
-
-random_state = 20240228
-main_scorer = 'neg_mean_squared_error'
-# Possible scorers:
-    #  neg_mean_absolute_percentage_error'
-    #  mean_squared_log_error
-    # See more below:
-    # https://scikit-learn.org/stable/modules/model_evaluation.html#regression-metrics
-    
-
-## Test with Default RF 
-reg = RandomForestRegressor(n_estimators = 100, random_state = random_state, n_jobs = 7)
-
-# default_RF_CV = pd.DataFrame(cross_validate(reg, X = training_merged[FEATURES],
-#                      y = training_merged[TARGET], cv=cv_splits, 
-#                      scoring=np.unique(['neg_mean_squared_error', main_scorer]).tolist(),
-#                      return_train_score = True))
-# print(f'Default\nTrain R2 {default_RF_CV["train_" + "neg_mean_squared_error"].mean()}\nTest R2 {default_RF_CV["test_" + "neg_mean_squared_error"].mean()}')
-
-
-#%% Fit the Models
-
-# Default Model 
-
-reg.fit(X = training_merged[FEATURES], y = training_merged[TARGET])
-
-print(mean_squared_error(reg.predict(training_merged[FEATURES]), training_merged[TARGET]))
-print(mean_squared_error(reg.predict(training_merged[FEATURES]), training_merged[TARGET], multioutput = 'raw_values'))
-print(mean_squared_error(reg.predict(test_merged[FEATURES]), test_merged[TARGET]))
-print(mean_squared_error(reg.predict(test_merged[FEATURES]), test_merged[TARGET], multioutput = 'raw_values'))
-
-historical_fire_ds = pd.read_csv('../DATASETS/AusPlotsBurnData/Combined_Data/AusPlots_Combined_Fire_Dataset.csv', parse_dates = ['ignition_d']) # Fire Dataset
-
-reg.fit(X = training_merged[FEATURES], y = training_merged[TARGET])
-
-for site in sites_list:
-    #fig, ax = plt.subplots(2)
-
-    site_data = datasets[site].set_index('time').dropna(subset = FEATURES)
-    
-    train_site = site_data.iloc[training_set[site].index]
-    #train_site['pv_filter'].plot(figsize = (15,5), ax = ax[0], title = site)
-    #train_site['precip_90'].plot(figsize = (15,5), ax = ax[0])
-    
-    test_site = site_data.iloc[test_set[site].index]
-    #test_site['pv_filter'].plot(figsize = (15,5), ax = ax[1])
-    #test_site['precip_90'].plot(figsize = (15,5), ax = ax[1])
-    
-    print(f'{test_site.index.min()}')
-    
-    y_pred = reg.predict(site_data[FEATURES])
-    TARGET_names = ['prediction_' + i for i in TARGET]
-    df = pd.DataFrame(y_pred, columns = TARGET_names)
-    df.index = site_data[FEATURES].index
-    
-    print(test[TARGET])
-    print(df.iloc[training_set[site].index])
-    
-    train_score = mean_squared_error(train_site[TARGET], df.iloc[training_set[site].index])
-    test_score = mean_squared_error(test_site[TARGET],  df.iloc[test_set[site].index])
-    print(train_score)
-    print(test_score)
-    
-    historical_fire_pipeline = Pipeline([
-        ('historical_burn_date_preprocess', historical_burn_date_preprocess(site))
-        ])
-    historical_fire_ds_site = historical_fire_pipeline.fit_transform(historical_fire_ds)
-    
-    dates = ''  # make dates null unless there are fire dates
-    if historical_fire_ds_site.empty == False:
-        dates = [i for i in historical_fire_ds_site['ignition_d'] if pd.isnull(i) == False] # check if the record does not have null values, otherwise filter it out
+        # get test set 
+        test = site_merged[(site_merged.index >= lower_bound) & (site_merged.index <= upper_bound)]
+        word_text = f'{site_location_name} Test Set: {(site_merged.time[lower_bound], site_merged.time[upper_bound])}, Period: {period}'
+        print(word_text)
+        to_print_as_word.append(word_text)
+        # get train set (note the selection condition is logically opposite to selection condition of the test set )
+        train = site_merged[(site_merged.index < lower_bound) | (site_merged.index > upper_bound)]
         
-    #test_score = mean_squared_error(site_data[site_data.index > time_split][TARGET], df[site_data.index > time_split])
-    #plotPredictions(site_data, df, TARGET, msg = f'{site} RF . MSE Scores: train:{train_score:.2f}, test:{test_score:.2f}')
-    plotPredictions(site_data, df, TARGET, msg = f'{site} MSE Scores: train:{train_score:.2f}, test:{test_score:.2f}',
-                    split = [f'{test_site.index.min()},', f'{test_site.index.max()}'],
-                    fire_split = dates)
-
-
-
-# Fine-Tuned Model
-# reg = RandomForestRegressor(**grid.best_params_)
-# reg.fit(train[FEATURES], train[TARGET])
-# y_pred = reg.predict(site_merged[FEATURES])
-# TARGET_names = [ 'prediction_' + i for i in TARGET]
-# df = pd.DataFrame(y_pred, columns = TARGET_names)
-# df.index = site_merged[FEATURES].index
-# plotPredictions(site_merged,df,TARGET, split = time_split)
-
-
-#%% Examine Importances 
-
-# Get importance 
-# https://scikit-learn.org/stable/modules/generated/sklearn.inspection.permutation_importance.html#sklearn.inspection.permutation_importance
-# https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-multicollinear-py
-# Comparion between plots code inspired by above links 
-
-#reg = RandomForestRegressor(**grid.best_params_)
-# reg.fit(training_merged[FEATURES], training_merged[TARGET])
-
-# # fig, ax = plt.subplots(1,2)
-# gini_importance = pd.DataFrame(reg.feature_importances_.T, index = FEATURES, columns = ['Gini_importance'])
-# gini_importance.sort_values(by = 'Gini_importance', inplace = True, ascending = True)
-# gini_importance.plot.barh(figsize = (15,5))
-# #gini_importance.to_csv('Gini_Importance_trees.csv')
-
-
-n_repeats = 50
-perm_importance = permutation_importance(reg, test_merged[FEATURES], test_merged[TARGET],
-                                          n_repeats=n_repeats, random_state = random_state, n_jobs = 7, scoring = 'neg_mean_squared_error')
-perm_sorted_idx = perm_importance.importances_mean.argsort()
-perm_importance_df = pd.DataFrame(perm_importance.importances[perm_sorted_idx].T, columns = test_merged[FEATURES].columns[perm_sorted_idx])
-# perm_importance_df.boxplot(vert = False, figsize = (15,10))
-# fig.tight_layout()
-
-arr_importances = np.array([list(perm_importance['importances_mean']), list(perm_importance['importances_std'])]).T
-perm_importance_df_2 = pd.DataFrame(arr_importances, columns = ['importances_mean', 'importances_std'], index = FEATURES)
-perm_importance_df_2.sort_values('importances_mean', ascending = True, inplace = True)
-perm_importance_df_2.plot.barh(yerr = 'importances_std', figsize = (15, 10))
-# #perm_importance_df_2.to_csv('Perm_importance_trees.csv')
+        datasets[site_location_name] = site_merged
+        training_set[site_location_name] = train
+        test_set[site_location_name] = test
+        
+    training_merged = pd.concat(training_set).dropna(subset = FEATURES) # drop na based on chosen features, needed for random forest 
+    training_merged.sort_values('time', inplace = True)
+    training_merged.set_index('time', inplace = True)
+    
+    test_merged = pd.concat(test_set).dropna(subset = FEATURES)
+    test_merged.sort_values('time', inplace = True)
+    test_merged.set_index('time', inplace = True)
+    
+    
+    #%% Run The model 
+    
+    random_state = 20240228
+    main_scorer = 'neg_mean_squared_error'
+    # Possible scorers:
+        #  neg_mean_absolute_percentage_error'
+        #  mean_squared_log_error
+        # See more below:
+        # https://scikit-learn.org/stable/modules/model_evaluation.html#regression-metrics
+    
+    reg = RandomForestRegressor(n_estimators = 100, random_state = random_state, n_jobs = 8)
+    #%% Fit the Models
+    
+    reg.fit(X = training_merged[FEATURES], y = training_merged[TARGET])
+    
+    
+    historical_fire_ds = pd.read_csv('../DATASETS/AusPlotsBurnData/Combined_Data/AusPlots_Combined_Fire_Dataset.csv', parse_dates = ['ignition_d']) # Fire Dataset
+    
+    training_row = mean_squared_error(reg.predict(training_merged[FEATURES]), training_merged[TARGET], multioutput = 'raw_values')
+    testing_row = mean_squared_error(reg.predict(test_merged[FEATURES]), test_merged[TARGET], multioutput = 'raw_values')
+    training_mean = mean_squared_error(reg.predict(training_merged[FEATURES]), training_merged[TARGET])
+    testing_mean = mean_squared_error(reg.predict(test_merged[FEATURES]), test_merged[TARGET])
+    results_table = pd.DataFrame([training_row, testing_row], columns = TARGET)
+    results_table['loss_mean'] = [training_mean, testing_mean]
+    results_table['training_set'] = ['Train', 'Test']
+    results_table.set_index('training_set', inplace = True)
+    
+    print(results_table)
+    #%% Time To get results and generate a report for visualisation 
+    
+    selected_super_group = '_'.join(s.split('/')) 
+    results_dir = f'C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/RESULTS/Random_Forest_Results_On_Super_Group_Results/{selected_super_group}'
+    
+    # Create Directory If this does not exist 
+    if os.path.exists(results_dir) == False:
+        os.makedirs(results_dir)
+        os.makedirs(results_dir + '/Plots') # also create a plots folder under since we can assume this folder did not initialy exist 
+        
+    doc = Document()
+    
+    doc.add_heading('Sites that were included', level=1)
+    
+    text = '\n\n'.join(to_print_as_word) 
+    doc.add_paragraph(text)
+    doc.add_paragraph(' ')
+    
+    doc.add_heading('Table: MSE of the Random Forest on each output', level=1)
+    table_variable = doc.add_table(rows = results_table.shape[0] + 1,
+                                    cols = results_table.shape[1] + 1)
+        
+    for i, row in enumerate(table_variable.rows):
+        for j, cell in enumerate(row.cells):
+            if i == 0:
+                all_columns = list(results_table.columns) + ['']
+                cell.text = all_columns[j-1]
+            elif j == 0:
+                cell.text = results_table.index[i-1]
+            else:
+                cell.text = str(round(results_table.iloc[i-1,j-1], 3))
+    table_variable.style = 'Table Grid'
+    
+    doc.add_page_break() 
+    
+    
+    
+    #%% Examine Importances 
+    
+    # Get importance 
+    # https://scikit-learn.org/stable/modules/generated/sklearn.inspection.permutation_importance.html#sklearn.inspection.permutation_importance
+    # https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance_multicollinear.html#sphx-glr-auto-examples-inspection-plot-permutation-importance-multicollinear-py
+    # Comparion between plots code inspired by above links 
+    
+    n_repeats = 50
+    perm_importance = permutation_importance(reg, test_merged[FEATURES], test_merged[TARGET],
+                                              n_repeats=n_repeats, random_state = random_state, n_jobs = 8, scoring = 'neg_mean_squared_error')
+    perm_sorted_idx = perm_importance.importances_mean.argsort()
+    perm_importance_df = pd.DataFrame(perm_importance.importances[perm_sorted_idx].T, columns = test_merged[FEATURES].columns[perm_sorted_idx])
+    
+    arr_importances = np.array([list(perm_importance['importances_mean']), list(perm_importance['importances_std'])]).T
+    perm_importance_df_2 = pd.DataFrame(arr_importances, columns = ['importances_mean', 'importances_std'], index = FEATURES)
+    perm_importance_df_2.sort_values('importances_mean', ascending = True, inplace = True)
+    
+    fig, ax = plt.subplots(1)
+    
+    perm_importance_df_2['importances_mean'].plot.barh(figsize = (15, 10), ax = ax)
+    xticks = [i for i in range(0, round(max(perm_importance_df_2['importances_mean']) + 10), 10)]
+    ax.set_xticks(xticks)
+    plt.grid(True)
+    plt.xlabel('Mean Gain in MSE')
+    
+    directory_plot_output = f"{results_dir}/Plots/Permutation_Importance.png"
+    plt.savefig(fname = directory_plot_output)
+    plt.close()
+    
+    doc.add_heading('Permutation Importance', level=1)
+    doc.add_picture(directory_plot_output, width=Inches(7))  
+    
+    
+    
+    #%% Permutation Importance by Precip Vars
+    
+    precip_var = ['precip_30', 'precip_90', 'precip_180', 'precip_365', 'precip_730', 'precip_1095', 'precip_1460'][::-1]
+    precip_var_set = ['1-30 days', '31-90 days', '91-180 days', '181-365 days', '366-730 days', '731-1095 days', '1096-1460 days'][::-1]
+    
+    fig, ax = plt.subplots(1, figsize = (10, 5))
+    
+    t = perm_importance_df_2.loc[precip_var]
+    t['precip_var_set'] = precip_var_set
+    t = t.set_index('precip_var_set')
+    t.index.name = None
+    t['importances_mean'].plot.barh(ax = ax)
+    plt.grid(True)
+    plt.xlabel('Mean Gain in MSE')
+    
+    directory_plot_output = f"{results_dir}/Plots/Permutation_Importance_Precip.png"
+    plt.savefig(fname = directory_plot_output)
+    plt.close()
+    
+    doc.add_heading('Permutation Importance by Precip', level=1)
+    doc.add_picture(directory_plot_output, width=Inches(7))  
+    doc.add_page_break() 
+    
+    
+    #%% ALE plots
+    
+    rf_ale = ALE(reg.predict, feature_names=FEATURES, target_names=TARGET)
+    rf_exp_tree = rf_ale.explain(np.array(training_merged[FEATURES]))
+    
+    nrow = 7
+    ncol = 5
+    fig, ax = plt.subplots(nrow, ncol, figsize = (15,20), sharey = True)
+    
+    # Iterate through row, then cols
+    counter = 0
+    for row in range(nrow):
+        for col in range(ncol):
+            # Break the loop when the number of features is limited 
+            if counter == len(FEATURES):
+                break
+            f = FEATURES[counter]
+            
+            ax[row, col].plot(rf_exp_tree['data']['feature_values'][FEATURES.index(f)], 
+                    rf_exp_tree['data']['ale_values'][FEATURES.index(f)][:, 0], 
+                    color = 'green', label = 'PV', marker='o', linewidth= 0.5, markersize= 1.5)
+            ax[row, col].plot(rf_exp_tree['data']['feature_values'][FEATURES.index(f)], 
+                       rf_exp_tree['data']['ale_values'][FEATURES.index(f)][:, 1],
+                    color = 'blue', label = 'NPV', marker='o', linewidth= 0.5, markersize= 1.5)
+            ax[row, col].plot(rf_exp_tree['data']['feature_values'][FEATURES.index(f)], 
+                       rf_exp_tree['data']['ale_values'][FEATURES.index(f)][:, 2],
+                    color = 'brown', label = 'BS', marker='o', linewidth= 0.5, markersize= 1.5)
+            ax[row, col].axhline(y=0, color='black', linestyle='--')
+            ax[row, col].grid(True)
+            ax[row, col].set_xlabel(f)
+            
+            if col == 0:
+                ax[row, col].set_ylabel('ALE')
+            counter += 1
+    plt.tight_layout()
+    
+    directory_plot_output = f"{results_dir}/Plots/ALE_Plots.png"
+    plt.savefig(fname = directory_plot_output)
+    plt.close()
+    
+    doc.add_heading(f'ALE Importance', level=1)
+    doc.add_picture(directory_plot_output, width=Inches(7))  
+    doc.add_page_break() 
+    
+    
+    #%% Plot Time series 
+    
+    for site in sites_list:
+    
+        site_data = datasets[site].set_index('time').dropna(subset = FEATURES)
+        train_site = site_data.iloc[training_set[site].index]
+        test_site = site_data.iloc[test_set[site].index]
+    
+        print(f'{test_site.index.min()}')
+        
+        y_pred = reg.predict(site_data[FEATURES])
+        TARGET_names = ['prediction_' + i for i in TARGET]
+        df = pd.DataFrame(y_pred, columns = TARGET_names)
+        df.index = site_data[FEATURES].index
+        
+        train_score = mean_squared_error(train_site[TARGET], df.iloc[training_set[site].index])
+        test_score = mean_squared_error(test_site[TARGET],  df.iloc[test_set[site].index])
+        
+        historical_fire_pipeline = Pipeline([
+            ('historical_burn_date_preprocess', historical_burn_date_preprocess(site))
+            ])
+        historical_fire_ds_site = historical_fire_pipeline.fit_transform(historical_fire_ds)
+        
+        dates = ''  # make dates null unless there are fire dates
+        if historical_fire_ds_site.empty == False:
+            dates = [i for i in historical_fire_ds_site['ignition_d'] if pd.isnull(i) == False] # check if the record does not have null values, otherwise filter it out
+            
+        plotPredictions(site_data, df, TARGET, msg = f'{site} MSE Scores: train:{train_score:.2f}, test:{test_score:.2f}',
+                        split = [f'{test_site.index.min()},', f'{test_site.index.max()}'],
+                        fire_split = dates, directory_plot_output = f"{results_dir}/Plots/{site}.png")
+        
+        doc.add_heading(f'{site}', level=1)
+        doc.add_picture(f"{results_dir}/Plots/{site}.png", width=Inches(7))  
+        doc.add_page_break() 
+        
+    #%% Save the Document
+    
+    doc.save(f'{results_dir}/Random_Forest_{selected_super_group}_Results.docx')

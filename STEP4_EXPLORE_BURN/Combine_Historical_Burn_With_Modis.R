@@ -16,8 +16,7 @@ library(dplyr)
 
 historical <- read.csv('../DATASETS/AusPlotsBurnData/Historical_Bush_Fires/AusPlots_Historical_BurnDates.csv')
 historical$Data_Source <- rep('Historical_BushFires_Boundaries', nrow(historical))
-historical <- historical[-which(historical$ignition_d == ''),] # Remove 
-historical$ignition_d <- as.Date(historical$ignition_d, format = '%Y/%m/%d')
+historical$ignition_d <- as.Date(historical$ignition_d,)
 
 modis <- read.csv('../DATASETS/AusPlotsBurnData/MODIS_Burn/AusPlots_BurnDates_2024_Corrected_ColNames.csv')
 colnames(modis)[3] <- c('ignition_d')
@@ -34,5 +33,9 @@ AusPlots_burn <- AusPlots_burn %>%
   left_join(modis, by = common)
 
 colnames(AusPlots_burn)[1] <- 'site_location_name'
+AusPlots_burn <- AusPlots_burn[, -which(colnames(AusPlots_burn) == 'X')]
 
 write.csv(AusPlots_burn, '../DATASETS/AusPlotsBurnData/Combined_Data/AusPlots_Combined_Fire_Dataset.csv')
+write.csv(AusPlots_burn, '../DATASETS_TO_SHARE/AusPlots_Combined_Fire_Dataset.csv')
+
+

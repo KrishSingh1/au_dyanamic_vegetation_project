@@ -15,6 +15,7 @@
 library(data.table)
 library(ggplot2)
 library(dplyr)
+library(stats)
 
 
 # Functions ---------------------------------------------------------------
@@ -26,9 +27,9 @@ directory <- 'C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanami
 files <- list.files(directory, pattern = "\\.csv$", full.names = FALSE)
 file.names <- tools::file_path_sans_ext(files)
 
-cols <- c('site_location_name', 'ue_filter', 'sd_dev', 'mean', 'n_datapoints', 'n_outliers')
+cols <- c('site_location_name', 'ue_filter', 'sd_dev', 'mean', 'n_datapoints', 'n_outliers', 'n_missing', 'n_nas_omitted')
 ue_filter_diag <- t(data.frame(row.names = cols))
-ue_filter_interval <- seq(from = 10, to = 127, length.out = 10)
+ue_filter_interval <- seq(from = 10, to = 127, length.out = 20)
 
 counter_current <- 1
 counter_max <- length(file.names)
@@ -49,20 +50,28 @@ for (query in file.names) {
                                                   ue_med = median(as.numeric(site.fc$ue), na.rm = TRUE)))
   
   for(u in ue_filter_interval) {
-    sub_fc <- subset(site.fc, ue <= u)
-    sub_fc <- sub_fc[, list(pv = mean(pv, na.rm = TRUE)), by = list(time)]
+    
+    sub_fc <- subset(site.fc, ue <= u) # apply ue filtering, this removes na anyways
+    sub_fc <- sub_fc[, list(pv = mean(pv, na.rm = TRUE)), by = list(time)]  # aggregate by time
+    
+    not_filtered <- site.fc[, list(pv = mean(pv, na.rm = TRUE)), by = list(time)] # Check the number of rows without ue filtering 
+    non_na_inclusion <- sum(is.na(not_filtered$pv))
+    not_filtered <- na.omit(not_filtered) # omit rows that were considered na 
+    
     pv <- sub_fc$pv
     sd_pv <- sd(pv,na.rm = TRUE)
     mean_pv <- mean(pv, na.rm = TRUE)
     datapoints <- nrow(sub_fc)
     n_outliers <- length(boxplot.stats(pv)$out)
+    
     row_fc <- c(site_location_name = query, 
                 ue_filter = u,
                 sd_dev = sd_pv,
                 mean = mean_pv, 
                 n_datapoints = datapoints,
-                n_outliers = n_outliers)
-    
+                n_outliers = n_outliers,
+                n_missing = nrow(not_filtered) - datapoints,
+                n_nas_omitted = non_na_inclusion)
     ue_filter_diag <- rbind(ue_filter_diag, row_fc)
     
   }
@@ -78,6 +87,10 @@ ue_filter_diag_df$sd_dev <- as.numeric(ue_filter_diag_df$sd_dev)
 ue_filter_diag_df$mean <- as.numeric(ue_filter_diag_df$mean)
 ue_filter_diag_df$n_datapoints <- as.numeric(ue_filter_diag_df$n_datapoints)
 ue_filter_diag_df$n_outliers <-as.numeric(ue_filter_diag_df$n_outliers)
+ue_filter_diag_df$n_missing <-as.numeric(ue_filter_diag_df$n_missing)
+
+ggplot(data = ue_filter_diag_df) +
+  geom_point(mapping = aes(x = ue_filter, y = n_missing)) 
 
 
 ue_filter_min_max <- as.data.frame(ue_filter_min_max)
