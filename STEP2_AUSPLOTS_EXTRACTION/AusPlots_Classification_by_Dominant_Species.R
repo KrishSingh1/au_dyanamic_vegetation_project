@@ -35,36 +35,11 @@ colnames(growth.form.agg)[which(colnames(growth.form.agg) == 'Group.1')] <- 'sit
 classify <- function(dataset.row) {
   return(names(which.max(dataset.row[colnames(growth.form.agg)[which(colnames(growth.form.agg) != 'site_location_name')]])))
 }
-
 growth.form.agg$vegetation_type <- unlist(apply(growth.form.agg, MARGIN = 1, FUN = classify))
 
-# Now calculate the relative dominance: percent of dominant species/total sum of percentage of species
-calc.relative.dominance <- function(dataset.row) {
-  # Get and covert species percent into numeric 
-  site.species.percentages <- as.numeric(dataset.row[which(!(names(dataset.row) %in% c('site_location_name', 'vegetation_type')))])
-  site.sum <- sum(site.species.percentages, na.rm = T) # calc the sum
-  dominant.species.percent <- as.numeric(dataset.row[dataset.row['vegetation_type'][[1]]])
-  rel_dom <- dominant.species.percent/site.sum # get the relative dominance
-  return(rel_dom)
-}
-
-growth.form.agg$relative_dominance <- unlist(apply(growth.form.agg, MARGIN = 1, FUN = calc.relative.dominance))
-
-
-
-# Now calculate the relative dominance: percent of dominant species/total sum of percentage of species
-calc.scaled.dominance <- function(dataset.row) {
-  # Get and covert species percent into numeric 
-  dominant.species.percent <- as.numeric(dataset.row[dataset.row['vegetation_type'][[1]]])
-  rel_dom <- as.numeric(dataset.row['relative_dominance'])
-  
-  scaled_dom <- dominant.species.percent * rel_dom # get the scaled dominance
-  return(scaled_dom)
-}
-
-growth.form.agg$scaled_dom <- unlist(apply(growth.form.agg, MARGIN = 1, FUN = calc.scaled.dominance))
-
 write.csv(growth.form.agg,'../DATASETS/AusPlots_Extracted_Data/Final/growth_forms_classification_by_dom_species_final_2-0-6.csv')
+write.csv(growth.form.agg,'../DATASETS_TO_SHARE/AusPlots_Dominant_Growth_Form/growth_forms_classification_by_dom_species_final_2-0-6.csv')
+
 
 # Junk Script (Don't run) -------------------------------------------------
 

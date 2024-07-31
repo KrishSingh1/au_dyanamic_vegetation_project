@@ -20,7 +20,6 @@ library(sfheaders)
 # Functions ---------------------------------------------------------------
 
 
-
 # Main --------------------------------------------------------------------
 # Look at the directory for all avaliable DEA FC data per site 
 directory <- 'C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/DATASETS/DEA_FC_PROCESSED/MODELLED_PREPROCESSED/'
@@ -40,14 +39,16 @@ site.corners.data.cleaned <- read.csv('C:/Users/krish/Desktop/DYNAMIC MODEL VEGE
   st_set_crs(3577)
 
 # Get our evaluation data:
-evaluation.data <- read.csv('../DATASETS/AusPlots_Extracted_Data/Final/DEA_FC_Ground_Truth_Evaluation.csv') %>%
-  select(c('site_location_name', 'green', 'brown', 'bare', 'visit_start_date' )) %>%  
+evaluation.data <- read.csv('../DATASETS/AusPlots_Extracted_Data/Final/DEA_FC_Ground_Truth_Evaluation_with_percentiles.csv') %>%
   mutate(visit_start_date = as.Date(visit_start_date)) %>%
+  select(!time) %>%
   filter(is.na(green) == FALSE | is.na(brown) == FALSE | is.na(bare) == FALSE) %>%
   rename(time = visit_start_date,
          pv = green,
          npv = brown,
          bs = bare)
+
+theil_sen_reg <- read.csv('../DATASETS/AusPlots_Theil_Sen_Regression_Stats/AusPlots_Theil_Sen_Regression_Stats.csv')
 
 for(state in states){
   
@@ -87,6 +88,9 @@ for(state in states){
     evaluation_subset <- evaluation.data %>%
       subset(site_location_name == query)
     
+    theil_sen_reg_subset <- theil_sen_reg %>%
+      subset(site_location_name == query)
+    
     # Plot time series per fractional cover 
     for (fraction in c('pv', 'npv', 'bs')) {
       
@@ -102,18 +106,48 @@ for(state in states){
       
       t <- ggplot(data = test, aes(x = time))  +
         geom_line(aes(y = .data[[fraction]], ), size = 0.3, color = colour) + 
-        geom_point(aes(y = .data[[fraction]]), size = 0.1) +
+        scale_y_continuous(limits = c(0, 100), breaks = scales::pretty_breaks(n = 5)) +
         scale_x_date(date_labels = "%Y") +
-        ylim(c(0,100)) + geom_point(data = evaluation_subset, aes(x =  time, y = .data[[fraction]]), shape = 4, color = 'blue')
-      
-      #plot(t)
-      
-      ggsave(plot_file, t, width = 7, height = 2, units = "in")
-      
+        geom_point(data = evaluation_subset, aes(x =  time, y = .data[[fraction]]), shape = 4, color = 'blue') +
+        geom_abline(intercept = theil_sen_reg_subset[[paste0(fraction, '_filter','_intercept')]], 
+                    slope = theil_sen_reg_subset[[paste0(fraction, '_filter', '_slope')]], color = 'red') +
+        ggtitle(paste0('slope = ', round(theil_sen_reg_subset[[paste0(fraction, '_filter', '_slope_yr')]],7),
+                       paste0(' ', fraction, '/yr')))
+        
+      ggsave(plot_file, t, width = 7, height = 3, units = "in")
       doc <- doc %>%
-        body_add_img(src = plot_file, width = 7, height = 2, style = "centered")
+        body_add_img(src = plot_file, width = 7, height = 3, style = "centered")
       
     }
+    
+    evaluation_subset <- evaluation_subset %>%
+      mutate(time = as.factor(time))
+    
+    fraction <- 'pv'
+    pv_t <- ggplot(data = test) +
+      stat_ecdf(mapping = aes(x = .data[[fraction]]), color = 'darkgreen') +
+      geom_point(data = evaluation_subset,
+                 mapping = aes(x = .data[[paste0(fraction, '_filter')]], y = .data[[paste0(fraction, '_filter', '_percentile')]],
+                               color = time), size = 2)
+    
+    fraction <- 'npv'
+    npv_t <- ggplot(data = test) +
+      stat_ecdf(mapping = aes(x = .data[[fraction]]), color = 'steelblue') +
+      geom_point(data = evaluation_subset,
+                 mapping = aes(x = .data[[paste0(fraction, '_filter')]], y = .data[[paste0(fraction, '_filter', '_percentile')]],
+                               color = time), size = 2)
+    
+    fraction <- 'bs'
+    bs_t <- ggplot(data = test) +
+      stat_ecdf(mapping = aes(x = .data[[fraction]]), color = 'darkred') +
+      geom_point(data = evaluation_subset,
+                 mapping = aes(x = .data[[paste0(fraction, '_filter')]], y = .data[[paste0(fraction, '_filter', '_percentile')]],
+                               color = time), size = 2)
+    
+    cowplot::save_plot(plot = cowplot::plot_grid(pv_t, npv_t, bs_t), filename = plot_file,
+                       base_width = 7, base_height = 5, units = 'in')
+    doc <- doc %>%
+      body_add_img(src = plot_file, width = 7, height = 5, style = "centered")
     
     test.dea.trimed <- fread(paste0('C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/DATASETS/DEA_FC_PROCESSED/SPATIAL/', query, '.csv'))
     test.dea.trimed <- test.dea.trimed %>% 

@@ -9,14 +9,14 @@ This folder contains:
 
 	--> 'Grass_Tribes_Cleaned.csv': Cleaned and preprocessed 'Grass_Tribes.csv', renaming columns and removing empty rows. 
 
-	--> 'FCOV30_C4_fraction.tif': [ENTER DESCRIPTION HERE]
+	--> 'FCOV30_C4_fraction.tif': C4 fractions for Australia. See A.1 of 'Donohue, R.J. (2021) Testing the accuracy of Gramina, a model for monitoring Australia’s pasture and grassland biomass. CSIRO, Canberra, Australia.' for a in depth description of the dataset.
 
 
 ---> 'Output': The generated percent cover of the grass tribes Chloridoideae and Andropogoneae datasets and generated map visualisations of Chloridoidae and Andropogoneae.
 
-	--> 'Andropogoneae Map.png': The image file of a map showing the percent cover of Andropogoneae across AusPlots Sites in Australia. This percent cover overlays the C4 Fraction map 'FCOV30_C4_fraction.tif'. This image was generated through 'Grass_Cover_Geovisualisation_qgis_Andro_file.qgz' using the datasets 'ausplots_grass_cover_by_tribe_agg.csv'. Also includes a base map layer 'OpenStreetMap' (https://www.openstreetmap.org/#map=4/-30.86/115.14) already integrated in qgis. 
+	--> 'Andropogoneae Map.png': The image file of a map showing the percent cover (classified into 8 Jenks natural breaks) of Andropogoneae across AusPlots Sites in Australia. This percent cover overlays the C4 Fraction map 'FCOV30_C4_fraction.tif'. This image was generated through 'Grass_Cover_Geovisualisation_qgis_Andro_file.qgz' using the datasets 'ausplots_grass_cover_by_tribe_agg.csv'. Also includes a base map layer 'OpenStreetMap' (https://www.openstreetmap.org/#map=4/-30.86/115.14) already integrated in qgis. 
 	
-	--> 'Chloridoideae Map.png': The image file of a map showing the percent cover of Chloridoideae across AusPlots Sites in Australia. This percent cover overlays the C4 Fraction map 'FCOV30_C4_fraction.tif'. This image was generated through 'Grass_Cover_Geovisualisation_qgis_Andro_file.qgz' using the datasets 'ausplots_grass_cover_by_tribe_agg.csv'. Also includes a base map layer 'OpenStreetMap' (https://www.openstreetmap.org/#map=4/-30.86/115.14) already integrated in qgis. 
+	--> 'Chloridoideae Map.png': The image file of a map showing the percent cover (classified into 8 Jenks natural breaks) of Chloridoideae across AusPlots Sites in Australia. This percent cover overlays the C4 Fraction map 'FCOV30_C4_fraction.tif'. This image was generated through 'Grass_Cover_Geovisualisation_qgis_Andro_file.qgz' using the datasets 'ausplots_grass_cover_by_tribe_agg.csv'. Also includes a base map layer 'OpenStreetMap' (https://www.openstreetmap.org/#map=4/-30.86/115.14) already integrated in qgis. 
 
 	--> 'ausplots_species_cover_tribe_labelled.csv': Contains all species (rows) percent cover by site visit (columns). The last column 'tribe_name' is the label that categorizes the species fraction as either Andropogoneae or Chloridoideae or 'non_applicable/no_tribe'.
 
@@ -25,9 +25,7 @@ This folder contains:
 
 	--> 'ausplots_grass_cover_by_tribe_agg.csv': Contains aggregated data of the percent cover of Andropogoneae, Chloridoideae, and non_applicable/no_tribe for each visit grouped by the site location name. Basically 'ausplots_grass_cover_by_tribe.csv' but aggregated by 'site_location_name', which the mean percent cover was taken per aggregate. 
 
-	--> 'Grass_Cover_Geovisualisation_qgis_Andro_file.qgz': The QGIS project file used to produce 'Andropogoneae Map.png'. If you have it opened on QGIS, see 'Project > Layout Manager > Andro_Grass_Map', for the map. However, you can normally interact with this map without access at the image. Data used: 'FCOV30_C4_fraction.tif' and 'ausplots_grass_cover_by_tribe_agg.csv.'
-
-	--> 'Grass_Cover_Geovisualisation_qgis_Chlor_file.qgz': The QGIS project file used to produce 'Chloridoideae Map.png'. If you have it opened on QGIS, see 'Project > Layout Manager > Chlor_Grass_Map', for the map. However, you can normally interact with this map without access at the image. Data used: 'FCOV30_C4_fraction.tif' and 'ausplots_grass_cover_by_tribe_agg.csv.'
+	--> 'Grass_Cover_Geovisualisation.qgz': The QGIS project file used to produce 'Chloridoideae Map.png' and 'Andropogoneae Map.png'. If you have it opened on QGIS, see 'Project > Layout Manager', for the map. However, you can normally interact with these maps without accessing these images. Data used: 'FCOV30_C4_fraction.tif' and 'ausplots_grass_cover_by_tribe_agg.csv.'
 		
 		
 

@@ -1,6 +1,6 @@
 ###### DEA_Data_Repeated_Sites_Visualisation ######
 # By Krish Singh
-# 20230929
+# 2024-07-30
 # To see the change in fractional cover from site visit to another with DEA data. 
 
 
@@ -28,16 +28,13 @@ library(grid)
 # Main --------------------------------------------------------------------
 
 # Get DEA file names 
-directory <- "/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/DataExtraction/BACKUP_DATA/csv_files"
-files <- list.files(directory, pattern = "\\.csv$", full.names = FALSE)
-fileNames <- tools::file_path_sans_ext(files)
-sites.query <- read.csv("../DATASETS/sites_info_query.csv")
 
 # Load AusPlots data 
-evaluation_fc <- fread('../DATASETS/AusPlots_Extracted_Data/Final/DEA_FC_Ground_Truth_Evaluation.csv') %>%
+evaluation_fc <- fread('../DEA_FC_Ground_Truth_Evaluation_File/DEA_FC_Ground_Truth_Evaluation.csv') %>%
   mutate(time = as.Date(time)) %>%
   arrange(time)
   
+fileNames <- unique(evaluation_fc$site_location_name)
 # Looking at the varying number of NAs between in-situ for green, brown, bs
 # Its best to calculate the change differently
 # Additionally, we are not considering the length of time into our change calcs 
@@ -62,6 +59,7 @@ change_list <- lapply(evaluation_list, FUN = function(one_fraction) {
   for(s in site_list) {
     site_fc_information <- subset(one_fraction, site_location_name == s) %>%
       arrange(time)
+    #print(site_fc_information)
     n_samples <- nrow(site_fc_information)
     
     for (sample in 1:(n_samples-1)) {
@@ -82,7 +80,7 @@ change_list <- lapply(evaluation_list, FUN = function(one_fraction) {
                time_b = time_b,
                site_location_name = s) %>%
         rename(days_difference = time)
-      
+      #print(change)
       temp <- rbind(temp, change)
     }
   }
@@ -107,7 +105,10 @@ bs.bare.pl <- ggplot(data = change_list$bs_fc, aes(x = bare, y = bs_filter)) +
                                                predicted = change_list$bs_fc$bs_filter),2)),
                                    0.16, 0.8))
 
-plot(bs.bare.pl)          
+plot(bs.bare.pl)    
+
+ggsave('../DEA_Evaluation_Plots/DEA_VS_AUSPLOTS_FC_BARE_CHANGE.png',
+       bs.bare.pl, width = 13, height = 13, units = "in")
 
 
 green.stats <- lm(pv_filter~green, change_list$green_fc)
@@ -125,6 +126,8 @@ pv.green.pl <- ggplot(data = change_list$green_fc, aes(x = green, y = pv_filter)
 
 plot(pv.green.pl)       
 
+ggsave('../DEA_Evaluation_Plots/DEA_VS_AUSPLOTS_FC_GREEN_CHANGE.png',
+       pv.green.pl, width = 13, height = 13, units = "in")
 
 brown.stats <- lm(npv_filter~brown, change_list$brown_fc)
 npv.brown.pl <- ggplot(data = change_list$brown_fc, aes(x = brown, y = npv_filter)) + 
@@ -139,10 +142,61 @@ npv.brown.pl <- ggplot(data = change_list$brown_fc, aes(x = brown, y = npv_filte
                                                predicted = change_list$brown_fc$npv_filter),2)),
                              0.16, 0.8)) 
 
-plot(npv.brown.pl)       
+plot(npv.brown.pl)   
+
+ggsave('../DEA_Evaluation_Plots/DEA_VS_AUSPLOTS_FC_BROWN_CHANGE.png',
+       npv.brown.pl, width = 13, height = 13, units = "in")
 
 
 plot(cowplot::plot_grid(pv.green.pl, npv.brown.pl, bs.bare.pl))
 
 
+# Plot by Vegetation Growth Form ------------------------------------------
+
+
+growth.form.agg <- read.csv('../AusPlots_Dominant_Growth_Form/growth_forms_classification_by_dom_species_final_2-0-6.csv')
+growth.form.essen <- growth.form.agg[,c("site_location_name", "vegetation_type")]
+
+
+# Now plot by vegetation type 
+
+## Green 
+
+dea.fc.sites.plotting <- merge(change_list$green_fc, growth.form.essen, by = 'site_location_name')
+cal.green <- ggplot(dea.fc.sites.plotting, aes(y = pv_filter, x = green)) + geom_point(alpha = 0.5) + 
+  xlim(-100,100) + ylim(-100,100) + labs(x = "\u0394 green cover (in-situ)", y = "\u0394 green cover (remote)") +
+  facet_wrap(~vegetation_type) +
+  geom_abline(slope = 1, intercept = 0, lty = 2, size = 0.9) + coord_obs_pred() +  stat_poly_eq(mapping = use_label(c("eq", "R2", 'p'))) +
+  stat_smooth(method = 'lm',fullrange = F)
+plot(cal.green)
+
+ggsave('../DEA_Evaluation_Plots/DEA_VS_AUSPLOTS_FC_CHANGE_GREEN_PER_GROWTHFORM.png',
+       cal.green, width = 13, height = 13, units = "in")
+
+
+## Bare
+dea.fc.sites.plotting <- merge(change_list$bs_fc, growth.form.essen, by = 'site_location_name')
+
+cal.bare <- ggplot(dea.fc.sites.plotting, aes(y = bs_filter, x = bare)) + geom_point(alpha = 0.5) +
+  xlim(-100,100) + ylim(-100,100)  + labs(x = "\u0394 bare cover (in-situ)", y = "\u0394 bare cover (remote)") +
+  geom_abline(slope = 1, intercept = 0, lty = 2, size = 0.9) + facet_wrap(~vegetation_type) +
+  coord_obs_pred() + stat_poly_eq(mapping = use_label(c("eq", "R2", 'p'))) +
+  stat_smooth(method = 'lm',fullrange = F)
+plot(cal.bare)
+
+ggsave('../DEA_Evaluation_Plots/DEA_VS_AUSPLOTS_FC_CHANGE_BARE_PER_GROWTHFORM.png',
+       cal.bare, width = 13, height = 13, units = "in")
+
+## Brown
+dea.fc.sites.plotting <- merge(change_list$brown_fc, growth.form.essen, by = 'site_location_name')
+
+cal.brown <- ggplot(dea.fc.sites.plotting, aes(y = npv_filter, x = brown)) + geom_point(alpha = 0.5) +
+  xlim(-100,100) + ylim(-100,100)  + labs(x = "\u0394 brown cover (in-situ)", y = "\u0394 brown cover (remote)") +
+  geom_abline(slope = 1, intercept = 0, lty = 2, size = 0.9) + facet_wrap(~vegetation_type) +
+  coord_obs_pred() + stat_poly_eq(mapping = use_label(c("eq", "R2", 'p'))) +
+  stat_smooth(method = 'lm',fullrange = F)
+plot(cal.brown)
+
+ggsave('../DEA_Evaluation_Plots/DEA_VS_AUSPLOTS_FC_CHANGE_BROWN_PER_GROWTHFORM.png',
+       cal.brown, width = 13, height = 13, units = "in")
 
