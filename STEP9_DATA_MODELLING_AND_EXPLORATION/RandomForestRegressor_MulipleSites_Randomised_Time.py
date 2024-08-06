@@ -62,9 +62,8 @@ super_group_list = ['Desert Chenopod', 'Desert Forb', 'Desert Hummock.grass',
        'Temp/Med Shrub', 'Temp/Med Tree.Palm', 'Temp/Med Tussock.grass',
        'Tropical/Savanna Tree.Palm', 'Tropical/Savanna Tussock.grass']
 
-
-for s in ['Temp/Med Shrub', 'Temp/Med Tree.Palm', 'Temp/Med Tussock.grass',
-'Tropical/Savanna Tree.Palm', 'Tropical/Savanna Tussock.grass']:
+target_group_list = [] 
+for s in super_group_list:
     print(s)
     
     selected_super_group = s
@@ -115,31 +114,9 @@ for s in ['Temp/Med Shrub', 'Temp/Med Tree.Palm', 'Temp/Med Tussock.grass',
     test_set = {} # test set 
     
     # Iterate through the site list 
-    
     # Set up a random seed, based on the date it was set YYYYMMDD
+    # 
     random.seed(20240514)
-    number_of_blocks = 10
-    choices = [b for b in range(number_of_blocks)]
-    number_of_choices = len(sites_list)/len(choices)
-    duplicator = [round(np.floor(number_of_choices)) for i in range(len(choices))]
-    
-    already_chosen = []
-    while sum(duplicator) != len(sites_list): # if there is an uneven split, keep adding 1 more until it sums to the avaliable number of datasets 
-        chosen_index = random.randrange(0,len(duplicator),1)
-        if chosen_index not in already_chosen:
-            duplicator[chosen_index] += 1
-            already_chosen.append(chosen_index)
-        
-    random.shuffle(duplicator) # In cases where there is an uneven split, randomise which block gets the extra choice 
-    print(duplicator)
-    
-    choice_adj = []
-    for index ,i in enumerate(choices):
-        for j in range(duplicator[index]):
-            choice_adj.append(i)
-            
-    random.shuffle(choice_adj)
-    print(choice_adj)
     
     # Now Construct the training and test dataset 
     to_print_as_word = []
@@ -148,21 +125,6 @@ for s in ['Temp/Med Shrub', 'Temp/Med Tree.Palm', 'Temp/Med Tussock.grass',
                                   parse_dates = ['time']).copy().dropna(subset = FEATURES) # read and drop na
         site_merged.sort_values('time', inplace = True)
         site_merged.reset_index(inplace = True)
-        
-        period = len(site_merged)//number_of_blocks # get size of time period (as expressed by the number of data points)
-        lower_bound = choice_adj[i] * period
-        if lower_bound == choices[-1] * period: # if its the last block%, simply take all time points from there up to the most recent time point
-            upper_bound = len(site_merged) -1
-        else:
-            upper_bound = lower_bound + period 
-    
-        # get test set 
-        test = site_merged[(site_merged.index >= lower_bound) & (site_merged.index <= upper_bound)]
-        word_text = f'{site_location_name} Test Set: {(site_merged.time[lower_bound], site_merged.time[upper_bound])}, Period: {period}'
-        print(word_text)
-        to_print_as_word.append(word_text)
-        # get train set (note the selection condition is logically opposite to selection condition of the test set )
-        train = site_merged[(site_merged.index < lower_bound) | (site_merged.index > upper_bound)]
         
         datasets[site_location_name] = site_merged
         training_set[site_location_name] = train
@@ -175,6 +137,7 @@ for s in ['Temp/Med Shrub', 'Temp/Med Tree.Palm', 'Temp/Med Tussock.grass',
     test_merged = pd.concat(test_set).dropna(subset = FEATURES)
     test_merged.sort_values('time', inplace = True)
     test_merged.set_index('time', inplace = True)
+    
     
     
     #%% Run The model 
@@ -208,12 +171,33 @@ for s in ['Temp/Med Shrub', 'Temp/Med Tree.Palm', 'Temp/Med Tussock.grass',
     #%% Time To get results and generate a report for visualisation 
     
     selected_super_group = '_'.join(s.split('/')) 
-    results_dir = f'C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/RESULTS/Random_Forest_Results_On_Super_Group_Results/{selected_super_group}'
+    results_dir = f'C:/Users/krish/Desktop/DYNAMIC MODEL VEGETATION PROJECT/au_dyanamic_vegetation_project/RESULTS/Random_Forest_Results_On_Super_Group_Results_2/{selected_super_group}'
     
     # Create Directory If this does not exist 
     if os.path.exists(results_dir) == False:
         os.makedirs(results_dir)
+    
+    if os.path.exists(results_dir + '/Plots') == False:
         os.makedirs(results_dir + '/Plots') # also create a plots folder under since we can assume this folder did not initialy exist 
+    
+    if os.path.exists(results_dir + '/Results') == False:
+        os.makedirs(results_dir + '/Results')
+        
+    if os.path.exists(results_dir + '/Training') == False:
+        os.makedirs(results_dir + '/Training')
+    
+    #%% Create CSV files 
+    
+    training_merged.to_csv(f'{results_dir}/Training/{selected_super_group}_Training_set.csv')
+    test_merged.to_csv(f'{results_dir}/Training/{selected_super_group}_Test_set.csv')
+    results_table.to_csv(f'{results_dir}/Results/{selected_super_group}_Overall_MSE.csv')
+    
+    print(f'Size of training and test set for {selected_super_group}')
+    print(len(training_merged))
+    print(len(test_merged))
+    
+    continue
+    #%% Create document 
         
     doc = Document()
     
